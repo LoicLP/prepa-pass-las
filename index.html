@@ -19,9 +19,12 @@
   <header id="site-header" class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100"></header>
 
   <!-- HERO SECTION -->
-  <section id="accueil" class="relative gradient-hero pt-28 pb-16 md:pt-36 md:pb-24 overflow-hidden">
+  <section id="accueil" class="relative gradient-hero noise-overlay dot-grid pt-28 pb-16 md:pt-36 md:pb-24 overflow-hidden">
     <div class="blob-1"></div>
     <div class="blob-2"></div>
+    <!-- Geometric decorations -->
+    <div class="geo-circle-light w-40 h-40 top-24 right-[10%] hidden lg:block"></div>
+    <div class="geo-ring-light w-64 h-64 -bottom-16 left-[5%] hidden lg:block"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
       <div class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         <!-- Left: Text -->
@@ -66,6 +69,14 @@
       </div>
     </div>
   </section>
+
+  <!-- WAVE: Hero → PASS vs LAS -->
+  <div class="wave-divider">
+    <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,40 C360,80 720,0 1080,40 C1260,60 1380,50 1440,40 L1440,80 L0,80 Z" fill="#f9fafb"/>
+      <path d="M0,56 C320,72 640,32 960,56 C1120,68 1320,48 1440,56 L1440,80 L0,80 Z" fill="#f9fafb" opacity="0.5"/>
+    </svg>
+  </div>
 
   <!-- PARCOURS PASS VS LAS -->
   <section class="py-16 md:py-24 bg-gray-50">
@@ -125,9 +136,22 @@
     </div>
   </section>
 
+  <!-- WAVE: PASS vs LAS → Programme -->
+  <div class="wave-divider" style="margin-top:-1px">
+    <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,40 C480,0 960,80 1440,40 L1440,0 L0,0 Z" fill="#f9fafb"/>
+      <path d="M0,28 C360,56 720,8 1080,36 C1260,48 1380,32 1440,28 L1440,0 L0,0 Z" fill="#f9fafb" opacity="0.5"/>
+    </svg>
+  </div>
+
   <!-- PROGRAMME -->
-  <section id="programme" class="py-16 md:py-24 gradient-dark text-white relative overflow-hidden">
+  <section id="programme" class="py-16 md:py-24 gradient-dark noise-overlay text-white relative overflow-hidden">
     <div class="absolute top-0 right-0 w-96 h-96 bg-primary-700/20 rounded-full blur-3xl -mr-48 -mt-48"></div>
+    <!-- Geometric shapes -->
+    <div class="geo-circle w-32 h-32 top-20 left-[8%] hidden lg:block"></div>
+    <div class="geo-diamond w-16 h-16 bottom-24 right-[12%] hidden lg:block"></div>
+    <div class="geo-cross top-1/2 left-[3%] hidden lg:block"></div>
+    <div class="geo-circle w-20 h-20 bottom-12 left-[45%] hidden lg:block"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
       <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full border border-white/20 mb-6">
         <svg class="w-4 h-4 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
@@ -141,8 +165,10 @@
   </section>
 
   <!-- METHODE -->
-  <section id="methode" class="py-16 md:py-24 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+  <section id="methode" class="py-16 md:py-24 bg-white grid-pattern relative overflow-hidden">
+    <div class="geo-circle-light w-48 h-48 -top-12 -right-12 hidden lg:block"></div>
+    <div class="geo-ring-light w-32 h-32 bottom-8 left-[6%] hidden lg:block"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
       <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-4">La méthode pour réussir votre concours</h2>
       <p class="text-gray-600 text-lg max-w-2xl mx-auto mb-12">Grâce à notre outil d'entraînement développé sur mesure pour maîtriser chaque UE du programme !</p>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -171,8 +197,16 @@
     </div>
   </section>
 
+  <!-- WAVE: Méthode → FAQ -->
+  <div class="wave-divider">
+    <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,30 C240,60 480,0 720,30 C960,60 1200,0 1440,30 L1440,60 L0,60 Z" fill="#f9fafb"/>
+    </svg>
+  </div>
+
   <!-- FAQ -->
-  <section id="faq" class="py-16 md:py-24 bg-gray-50">
+  <section id="faq" class="py-16 md:py-24 bg-gray-50 dot-grid relative overflow-hidden">
+    <div class="geo-ring-light w-56 h-56 -top-16 right-[8%] hidden lg:block"></div>
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       <h2 class="text-3xl md:text-4xl font-black text-gray-900 text-center mb-12">Questions fréquentes</h2>
       <div class="space-y-4">
@@ -186,8 +220,11 @@
   </section>
 
   <!-- CTA SECTION -->
-  <section id="tarifs" class="py-16 md:py-24 gradient-dark text-white">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+  <section id="tarifs" class="py-16 md:py-24 gradient-dark noise-overlay text-white relative overflow-hidden">
+    <div class="geo-circle w-24 h-24 top-8 left-[10%] hidden lg:block"></div>
+    <div class="geo-diamond w-12 h-12 top-16 right-[15%] hidden lg:block"></div>
+    <div class="geo-cross bottom-12 right-[8%] hidden lg:block"></div>
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
       <h2 class="text-3xl md:text-4xl font-black mb-4">Découvrez nos formules d'accompagnement</h2>
       <p class="text-primary-200 text-lg max-w-xl mx-auto mb-8">Sans engagement ou jusqu'au concours, trouvez le rythme qui correspond à votre objectif en santé.</p>
       <a href="tarifs.html" class="inline-flex items-center gap-2 px-8 py-4 bg-primary-500 text-white text-base font-bold rounded-2xl hover:bg-primary-400 transition-colors shadow-xl shadow-primary-600/30">
