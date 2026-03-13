@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cours détaillé - Prépa PASS/LAS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { primary: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81',950:'#1e1b4b' }, accent: { 400:'#34d399',500:'#10b981',600:'#059669' } } } } }
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .cours-section { animation: sectionIn 0.5s ease-out both; }
+    @keyframes sectionIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .toc-link { transition: all 0.2s ease; }
+    .toc-link:hover { transform: translateX(4px); }
+    .toc-link.active { border-left-color: #4f46e5; color: #4f46e5; font-weight: 700; }
+    .cours-content h3 { scroll-margin-top: 100px; }
+    .progress-bar { transition: width 0.3s ease; }
+
+    /* Hero dark gradient */
+    .cours-hero-dark {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #3730a3 70%, #4338ca 100%);
+    }
+    .cours-hero-gradient-text {
+      background: linear-gradient(135deg, #a5b4fc 0%, #c4b5fd 50%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    /* Subtle glow behind hero icon */
+    .cours-icon-glow {
+      box-shadow: 0 0 40px rgba(99, 102, 241, 0.3), 0 0 80px rgba(99, 102, 241, 0.1);
+    }
+    /* TOC card */
+    .toc-card {
+      background: white;
+      border-radius: 1rem;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: box-shadow 0.3s ease;
+    }
+    .toc-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    /* Section card */
+    .section-card {
+      background: white;
+      border-radius: 1rem;
+      border: 1px solid #f1f5f9;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      transition: box-shadow 0.3s ease;
+    }
+    .section-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+    /* Breadcrumb pill */
+    .breadcrumb-pill {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(8px);
+    }
+    /* Hero stat pill */
+    .hero-stat-pill {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    /* Hero decorative shapes */
+    .cours-geo-circle {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.06);
+      pointer-events: none;
+    }
+    .cours-geo-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px dashed rgba(255,255,255,0.08);
+      pointer-events: none;
+    }
+    .cours-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+    /* Floating back button */
+    .back-fab {
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .back-fab:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-gray-900 antialiased">
+  <header id="site-header" class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100"></header>
+
+  <!-- Reading progress bar -->
+  <div class="fixed top-[64px] left-0 right-0 z-40 h-1 bg-gray-100">
+    <div id="reading-progress" class="progress-bar h-full bg-primary-500 rounded-r-full" style="width:0%"></div>
+  </div>
+
+  <div id="cours-app">
+    <!-- Content rendered by JS -->
+    <div class="pt-28 pb-16 text-center">
+      <div class="animate-pulse flex flex-col items-center gap-4">
+        <div class="w-12 h-12 bg-gray-200 rounded-xl"></div>
+        <div class="w-64 h-6 bg-gray-200 rounded-lg"></div>
+        <div class="w-96 h-4 bg-gray-100 rounded-lg"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer id="site-footer" class="bg-gray-900 text-gray-400 py-12 md:py-16"></footer>
+
+  <script src="js/data.js?v=9"></script>
+  <script src="js/cours-data-anatomie.js?v=8"></script>
+  <script src="js/cours-data-chimie.js?v=8"></script>
+  <script src="js/cours-data-biocell.js?v=8"></script>
+  <script src="js/cours-data-biostats.js?v=8"></script>
+  <script src="js/cours-data-biophysique.js?v=8"></script>
+  <script src="js/cours-data-ssh.js?v=8"></script>
+  <script>
+    // Combine all course data into one object
+    const COURS_DATA = Object.assign({},
+      typeof COURS_ANATOMIE !== 'undefined' ? COURS_ANATOMIE : {},
+      typeof COURS_CHIMIE !== 'undefined' ? COURS_CHIMIE : {},
+      typeof COURS_BIOCELL !== 'undefined' ? COURS_BIOCELL : {},
+      typeof COURS_BIOSTATS !== 'undefined' ? COURS_BIOSTATS : {},
+      typeof COURS_BIOPHYSIQUE !== 'undefined' ? COURS_BIOPHYSIQUE : {},
+      typeof COURS_SSH !== 'undefined' ? COURS_SSH : {}
+    );
+  </script>
+  <script src="js/app.js?v=10"></script>
+  <script src="js/cours.js?v=9"></script>
+</body>
+</html>

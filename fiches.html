@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fiches de cours - Prépa PASS/LAS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { primary: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81',950:'#1e1b4b' }, accent: { 400:'#34d399',500:'#10b981',600:'#059669' } } } } }
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .fiche-card { animation: cardFadeIn 0.4s ease-out both; }
+    @keyframes cardFadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .filter-pill { transition: all 0.2s ease; }
+    .filter-pill:hover { transform: translateY(-1px); }
+    .filter-pill.active { box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25); }
+    .search-input:focus { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); }
+    .subject-section { animation: sectionFadeIn 0.3s ease-out both; }
+    @keyframes sectionFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    /* Floating fiche cards animation */
+    .fiche-float {
+      animation: ficheFloat 6s ease-in-out infinite;
+    }
+    .fiche-float:nth-child(2) { animation-delay: 1.5s; }
+    .fiche-float:nth-child(3) { animation-delay: 3s; }
+    .fiche-float:nth-child(4) { animation-delay: 4.5s; }
+    @keyframes ficheFloat {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-14px) rotate(1deg); }
+    }
+    .fiche-float-reverse {
+      animation: ficheFloatReverse 7s ease-in-out infinite;
+    }
+    @keyframes ficheFloatReverse {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(-1deg); }
+    }
+    /* Hero title gradient text */
+    .hero-gradient-text {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    /* Stat item hover */
+    .stat-item { transition: transform 0.2s ease; }
+    .stat-item:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body class="bg-slate-50 text-gray-900 antialiased">
+  <header id="site-header" class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100"></header>
+
+  <!-- Hero -->
+  <section class="gradient-hero noise-overlay dot-grid pt-28 pb-14 md:pt-36 md:pb-20 relative overflow-hidden">
+    <div class="blob-1"></div>
+    <div class="blob-2"></div>
+    <!-- Extra decorative blob -->
+    <div class="absolute w-[250px] h-[250px] bg-violet-300/10 rounded-full blur-[80px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+    <div class="geo-circle-light w-40 h-40 top-24 right-[10%] hidden lg:block"></div>
+    <div class="geo-ring-light w-64 h-64 -bottom-16 left-[5%] hidden lg:block"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <!-- Left: Text content -->
+        <div>
+          <div class="inline-flex items-center gap-2 bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-primary-200 mb-6">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary-500"></span>
+            </span>
+            <span class="text-sm font-semibold text-primary-700">150 fiches disponibles</span>
+          </div>
+          <h1 class="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-5">
+            Fiches et <span class="hero-gradient-text">cours complets</span> en un clic
+          </h1>
+          <p class="text-lg text-gray-600 leading-relaxed mb-8 max-w-xl">
+            Révisez efficacement avec des <strong class="text-gray-900">fiches de révision</strong> synthétiques et des <strong class="text-gray-900">cours détaillés</strong> couvrant le <strong class="text-gray-900">tronc commun</strong> du programme PASS/LAS. Chaque fiche est <strong class="text-gray-900">téléchargeable en PDF</strong>.
+          </p>
+          <!-- Stats row -->
+          <div class="flex flex-wrap items-center gap-5 sm:gap-6">
+            <div class="stat-item flex items-center gap-3">
+              <div class="w-11 h-11 bg-primary-100 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+              </div>
+              <div>
+                <div class="text-xl font-black text-gray-900">150</div>
+                <div class="text-xs font-medium text-gray-500">Fiches & cours</div>
+              </div>
+            </div>
+            <div class="w-px h-10 bg-gray-200/60 hidden sm:block"></div>
+            <div class="stat-item flex items-center gap-3">
+              <div class="w-11 h-11 bg-violet-100 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5"/></svg>
+              </div>
+              <div>
+                <div class="text-xl font-black text-gray-900">6</div>
+                <div class="text-xs font-medium text-gray-500">UE couvertes</div>
+              </div>
+            </div>
+            <div class="w-px h-10 bg-gray-200/60 hidden sm:block"></div>
+            <div class="stat-item flex items-center gap-3">
+              <div class="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+              </div>
+              <div>
+                <div class="text-xl font-black text-gray-900">PDF</div>
+                <div class="text-xs font-medium text-gray-500">Téléchargeable</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Floating fiche preview cards -->
+        <div class="hidden lg:block relative h-[340px]">
+          <!-- Card 1 - Anatomie (indigo) - top left -->
+          <div class="fiche-float absolute top-0 left-4 w-56 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-indigo-500/10 border border-indigo-100/50 p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-indigo-700">Anatomie</div>
+                <div class="text-[10px] text-gray-400">25 fiches</div>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <div class="h-2 bg-indigo-100 rounded-full w-full"></div>
+              <div class="h-2 bg-indigo-50 rounded-full w-4/5"></div>
+              <div class="h-2 bg-indigo-50 rounded-full w-3/5"></div>
+            </div>
+          </div>
+
+          <!-- Card 2 - Biologie cellulaire (violet) - top right -->
+          <div class="fiche-float-reverse absolute top-6 right-0 w-56 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-violet-500/10 border border-violet-100/50 p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-9 h-9 bg-violet-100 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-violet-700">Biologie cellulaire</div>
+                <div class="text-[10px] text-gray-400">25 fiches</div>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <div class="h-2 bg-violet-100 rounded-full w-full"></div>
+              <div class="h-2 bg-violet-50 rounded-full w-3/4"></div>
+              <div class="h-2 bg-violet-50 rounded-full w-2/3"></div>
+            </div>
+          </div>
+
+          <!-- Card 3 - Chimie (emerald) - bottom left -->
+          <div class="fiche-float absolute bottom-12 -left-2 w-56 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-emerald-500/10 border border-emerald-100/50 p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-emerald-700">Chimie / Biochimie</div>
+                <div class="text-[10px] text-gray-400">25 fiches</div>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <div class="h-2 bg-emerald-100 rounded-full w-full"></div>
+              <div class="h-2 bg-emerald-50 rounded-full w-5/6"></div>
+              <div class="h-2 bg-emerald-50 rounded-full w-1/2"></div>
+            </div>
+          </div>
+
+          <!-- Card 4 - Biophysique (amber) - bottom right -->
+          <div class="fiche-float-reverse absolute bottom-0 right-6 w-56 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-amber-500/10 border border-amber-100/50 p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-9 h-9 bg-amber-100 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/></svg>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-amber-700">Biophysique</div>
+                <div class="text-[10px] text-gray-400">25 fiches</div>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <div class="h-2 bg-amber-100 rounded-full w-full"></div>
+              <div class="h-2 bg-amber-50 rounded-full w-2/3"></div>
+              <div class="h-2 bg-amber-50 rounded-full w-4/5"></div>
+            </div>
+          </div>
+
+          <!-- Decorative: small floating icons -->
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-primary-100/40 rounded-2xl rotate-12 blur-[2px]"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search + Filters -->
+  <section class="py-4 -mt-6 relative z-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="bg-white rounded-2xl shadow-lg shadow-gray-200/60 border border-gray-100 p-4 md:p-5">
+        <!-- Search bar -->
+        <div class="relative mb-3">
+          <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+          <input id="search-input" type="text" placeholder="Rechercher une fiche par titre ou mot-clé..." class="search-input w-full pl-12 pr-4 py-3 bg-slate-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-300 transition-all">
+        </div>
+        <!-- Filter pills -->
+        <div class="flex flex-wrap gap-2" id="subject-filters">
+          <button onclick="filterFiches('all')" class="filter-pill subject-btn active inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-primary-600 text-white transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z"/></svg>
+            Toutes
+            <span class="bg-white/20 text-xs px-2 py-0.5 rounded-full" id="count-all">150</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Results counter -->
+  <section class="pt-1 pb-1">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between">
+        <p id="results-counter" class="text-sm text-gray-500 font-medium"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Fiches grid -->
+  <section class="pb-16">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div id="fiches-container"></div>
+    </div>
+  </section>
+
+  <!-- Fiche Modal -->
+  <div id="fiche-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeFiche()"></div>
+    <div class="relative z-10 max-w-3xl mx-auto mt-20 mb-10 mx-4">
+      <div class="bg-white rounded-2xl shadow-2xl max-h-[80vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white/90 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <span id="modal-subject" class="px-3 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full"></span>
+          <div class="flex items-center gap-2">
+            <button onclick="handleDownloadPDF()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent-500 text-white text-xs font-bold rounded-lg hover:bg-accent-600 transition-colors" title="Télécharger en PDF">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+              <span class="hidden sm:inline">PDF</span>
+            </button>
+            <button onclick="closeFiche()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="px-6 md:px-8 py-6">
+          <h2 id="modal-title" class="text-2xl font-black text-gray-900 mb-6"></h2>
+          <div id="modal-content" class="prose prose-gray max-w-none text-gray-700 leading-relaxed"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer id="site-footer" class="bg-gray-900 text-gray-400 py-12 md:py-16"></footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+  <script src="js/data.js?v=9"></script>
+  <script src="js/app.js?v=10"></script>
+  <script>
+    const subjectColors = {
+      'indigo': { badge: 'bg-indigo-100 text-indigo-700', bar: 'bg-indigo-500', ring: 'ring-indigo-500/20', icon: 'text-indigo-500', light: 'bg-indigo-50', border: 'border-indigo-100' },
+      'primary': { badge: 'bg-primary-100 text-primary-700', bar: 'bg-primary-500', ring: 'ring-primary-500/20', icon: 'text-primary-500', light: 'bg-primary-50', border: 'border-primary-100' },
+      'emerald': { badge: 'bg-emerald-100 text-emerald-700', bar: 'bg-emerald-500', ring: 'ring-emerald-500/20', icon: 'text-emerald-500', light: 'bg-emerald-50', border: 'border-emerald-100' },
+      'violet': { badge: 'bg-violet-100 text-violet-700', bar: 'bg-violet-500', ring: 'ring-violet-500/20', icon: 'text-violet-500', light: 'bg-violet-50', border: 'border-violet-100' },
+      'cyan': { badge: 'bg-cyan-100 text-cyan-700', bar: 'bg-cyan-500', ring: 'ring-cyan-500/20', icon: 'text-cyan-500', light: 'bg-cyan-50', border: 'border-cyan-100' },
+      'amber': { badge: 'bg-amber-100 text-amber-700', bar: 'bg-amber-500', ring: 'ring-amber-500/20', icon: 'text-amber-500', light: 'bg-amber-50', border: 'border-amber-100' },
+      'rose': { badge: 'bg-rose-100 text-rose-700', bar: 'bg-rose-500', ring: 'ring-rose-500/20', icon: 'text-rose-500', light: 'bg-rose-50', border: 'border-rose-100' },
+    };
+
+    const subjectIcons = {
+      'anatomie': '<path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/>',
+      'chimie': '<path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/>',
+      'biocell': '<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/>',
+      'biostats': '<path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/>',
+      'biophysique': '<path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/>',
+      'ssh': '<path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/>',
+    };
+
+    let currentSubject = 'all';
+    let currentSearch = '';
+    let currentFicheData = null;
+
+    function getFilteredFiches() {
+      let fiches = currentSubject === 'all' ? FICHES_DATA : FICHES_DATA.filter(f => f.subject === currentSubject);
+      if (currentSearch) {
+        const q = currentSearch.toLowerCase();
+        fiches = fiches.filter(f => f.title.toLowerCase().includes(q) || f.summary.toLowerCase().includes(q));
+      }
+      return fiches;
+    }
+
+    function updateResultsCounter(fiches) {
+      const counter = document.getElementById('results-counter');
+      if (currentSearch) {
+        counter.textContent = fiches.length === 0 ? 'Aucune fiche trouvée' : `${fiches.length} fiche${fiches.length > 1 ? 's' : ''} trouvée${fiches.length > 1 ? 's' : ''}`;
+      } else if (currentSubject === 'all') {
+        counter.textContent = `${fiches.length} fiches — toutes les matières`;
+      } else {
+        const subject = SUBJECTS.find(s => s.id === currentSubject);
+        counter.textContent = `${fiches.length} fiches en ${subject?.name || ''}`;
+      }
+    }
+
+    function renderFicheCard(f, index) {
+      const subject = SUBJECTS.find(s => s.id === f.subject);
+      const colors = subjectColors[subject?.color] || subjectColors['primary'];
+      const icon = subjectIcons[f.subject] || '';
+      const delay = Math.min(index * 0.04, 0.4);
+      return `
+        <article class="fiche-card group bg-white rounded-2xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg hover:shadow-gray-200/60 hover:border-gray-300 transition-all duration-300" onclick="openFiche('${f.id}')" style="animation-delay:${delay}s">
+          <div class="h-1 ${colors.bar}"></div>
+          <div class="p-5">
+            <div class="flex items-start gap-3 mb-3">
+              <div class="w-9 h-9 rounded-xl ${colors.light} ${colors.border} border flex items-center justify-center shrink-0">
+                <svg class="w-4.5 h-4.5 ${colors.icon}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">${icon}</svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <span class="text-[11px] font-bold uppercase tracking-wider ${colors.icon}">${subject?.name || ''}</span>
+                <h3 class="text-[15px] font-bold text-gray-900 leading-snug mt-0.5 group-hover:text-primary-700 transition-colors">${f.title}</h3>
+              </div>
+            </div>
+            <p class="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4">${f.summary}</p>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 text-primary-600 text-xs font-bold group-hover:gap-2.5 transition-all">
+                Lire la fiche
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
+              </div>
+              <button onclick="event.stopPropagation(); openCours('${f.id}')" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${isPremium() ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100' : 'bg-gray-50 text-gray-400 border border-gray-200 hover:bg-gray-100'}">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">${isPremium()
+                  ? '<path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342"/>'
+                  : '<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>'
+                }</svg>
+                Cours
+              </button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderFiches(filter) {
+      const container = document.getElementById('fiches-container');
+      const fiches = getFilteredFiches();
+      updateResultsCounter(fiches);
+
+      if (fiches.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-16">
+            <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+            </div>
+            <p class="text-gray-500 font-medium">Aucune fiche ne correspond à votre recherche</p>
+            <p class="text-sm text-gray-400 mt-1">Essayez avec d'autres mots-clés</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Group by subject when showing all + no search
+      if (currentSubject === 'all' && !currentSearch) {
+        let html = '';
+        let cardIndex = 0;
+        SUBJECTS.forEach(sub => {
+          const subFiches = fiches.filter(f => f.subject === sub.id);
+          if (subFiches.length === 0) return;
+          const colors = subjectColors[sub.color] || subjectColors['primary'];
+          const icon = subjectIcons[sub.id] || '';
+          html += `
+            <div class="subject-section mb-10">
+              <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl ${colors.light} ${colors.border} border flex items-center justify-center">
+                  <svg class="w-5 h-5 ${colors.icon}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">${icon}</svg>
+                </div>
+                <div>
+                  <h2 class="text-lg font-bold text-gray-900">${sub.name}</h2>
+                  <p class="text-xs text-gray-500">${subFiches.length} fiches</p>
+                </div>
+              </div>
+              <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${subFiches.map(f => renderFicheCard(f, cardIndex++)).join('')}
+              </div>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
+      } else {
+        container.innerHTML = `
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${fiches.map((f, i) => renderFicheCard(f, i)).join('')}
+          </div>
+        `;
+      }
+    }
+
+    function filterFiches(subjectId) {
+      currentSubject = subjectId;
+      document.querySelectorAll('.subject-btn').forEach(btn => {
+        btn.classList.remove('bg-primary-600', 'text-white', 'active');
+        btn.classList.add('bg-white', 'text-gray-700', 'border', 'border-gray-200');
+      });
+      event.target.closest('.subject-btn').classList.remove('bg-white', 'text-gray-700', 'border', 'border-gray-200');
+      event.target.closest('.subject-btn').classList.add('bg-primary-600', 'text-white', 'active');
+      renderFiches(subjectId);
+    }
+
+    function openFiche(id) {
+      const fiche = FICHES_DATA.find(f => f.id === id);
+      if (!fiche) return;
+      currentFicheData = fiche;
+      const subject = SUBJECTS.find(s => s.id === fiche.subject);
+      const colors = subjectColors[subject?.color] || subjectColors['primary'];
+      document.getElementById('modal-title').textContent = fiche.title;
+      document.getElementById('modal-subject').textContent = subject?.name || '';
+      document.getElementById('modal-subject').className = `px-3 py-1 ${colors.badge} text-xs font-bold rounded-full`;
+      const coursBtn = isPremium()
+        ? `<div class="mt-8 pt-6 border-t border-gray-200">
+            <a href="cours.html?id=${fiche.id}" class="flex items-center justify-between w-full px-6 py-4 bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-200 rounded-2xl hover:border-amber-300 hover:shadow-lg hover:shadow-amber-100/50 transition-all group">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-amber-200 rounded-xl flex items-center justify-center">
+                  <svg class="w-5 h-5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342"/></svg>
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-amber-900">Accéder au cours complet</p>
+                  <p class="text-xs text-amber-600">Cours détaillé avec explications approfondies</p>
+                </div>
+              </div>
+              <svg class="w-5 h-5 text-amber-500 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
+            </a>
+          </div>`
+        : `<div class="mt-8 pt-6 border-t border-gray-200">
+            <button onclick="showUpsellToast()" class="flex items-center justify-between w-full px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl hover:border-gray-300 transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gray-200 rounded-xl flex items-center justify-center">
+                  <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+                </div>
+                <div class="text-left">
+                  <p class="text-sm font-bold text-gray-500">Cours complet</p>
+                  <p class="text-xs text-gray-400">Réservé aux membres Premium</p>
+                </div>
+              </div>
+              <span class="px-3 py-1.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">Premium</span>
+            </button>
+          </div>`;
+      document.getElementById('modal-content').innerHTML = fiche.content + coursBtn;
+      document.getElementById('fiche-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeFiche() {
+      document.getElementById('fiche-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    function handleDownloadPDF() {
+      if (!isPremium()) {
+        showUpsellToast();
+        return;
+      }
+      downloadFichePDF();
+    }
+
+    const pdfColors = {
+      indigo:  { bg: '#eef2ff', accent: '#4f46e5', accentDark: '#3730a3', accentDeep: '#1e1b4b', badge: '#e0e7ff', badgeText: '#3730a3', light: '#c7d2fe', lighter: '#e0e7ff', ring: '#a5b4fc' },
+      primary: { bg: '#eef2ff', accent: '#4f46e5', accentDark: '#3730a3', accentDeep: '#1e1b4b', badge: '#e0e7ff', badgeText: '#3730a3', light: '#c7d2fe', lighter: '#e0e7ff', ring: '#a5b4fc' },
+      emerald: { bg: '#ecfdf5', accent: '#059669', accentDark: '#065f46', accentDeep: '#022c22', badge: '#d1fae5', badgeText: '#065f46', light: '#a7f3d0', lighter: '#d1fae5', ring: '#6ee7b7' },
+      violet:  { bg: '#f5f3ff', accent: '#7c3aed', accentDark: '#5b21b6', accentDeep: '#2e1065', badge: '#ede9fe', badgeText: '#5b21b6', light: '#ddd6fe', lighter: '#ede9fe', ring: '#c4b5fd' },
+      cyan:    { bg: '#ecfeff', accent: '#0891b2', accentDark: '#155e75', accentDeep: '#083344', badge: '#cffafe', badgeText: '#155e75', light: '#a5f3fc', lighter: '#cffafe', ring: '#67e8f9' },
+      amber:   { bg: '#fffbeb', accent: '#d97706', accentDark: '#92400e', accentDeep: '#451a03', badge: '#fef3c7', badgeText: '#92400e', light: '#fde68a', lighter: '#fef3c7', ring: '#fbbf24' },
+      rose:    { bg: '#fff1f2', accent: '#e11d48', accentDark: '#9f1239', accentDeep: '#4c0519', badge: '#ffe4e6', badgeText: '#9f1239', light: '#fecdd3', lighter: '#ffe4e6', ring: '#fb7185' },
+    };
+
+    function downloadFichePDF() {
+      if (!currentFicheData) return;
+      const fiche = currentFicheData;
+      const subject = SUBJECTS.find(s => s.id === fiche.subject);
+      const colors = pdfColors[subject?.color] || pdfColors['primary'];
+
+      const savedHTML = document.body.innerHTML;
+      const savedScroll = window.scrollY;
+      document.body.style.overflow = 'auto';
+
+      let processedContent = fiche.content
+        .replace(/class="[^"]*text-xl font-bold[^"]*"/g,
+          `style="font-size:16px;font-weight:700;color:${colors.accentDark};margin:24px 0 10px 0;padding:10px 0 8px 14px;border-left:3px solid ${colors.accent};letter-spacing:-0.2px;"`)
+        .replace(/class="[^"]*text-lg font-semibold[^"]*"/g,
+          `style="font-size:14px;font-weight:600;color:#1f2937;margin:18px 0 8px 0;"`)
+        .replace(/class="[^"]*list-disc[^"]*"/g, 'style="padding-left:20px;margin:0 0 14px 0;"')
+        .replace(/class="[^"]*mb-3[^"]*"/g, 'style="margin:0 0 10px 0;line-height:1.7;"')
+        .replace(/class="[^"]*mb-4[^"]*"/g, 'style="margin:0 0 14px 0;line-height:1.7;"')
+        .replace(/<li>/g, '<li style="margin:0 0 4px 0;line-height:1.65;font-size:12.5px;">')
+        .replace(/class="[^"]*bg-[a-z]+-50 border border-[a-z]+-200 rounded-xl p-4[^"]*"/g,
+          `style="background:${colors.bg};border:1.5px solid ${colors.light};border-radius:10px;padding:14px 18px;margin-top:16px;margin-bottom:8px;"`)
+        .replace(/class="[^"]*text-sm font-semibold text-[a-z]+-800[^"]*"/g,
+          `style="font-size:11.5px;font-weight:600;color:${colors.badgeText};margin:0;line-height:1.55;"`);
+
+      const pdfContainer = document.createElement('div');
+      pdfContainer.id = 'pdf-export';
+      pdfContainer.style.cssText = 'width:700px;margin:0 auto;font-family:Inter,Helvetica,Arial,sans-serif;color:#1f2937;background:#fff;';
+      pdfContainer.innerHTML = `
+        <!-- HEADER -->
+        <div style="background:${colors.accent};padding:32px 36px 28px;color:#fff;">
+          <table style="width:100%;border-collapse:collapse;margin-bottom:18px;"><tr>
+            <td style="padding:0;">
+              <span style="display:inline-block;padding:5px 14px;background:rgba(255,255,255,0.15);font-size:10px;font-weight:700;border-radius:999px;letter-spacing:0.5px;text-transform:uppercase;margin-right:8px;">${subject?.name || ''}</span>
+              <span style="display:inline-block;padding:5px 12px;background:rgba(255,255,255,0.08);font-size:10px;font-weight:600;border-radius:999px;color:rgba(255,255,255,0.7);">Fiche de révision</span>
+            </td>
+            <td style="padding:0;text-align:right;">
+              <span style="font-size:10px;font-weight:700;opacity:0.5;letter-spacing:1px;">PRÉPA PASS/LAS</span>
+            </td>
+          </tr></table>
+          <h1 style="font-size:26px;font-weight:900;margin:0 0 8px 0;letter-spacing:-0.4px;line-height:1.2;">${fiche.title}</h1>
+          <p style="font-size:12px;color:rgba(255,255,255,0.6);margin:0;line-height:1.5;">${fiche.summary}</p>
+        </div>
+
+        <!-- Accent line -->
+        <div style="height:3px;background:${colors.light};"></div>
+
+        <!-- BODY -->
+        <div style="padding:28px 36px 20px;font-size:12.5px;line-height:1.75;color:#374151;">
+          ${processedContent}
+        </div>
+
+        <!-- FOOTER -->
+        <table style="width:calc(100% - 72px);margin:0 36px;padding:0;border-collapse:collapse;border-top:2px solid ${colors.lighter};">
+          <tr>
+            <td style="padding:16px 0 10px;vertical-align:middle;">
+              <table style="border-collapse:collapse;"><tr>
+                <td style="padding:0 8px 0 0;vertical-align:middle;">
+                  <div style="width:24px;height:24px;background:${colors.accent};border-radius:6px;text-align:center;line-height:24px;">
+                    <span style="color:#fff;font-size:10px;font-weight:900;">P</span>
+                  </div>
+                </td>
+                <td style="padding:0;vertical-align:middle;">
+                  <span style="font-size:9px;font-weight:700;color:#374151;display:block;">Prépa PASS/LAS</span>
+                  <span style="font-size:8px;color:#9ca3af;">Usage personnel uniquement</span>
+                </td>
+              </tr></table>
+            </td>
+            <td style="padding:16px 0 10px;text-align:right;vertical-align:middle;">
+              <span style="font-size:9px;color:${colors.accent};font-weight:700;display:block;">prepa-pass-las.fr</span>
+              <span style="font-size:8px;color:#9ca3af;">${subject?.name || ''}</span>
+            </td>
+          </tr>
+        </table>
+      `;
+
+      document.body.innerHTML = '';
+      document.body.style.background = '#fff';
+      document.body.appendChild(pdfContainer);
+      window.scrollTo(0, 0);
+
+      html2pdf().set({
+        margin: [8, 12, 8, 12],
+        filename: 'fiche-' + fiche.id + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      }).from(pdfContainer).save().then(() => {
+        document.body.innerHTML = savedHTML;
+        document.body.style.overflow = '';
+        document.body.style.background = '';
+        window.scrollTo(0, savedScroll);
+        renderHeader();
+        renderFooter();
+        renderFiches(currentSubject);
+        bindSearchInput();
+      }).catch(() => {
+        document.body.innerHTML = savedHTML;
+        document.body.style.overflow = '';
+        document.body.style.background = '';
+        window.scrollTo(0, savedScroll);
+        renderHeader();
+        renderFooter();
+        renderFiches(currentSubject);
+        bindSearchInput();
+      });
+    }
+
+    function showUpsellToast() {
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-md animate-fade-in-up';
+      toast.innerHTML = `
+        <div class="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="font-bold text-sm">Fonctionnalité Premium</p>
+          <p class="text-xs text-gray-300 mt-0.5">Le téléchargement PDF est réservé aux abonnés Premium. Redirection...</p>
+        </div>
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => { window.location.href = 'tarifs.html'; }, 2000);
+    }
+
+    function openCours(ficheId) {
+      if (!isPremium()) {
+        showUpsellToast();
+        return;
+      }
+      window.location.href = 'cours.html?id=' + ficheId;
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFiche(); });
+
+    function bindSearchInput() {
+      const input = document.getElementById('search-input');
+      if (!input) return;
+      input.value = currentSearch;
+      input.addEventListener('input', (e) => {
+        currentSearch = e.target.value.trim();
+        renderFiches(currentSubject);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const filtersContainer = document.getElementById('subject-filters');
+      SUBJECTS.forEach(sub => {
+        const count = FICHES_DATA.filter(f => f.subject === sub.id).length;
+        const icon = subjectIcons[sub.id] || '';
+        const btn = document.createElement('button');
+        btn.className = 'filter-pill subject-btn inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-white text-gray-700 border border-gray-200 transition-colors';
+        btn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">${icon}</svg>
+          ${sub.name}
+          <span class="text-xs text-gray-400 font-normal">${count}</span>
+        `;
+        btn.onclick = () => filterFiches(sub.id);
+        filtersContainer.appendChild(btn);
+      });
+      renderFiches('all');
+      bindSearchInput();
+    });
+  </script>
+</body>
+</html>

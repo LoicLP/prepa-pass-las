@@ -26,6 +26,8 @@ function renderHeader() {
         <nav class="hidden md:flex items-center gap-8">
           <a href="index.html" class="text-sm ${getNavActiveClass('index.html')}">Accueil</a>
           <a href="qcm.html" class="text-sm ${getNavActiveClass('qcm.html')}">QCM</a>
+          <a href="fiches.html" class="text-sm ${getNavActiveClass('fiches.html')}">Fiches/Cours</a>
+          <a href="examen.html" class="text-sm ${getNavActiveClass('examen.html')}">Mode Examen</a>
           <a href="programme.html" class="text-sm ${getNavActiveClass('programme.html')}">Programme</a>
           <a href="blog.html" class="text-sm ${getNavActiveClass('blog.html')}">Blog</a>
           <a href="tarifs.html" class="text-sm ${getNavActiveClass('tarifs.html')}">Tarifs</a>
@@ -45,6 +47,8 @@ function renderHeader() {
     <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 px-4 pb-4">
       <a href="index.html" class="block py-3 text-sm font-medium text-gray-700 hover:text-primary-600">Accueil</a>
       <a href="qcm.html" class="block py-3 text-sm font-medium text-gray-700 hover:text-primary-600">QCM</a>
+      <a href="fiches.html" class="block py-3 text-sm font-medium text-gray-700 hover:text-primary-600">Fiches/Cours</a>
+      <a href="examen.html" class="block py-3 text-sm font-medium text-gray-700 hover:text-primary-600">Mode Examen</a>
       <a href="programme.html" class="block py-3 text-sm font-medium text-gray-700 hover:text-primary-600">Programme</a>
       <a href="blog.html" class="block py-3 text-sm font-medium text-gray-700 hover:text-primary-600">Blog</a>
       <a href="tarifs.html" class="block py-3 text-sm font-medium text-gray-700 hover:text-primary-600">Tarifs</a>
@@ -85,7 +89,7 @@ function renderFooter() {
             <li><a href="programme.html" class="hover:text-primary-400 transition-colors">Programme PASS 2025-2026</a></li>
             <li><a href="blog.html" class="hover:text-primary-400 transition-colors">Guide PASS vs LAS</a></li>
             <li><a href="qcm.html" class="hover:text-primary-400 transition-colors">QCM d'entraînement</a></li>
-            <li><a href="blog.html" class="hover:text-primary-400 transition-colors">Fiches de révision</a></li>
+            <li><a href="fiches.html" class="hover:text-primary-400 transition-colors">Fiches de révision</a></li>
           </ul>
         </div>
         <div>
@@ -129,6 +133,15 @@ function saveSession(session) {
   stats.totalCorrect += session.correct;
   stats.totalAnswered += session.total;
   localStorage.setItem('prepa-stats', JSON.stringify(stats));
+}
+
+/* ===== PREMIUM HELPERS ===== */
+function isPremium() {
+  return localStorage.getItem('prepa-premium') === 'true';
+}
+
+function setPremium(value) {
+  localStorage.setItem('prepa-premium', value ? 'true' : 'false');
 }
 
 /* ===== INIT ===== */

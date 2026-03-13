@@ -12,18 +12,166 @@
     tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { primary: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81',950:'#1e1b4b' }, accent: { 400:'#34d399',500:'#10b981',600:'#059669' } } } } }
   </script>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Blog floating cards */
+    .blog-float { animation: blogFloat 6s ease-in-out infinite; }
+    .blog-float-delay-1 { animation-delay: 1.2s; }
+    .blog-float-delay-2 { animation-delay: 2.4s; }
+    .blog-float-delay-3 { animation-delay: 3.6s; }
+    @keyframes blogFloat {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-12px) rotate(0.5deg); }
+    }
+    .blog-float-reverse { animation: blogFloatRev 7s ease-in-out infinite; }
+    @keyframes blogFloatRev {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(-0.5deg); }
+    }
+    .blog-gradient-text {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .blog-stat { transition: transform 0.2s ease; }
+    .blog-stat:hover { transform: translateY(-2px); }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased">
+<body class="bg-slate-100 text-gray-900 antialiased">
   <header id="site-header" class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100"></header>
 
   <!-- Hero -->
-  <section class="gradient-hero pt-28 pb-16 md:pt-36 md:pb-20 relative overflow-hidden">
+  <section class="gradient-hero noise-overlay dot-grid pt-28 pb-14 md:pt-36 md:pb-20 relative overflow-hidden">
     <div class="blob-1"></div>
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-      <h1 class="text-3xl md:text-5xl font-black text-gray-900 mb-4">Blog & Conseils</h1>
-      <p class="text-gray-600 text-lg max-w-2xl mx-auto">
-        Guides, conseils méthodologiques et actualités pour réussir votre PASS/LAS.
-      </p>
+    <div class="blob-2"></div>
+    <div class="absolute w-[250px] h-[250px] bg-purple-300/8 rounded-full blur-[80px] top-1/3 right-1/4 pointer-events-none"></div>
+    <div class="geo-circle-light w-40 h-40 top-24 right-[10%] hidden lg:block"></div>
+    <div class="geo-ring-light w-56 h-56 -bottom-12 left-[5%] hidden lg:block"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <!-- Left: Text -->
+        <div>
+          <div class="inline-flex items-center gap-2 bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-primary-200 mb-6">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary-500"></span>
+            </span>
+            <span class="text-sm font-semibold text-primary-700">Ressources & actualités</span>
+          </div>
+          <h1 class="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-5">
+            Blog & <span class="blog-gradient-text">Conseils</span> PASS/LAS
+          </h1>
+          <p class="text-lg text-gray-600 leading-relaxed mb-8 max-w-xl">
+            Guides pratiques, <strong class="text-gray-900">conseils méthodologiques</strong> et actualités pour maximiser vos chances de réussite en <strong class="text-gray-900">première année de santé</strong>.
+          </p>
+          <!-- Stats row -->
+          <div class="flex flex-wrap items-center gap-5 sm:gap-6">
+            <div class="blog-stat flex items-center gap-3">
+              <div class="w-11 h-11 bg-primary-100 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6V7.5Z"/></svg>
+              </div>
+              <div>
+                <div class="text-xl font-black text-gray-900" id="hero-article-count">6</div>
+                <div class="text-xs font-medium text-gray-500">Articles</div>
+              </div>
+            </div>
+            <div class="w-px h-10 bg-gray-200/60 hidden sm:block"></div>
+            <div class="blog-stat flex items-center gap-3">
+              <div class="w-11 h-11 bg-purple-100 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/></svg>
+              </div>
+              <div>
+                <div class="text-xl font-black text-gray-900">5</div>
+                <div class="text-xs font-medium text-gray-500">Catégories</div>
+              </div>
+            </div>
+            <div class="w-px h-10 bg-gray-200/60 hidden sm:block"></div>
+            <div class="blog-stat flex items-center gap-3">
+              <div class="w-11 h-11 bg-green-100 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+              </div>
+              <div>
+                <div class="text-xl font-black text-gray-900">5 min</div>
+                <div class="text-xs font-medium text-gray-500">Lecture moyenne</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Floating blog category cards -->
+        <div class="hidden lg:block relative h-[320px]">
+          <!-- Card 1 - Orientation (blue) -->
+          <div class="blog-float absolute top-0 left-4 w-[220px] bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-500/10 border border-blue-100/50 p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-blue-700">Orientation</div>
+                <div class="text-[10px] text-gray-400">PASS ou LAS ?</div>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <div class="h-2 bg-blue-100 rounded-full w-full"></div>
+              <div class="h-2 bg-blue-50 rounded-full w-3/4"></div>
+            </div>
+          </div>
+
+          <!-- Card 2 - Méthodologie (purple) -->
+          <div class="blog-float-reverse absolute top-4 right-0 w-[220px] bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-purple-500/10 border border-purple-100/50 p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-9 h-9 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342"/></svg>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-purple-700">Méthodologie</div>
+                <div class="text-[10px] text-gray-400">5 erreurs à éviter</div>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <div class="h-2 bg-purple-100 rounded-full w-full"></div>
+              <div class="h-2 bg-purple-50 rounded-full w-4/5"></div>
+            </div>
+          </div>
+
+          <!-- Card 3 - Conseils (green) -->
+          <div class="blog-float absolute bottom-10 -left-1 w-[220px] bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-green-500/10 border border-green-100/50 p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-green-700">Conseils</div>
+                <div class="text-[10px] text-gray-400">Organiser ses révisions</div>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <div class="h-2 bg-green-100 rounded-full w-full"></div>
+              <div class="h-2 bg-green-50 rounded-full w-2/3"></div>
+            </div>
+          </div>
+
+          <!-- Card 4 - Bien-être (pink) -->
+          <div class="blog-float-reverse absolute bottom-0 right-6 w-[220px] bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-pink-500/10 border border-pink-100/50 p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-9 h-9 bg-pink-100 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-pink-700">Bien-être</div>
+                <div class="text-[10px] text-gray-400">Gérer le stress</div>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <div class="h-2 bg-pink-100 rounded-full w-full"></div>
+              <div class="h-2 bg-pink-50 rounded-full w-5/6"></div>
+            </div>
+          </div>
+
+          <!-- Decorative center -->
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-primary-100/30 rounded-2xl rotate-12 blur-[2px]"></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -65,8 +213,8 @@
 
   <footer id="site-footer" class="bg-gray-900 text-gray-400 py-12 md:py-16"></footer>
 
-  <script src="js/data.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/data.js?v=9"></script>
+  <script src="js/app.js?v=10"></script>
   <script>
     const categoryColors = {
       'Orientation': 'bg-blue-100 text-blue-700',
