@@ -33,7 +33,7 @@ function renderHeader() {
           <a href="tarifs.html" class="text-sm ${getNavActiveClass('tarifs.html')}">Tarifs</a>
         </nav>
         <div class="flex items-center gap-3">
-          <a href="qcm.html" class="hidden sm:inline-flex px-5 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25">
+          <a href="dashboard.html" class="hidden sm:inline-flex px-5 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25">
             Mon tableau de bord
           </a>
           <button id="mobile-menu-btn" class="md:hidden p-2 text-gray-600 hover:text-primary-600" aria-label="Menu">
@@ -52,7 +52,7 @@ function renderHeader() {
       <a href="programme.html" class="block py-3 text-sm font-medium text-gray-700 hover:text-primary-600">Programme</a>
       <a href="blog.html" class="block py-3 text-sm font-medium text-gray-700 hover:text-primary-600">Blog</a>
       <a href="tarifs.html" class="block py-3 text-sm font-medium text-gray-700 hover:text-primary-600">Tarifs</a>
-      <a href="qcm.html" class="block mt-2 px-5 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl text-center">Mon tableau de bord</a>
+      <a href="dashboard.html" class="block mt-2 px-5 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl text-center">Mon tableau de bord</a>
     </div>
   `;
   // Mobile menu toggle
