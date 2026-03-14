@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { loadCoursForFiche } from '@/data/cours';
 import { usePremium } from '@/contexts/PremiumContext';
 import { FICHES_DATA } from '@/data/fiches';
+import { SUBJECTS } from '@/data/subjects';
 import { SUBJECT_COLORS, getSubjectName } from '@/data/constants';
 
 const SUBJECT_ICONS = {
@@ -32,7 +33,8 @@ export default function CoursContent() {
   const fiche = FICHES_DATA.find(f => f.id === id);
   const subjectId = fiche?.subject;
   const subjectName = subjectId ? getSubjectName(subjectId) : '';
-  const colors = subjectId ? SUBJECT_COLORS[subjectId] : SUBJECT_COLORS.anatomie;
+  const subjectObj = subjectId ? SUBJECTS.find(s => s.id === subjectId) : null;
+  const colors = SUBJECT_COLORS[subjectObj?.color] || SUBJECT_COLORS.indigo;
   const iconPath = subjectId ? SUBJECT_ICONS[subjectId] || '' : '';
 
   /* ---------- Load cours data ---------- */
@@ -208,7 +210,7 @@ export default function CoursContent() {
               <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
             </svg>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/70 bg-white/[0.08] border border-white/[0.12] backdrop-blur-lg">
-              <svg className={`w-3.5 h-3.5 ${colors.accent}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className={`w-3.5 h-3.5 ${colors.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
               </svg>
               {subjectName}
@@ -316,7 +318,7 @@ export default function CoursContent() {
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-gray-100">
                     <div className={`w-8 h-8 rounded-lg ${colors.bg} flex items-center justify-center`}>
-                      <svg className={`w-4 h-4 ${colors.accent}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className={`w-4 h-4 ${colors.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
                       </svg>
                     </div>

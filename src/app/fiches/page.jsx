@@ -328,31 +328,78 @@ export default function FichesPage() {
 
             {/* Right: floating cards (decorative, desktop only) */}
             <div className="hidden lg:block relative h-[340px]">
-              {[
-                { name: 'Anatomie', colorKey: 'indigo', pos: 'top-0 left-4', anim: 'animate-bounce-slow', count: FICHES_DATA.filter(f => f.subject === 'anatomie').length },
-                { name: 'Biologie cellulaire', colorKey: 'violet', pos: 'top-6 right-0', anim: '', count: FICHES_DATA.filter(f => f.subject === 'biocell').length },
-                { name: 'Chimie / Biochimie', colorKey: 'emerald', pos: 'bottom-12 -left-2', anim: 'animate-bounce-slow', count: FICHES_DATA.filter(f => f.subject === 'chimie').length },
-                { name: 'Biophysique', colorKey: 'amber', pos: 'bottom-0 right-6', anim: '', count: FICHES_DATA.filter(f => f.subject === 'biophysique').length },
-              ].map((card) => (
-                <div key={card.name} className={`absolute ${card.pos} w-56 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border p-5 border-${card.colorKey}-100/50 shadow-${card.colorKey}-500/10`}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-9 h-9 bg-${card.colorKey}-100 rounded-lg flex items-center justify-center`}>
-                      <svg className={`w-4 h-4 text-${card.colorKey}-600`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d={SUBJECT_ICONS[Object.keys(SUBJECT_ICONS).find(k => SUBJECTS.find(s => s.id === k)?.name === card.name || SUBJECTS.find(s => s.id === k)?.color === card.colorKey)] || ''} />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className={`text-xs font-bold text-${card.colorKey}-700`}>{card.name}</div>
-                      <div className="text-[10px] text-gray-400">{card.count} fiches</div>
-                    </div>
+              <div className="absolute top-0 left-4 w-56 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border p-5 border-indigo-100/50 shadow-indigo-500/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d={SUBJECT_ICONS.anatomie} />
+                    </svg>
                   </div>
-                  <div className="space-y-1.5">
-                    <div className={`h-2 bg-${card.colorKey}-100 rounded-full w-full`} />
-                    <div className={`h-2 bg-${card.colorKey}-50 rounded-full w-4/5`} />
-                    <div className={`h-2 bg-${card.colorKey}-50 rounded-full w-3/5`} />
+                  <div>
+                    <div className="text-xs font-bold text-indigo-700">Anatomie</div>
+                    <div className="text-[10px] text-gray-400">{FICHES_DATA.filter(f => f.subject === 'anatomie').length} fiches</div>
                   </div>
                 </div>
-              ))}
+                <div className="space-y-1.5">
+                  <div className="h-2 bg-indigo-100 rounded-full w-full" />
+                  <div className="h-2 bg-indigo-50 rounded-full w-4/5" />
+                  <div className="h-2 bg-indigo-50 rounded-full w-3/5" />
+                </div>
+              </div>
+              <div className="absolute top-6 right-0 w-56 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border p-5 border-violet-100/50 shadow-violet-500/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 bg-violet-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d={SUBJECT_ICONS.biocell} />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-violet-700">Biologie cellulaire</div>
+                    <div className="text-[10px] text-gray-400">{FICHES_DATA.filter(f => f.subject === 'biocell').length} fiches</div>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-2 bg-violet-100 rounded-full w-full" />
+                  <div className="h-2 bg-violet-50 rounded-full w-4/5" />
+                  <div className="h-2 bg-violet-50 rounded-full w-3/5" />
+                </div>
+              </div>
+              <div className="absolute bottom-12 -left-2 w-56 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border p-5 border-emerald-100/50 shadow-emerald-500/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d={SUBJECT_ICONS.chimie} />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-emerald-700">Chimie / Biochimie</div>
+                    <div className="text-[10px] text-gray-400">{FICHES_DATA.filter(f => f.subject === 'chimie').length} fiches</div>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-2 bg-emerald-100 rounded-full w-full" />
+                  <div className="h-2 bg-emerald-50 rounded-full w-4/5" />
+                  <div className="h-2 bg-emerald-50 rounded-full w-3/5" />
+                </div>
+              </div>
+              <div className="absolute bottom-0 right-6 w-56 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border p-5 border-amber-100/50 shadow-amber-500/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 bg-amber-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d={SUBJECT_ICONS.biophysique} />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-amber-700">Biophysique</div>
+                    <div className="text-[10px] text-gray-400">{FICHES_DATA.filter(f => f.subject === 'biophysique').length} fiches</div>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-2 bg-amber-100 rounded-full w-full" />
+                  <div className="h-2 bg-amber-50 rounded-full w-4/5" />
+                  <div className="h-2 bg-amber-50 rounded-full w-3/5" />
+                </div>
+              </div>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-indigo-100/40 rounded-2xl rotate-12 blur-[2px]" />
             </div>
           </div>

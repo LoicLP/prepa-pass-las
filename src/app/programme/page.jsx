@@ -2,6 +2,15 @@ import Link from 'next/link';
 import { PROGRAMME_DATA } from '@/data/programme';
 import UeTopics from './UeTopics';
 
+const UE_ICON_STYLES = {
+  indigo: 'bg-indigo-50 text-indigo-600',
+  emerald: 'bg-emerald-50 text-emerald-600',
+  violet: 'bg-violet-50 text-violet-600',
+  cyan: 'bg-cyan-50 text-cyan-600',
+  amber: 'bg-amber-50 text-amber-600',
+  rose: 'bg-rose-50 text-rose-600',
+};
+
 export const metadata = {
   title: 'Programme PASS/LAS - Pr\u00e9pa PASS/LAS',
   description: 'D\u00e9couvrez le programme d\u00e9taill\u00e9 des 6 UE du tronc commun PASS/LAS : anatomie, chimie, biologie cellulaire, biostatistiques, biophysique et SSH.',
@@ -133,7 +142,7 @@ export default function ProgrammePage() {
           {PROGRAMME_DATA.map((ue, i) => (
             <div key={ue.id} className={`mb-12 ${i > 0 ? 'pt-12 border-t border-gray-200' : ''}`} id={`ue-${ue.id}`}>
               <div className="flex flex-col md:flex-row md:items-start gap-6">
-                <div className={`w-16 h-16 bg-${ue.color}-50 rounded-2xl flex items-center justify-center shrink-0 text-${ue.color}-600`}
+                <div className={`w-16 h-16 ${UE_ICON_STYLES[ue.color] || 'bg-indigo-50 text-indigo-600'} rounded-2xl flex items-center justify-center shrink-0`}
                   dangerouslySetInnerHTML={{ __html: ue.icon }}
                 />
                 <div className="flex-1">

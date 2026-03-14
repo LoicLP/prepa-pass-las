@@ -25,6 +25,15 @@ function CheckIcon() {
   );
 }
 
+const UE_BG_COLORS = {
+  indigo: 'bg-indigo-500/30',
+  emerald: 'bg-emerald-500/30',
+  violet: 'bg-violet-500/30',
+  cyan: 'bg-cyan-500/30',
+  amber: 'bg-amber-500/30',
+  rose: 'bg-rose-500/30',
+};
+
 export default function Home() {
   return (
     <>
@@ -442,7 +451,7 @@ export default function Home() {
                 className="bg-white/10 backdrop-blur border border-white/10 rounded-2xl p-6 text-left hover:bg-white/15 transition-colors block"
               >
                 <div
-                  className={`w-12 h-12 bg-${ue.color}-500/30 rounded-xl flex items-center justify-center mb-4`}
+                  className={`w-12 h-12 ${UE_BG_COLORS[ue.color] || 'bg-indigo-500/30'} rounded-xl flex items-center justify-center mb-4`}
                   dangerouslySetInnerHTML={{ __html: ue.icon }}
                 />
                 <h3 className="font-bold text-lg mb-1">{ue.name}</h3>
