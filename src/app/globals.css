@@ -25,7 +25,18 @@ html { scroll-behavior: smooth; }
 
 /* ===== GRADIENTS ===== */
 .gradient-hero {
-  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 50%, #c7d2fe 100%);
+  background: linear-gradient(135deg, #eef2ff 0%, #ffffff 50%, #f5f3ff 100%);
+}
+.gradient-hero::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, transparent, #f8fafc);
+  z-index: 2;
+  pointer-events: none;
 }
 .gradient-dark {
   background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
@@ -49,9 +60,15 @@ html { scroll-behavior: smooth; }
 
 /* ===== PHONE MOCKUP ===== */
 .phone-mockup {
-  background: linear-gradient(145deg, #e0e7ff, #c7d2fe);
+  background: linear-gradient(145deg, #93c5fd, #a5b4fc, #c4b5fd, #f0abfc, #93c5fd);
+  background-size: 300% 300%;
+  animation: mockupShift 3s ease-in-out infinite;
   border-radius: 2rem;
   padding: 1.5rem;
+}
+@keyframes mockupShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 /* ===== ANIMATIONS ===== */
@@ -61,6 +78,10 @@ html { scroll-behavior: smooth; }
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: scale(0.9) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 @keyframes pulse-ring {
   0% { transform: scale(0.8); opacity: 1; }
@@ -262,3 +283,72 @@ html { scroll-behavior: smooth; }
 
 /* ===== VIEW TRANSITIONS ===== */
 .view-enter { animation: fadeInUp 0.3s ease-out; }
+
+/* ===== QCM LOADING PROGRESS BAR ===== */
+.loading-progress {
+  width: 40%;
+  animation: loadingSlide 1.5s ease-in-out infinite;
+}
+@keyframes loadingSlide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* ===== TIP FADE ===== */
+.tip-fade {
+  animation: tipFadeIn 0.4s ease-out;
+}
+@keyframes tipFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== STREAK POP ===== */
+@keyframes streakPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===== OPTION SLIDE IN ===== */
+.option-slide-in {
+  animation: optionSlideIn 0.3s ease-out both;
+}
+@keyframes optionSlideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ===== SCROLLBAR HIDE (question pills) ===== */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ===== CELEBRATION PULSE ===== */
+@keyframes celebratePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.celebrate-pulse {
+  animation: celebratePulse 0.6s ease-in-out 3;
+}
+
+/* ===== CONFETTI ===== */
+@keyframes confettiFall {
+  0% { transform: translateY(-20vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* ===== CORRECTION COLLAPSE ===== */
+.correction-collapse {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-out;
+}
+.correction-collapse.open {
+  max-height: 5000px;
+}

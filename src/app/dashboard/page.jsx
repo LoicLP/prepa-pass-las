@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { usePremium } from '@/contexts/PremiumContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { SUBJECTS } from '@/data/subjects';
 import { SUBJECT_COLORS, getSubjectName } from '@/data/constants';
 import { formatDate, formatDuration, scoreClass, scoreBarClass } from '@/utils/format';
@@ -18,12 +20,21 @@ function getSubjectBadgeColors(subjectId) {
 /* ========== MAIN PAGE ========== */
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('qcm');
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  // Auth guard : rediriger si non connecté
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/connexion');
+    }
+  }, [authLoading, user, router]);
 
   const [qcmStats] = useLocalStorage('prepa-qcm-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
   const [examStats] = useLocalStorage('prepa-examen-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
   const [annalesStats] = useLocalStorage('prepa-annales-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
 
-  const { isPremium, isLoaded } = usePremium();
+  const { isEssentiel, isPremiumPlus, isLoaded } = usePremium();
 
   const allSessions = useMemo(() => [
     ...qcmStats.sessions,
@@ -46,6 +57,50 @@ export default function DashboardPage() {
     { id: 'classement', label: 'Classement', premium: true, icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0 1 16.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 0 1-2.52.587 6.023 6.023 0 0 1-2.52-.587" /></svg> },
   ];
 
+  // Afficher un spinner pendant la vérification d'authentification
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <svg className="animate-spin w-10 h-10 text-primary-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-sm text-gray-500">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Gate Essentiel : utilisateur gratuit → wall upgrade
+  if (!isEssentiel) {
+    return (
+      <>
+        <section className="gradient-hero noise-overlay dot-grid pt-28 pb-10 md:pt-36 md:pb-14 relative overflow-hidden">
+          <div className="blob-1"></div>
+          <div className="blob-2"></div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+            <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-4">
+              Mon <span className="bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600 bg-clip-text text-transparent">tableau de bord</span>
+            </h1>
+          </div>
+        </section>
+        <div className="max-w-lg mx-auto px-4 py-16 text-center">
+          <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-black text-gray-900 mb-3">Réservé aux membres Essentiel</h2>
+          <p className="text-gray-500 mb-8">Le tableau de bord est accessible à partir de la formule Essentiel. Suivez votre progression, consultez vos historiques et analysez vos performances.</p>
+          <Link href="/tarifs" className="inline-flex px-6 py-3 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25">
+            Voir les offres
+          </Link>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       {/* Hero */}
@@ -54,7 +109,11 @@ export default function DashboardPage() {
         <div className="blob-2"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-4">
-            Mon <span className="bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600 bg-clip-text text-transparent">tableau de bord</span>
+            {user.displayName ? (
+              <>Bonjour <span className="bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600 bg-clip-text text-transparent">{user.displayName.split(' ')[0]}</span> !</>
+            ) : (
+              <>Mon <span className="bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600 bg-clip-text text-transparent">tableau de bord</span></>
+            )}
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
             Suivez votre progression, consultez vos historiques et analysez vos performances.
@@ -92,7 +151,7 @@ export default function DashboardPage() {
           <nav className="flex gap-1 overflow-x-auto sm:justify-center">
             {tabs.map(tab => {
               const isActive = activeTab === tab.id;
-              const showLock = tab.premium && !isPremium;
+              const showLock = tab.premium && !isPremiumPlus;
               return (
                 <button
                   key={tab.id}
@@ -119,8 +178,8 @@ export default function DashboardPage() {
           {activeTab === 'qcm' && <QcmTab sessions={qcmStats.sessions} />}
           {activeTab === 'examens' && <ExamensTab sessions={examStats.sessions} />}
           {activeTab === 'stats' && <StatistiquesTab qcmSessions={qcmStats.sessions} examSessions={examStats.sessions} annalesSessions={annalesStats.sessions} />}
-          {activeTab === 'progression' && <ProgressionTab isPremium={isPremium} qcmSessions={qcmStats.sessions} examSessions={examStats.sessions} annalesSessions={annalesStats.sessions} />}
-          {activeTab === 'classement' && <ClassementTab isPremium={isPremium} qcmSessions={qcmStats.sessions} examSessions={examStats.sessions} annalesSessions={annalesStats.sessions} />}
+          {activeTab === 'progression' && <ProgressionTab isPremium={isPremiumPlus} qcmSessions={qcmStats.sessions} examSessions={examStats.sessions} annalesSessions={annalesStats.sessions} />}
+          {activeTab === 'classement' && <ClassementTab isPremium={isPremiumPlus} qcmSessions={qcmStats.sessions} examSessions={examStats.sessions} annalesSessions={annalesStats.sessions} />}
         </div>
       </div>
     </>
@@ -195,7 +254,7 @@ function PremiumLock({ title, description }) {
           <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
           <p className="text-sm text-gray-500 mb-5">{description}</p>
           <Link href="/tarifs" className="inline-flex px-6 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25">
-            D&eacute;couvrir Premium+
+            Passer au Premium+
           </Link>
         </div>
       </div>

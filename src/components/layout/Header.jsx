@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navLinks = [
   { href: '/qcm', label: 'QCM' },
@@ -14,8 +15,26 @@ const navLinks = [
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading, logOut } = useAuth();
 
   const isActive = (href) => pathname === href;
+
+  const handleLogout = async () => {
+    try {
+      await logOut();
+      router.push('/');
+    } catch (err) {
+      console.error('Erreur de déconnexion:', err);
+    }
+  };
+
+  // Initiale de l'utilisateur
+  const userInitial = user?.displayName
+    ? user.displayName.charAt(0).toUpperCase()
+    : user?.email
+      ? user.email.charAt(0).toUpperCase()
+      : '?';
 
   return (
     <header className="bg-white/80 backdrop-blur-lg border-b border-gray-100 fixed top-0 inset-x-0 z-50">
@@ -44,9 +63,52 @@ export default function Header() {
             ))}
           </nav>
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="hidden sm:inline-flex px-5 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25">
-              Mon tableau de bord
-            </Link>
+            {!loading && (
+              <>
+                {user ? (
+                  /* ---- Connecté ---- */
+                  <div className="hidden sm:flex items-center gap-3">
+                    {/* Avatar initiale */}
+                    <div className="w-9 h-9 bg-primary-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-bold text-primary-700">{userInitial}</span>
+                    </div>
+                    {/* Dashboard */}
+                    <Link
+                      href="/dashboard"
+                      className="px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25"
+                    >
+                      Mon tableau de bord
+                    </Link>
+                    {/* Déconnexion */}
+                    <button
+                      onClick={handleLogout}
+                      className="px-3 py-2 text-sm font-medium text-gray-500 hover:text-red-600 transition-colors"
+                      title="Se déconnecter"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  /* ---- Déconnecté ---- */
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Link
+                      href="/connexion"
+                      className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-primary-600 transition-colors"
+                    >
+                      Connexion
+                    </Link>
+                    <Link
+                      href="/inscription"
+                      className="px-5 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25"
+                    >
+                      Inscription
+                    </Link>
+                  </div>
+                )}
+              </>
+            )}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="md:hidden p-2 text-gray-600 hover:text-primary-600"
@@ -71,9 +133,52 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
-          <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="block mt-2 px-5 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl text-center">
-            Mon tableau de bord
-          </Link>
+          {!loading && (
+            <>
+              {user ? (
+                /* ---- Mobile : Connecté ---- */
+                <>
+                  <div className="flex items-center gap-3 py-3 border-t border-gray-100 mt-2">
+                    <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-primary-700">{userInitial}</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">{user.displayName || user.email}</span>
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMenuOpen(false)}
+                    className="block mt-1 px-5 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl text-center"
+                  >
+                    Mon tableau de bord
+                  </Link>
+                  <button
+                    onClick={() => { handleLogout(); setMenuOpen(false); }}
+                    className="block w-full mt-2 px-5 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl text-center transition-colors"
+                  >
+                    Se déconnecter
+                  </button>
+                </>
+              ) : (
+                /* ---- Mobile : Déconnecté ---- */
+                <>
+                  <Link
+                    href="/connexion"
+                    onClick={() => setMenuOpen(false)}
+                    className="block mt-2 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 text-center border border-gray-200 rounded-xl"
+                  >
+                    Connexion
+                  </Link>
+                  <Link
+                    href="/inscription"
+                    onClick={() => setMenuOpen(false)}
+                    className="block mt-2 px-5 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl text-center"
+                  >
+                    Inscription
+                  </Link>
+                </>
+              )}
+            </>
+          )}
         </div>
       )}
     </header>

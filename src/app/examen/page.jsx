@@ -8,6 +8,20 @@ import { SUBJECTS } from '@/data/subjects';
 import { FICHES_DATA } from '@/data/fiches';
 import { QUESTIONS } from '@/data/questions';
 import { SUBJECT_COLORS, SUBJECT_ICONS, getSubjectName } from '@/data/constants';
+import { useGeminiQuestions } from '@/hooks/useGeminiQuestions';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePremium } from '@/contexts/PremiumContext';
+import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
+import UpgradeModal from '@/components/ui/UpgradeModal';
+
+const LOADING_TIPS = [
+  { icon: '💡', text: 'Relisez vos erreurs après chaque épreuve pour progresser plus vite.' },
+  { icon: '🎯', text: 'Visez 70\u00a0% de bonnes réponses avant de passer à un nouveau chapitre.' },
+  { icon: '⏱️', text: 'En conditions réelles, comptez ~1\u00a0min\u00a030 par question.' },
+  { icon: '📚', text: 'Alternez entre différentes matières pour renforcer la mémorisation.' },
+  { icon: '🔁', text: 'La répétition espacée est la clé pour retenir sur le long terme.' },
+  { icon: '🧠', text: 'Faire des QCM est plus efficace que relire ses cours passivement.' },
+];
 
 /* ========== HELPERS ========== */
 function shuffleArray(arr) {
@@ -210,7 +224,18 @@ export default function ExamenPage() {
   const [showMixedModal, setShowMixedModal] = useState(false);
   const [pendingFiche, setPendingFiche] = useState(null);
   const [customText, setCustomText] = useState('');
+  const [customTopic, setCustomTopic] = useState('');
   const [startTime, setStartTime] = useState(null);
+  const [tipIndex, setTipIndex] = useState(0);
+  const [correctionOpen, setCorrectionOpen] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeTier, setUpgradeTier] = useState('essentiel');
+  const pillsRef = useRef(null);
+
+  // ----- Auth & Premium -----
+  const { user } = useAuth();
+  const { isEssentiel, isPremiumPlus } = usePremium();
 
   // ----- Finish ref for timer callback -----
   const finishRef = useRef(null);
@@ -232,6 +257,9 @@ export default function ExamenPage() {
     onExpire: () => finishRef.current?.(),
   });
 
+  // ----- Gemini AI -----
+  const { generateQuestions: generateAIQuestions, isGenerating } = useGeminiQuestions();
+
   // ----- Stats -----
   const [stats, setStats] = useLocalStorage('prepa-examen-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
 
@@ -239,8 +267,8 @@ export default function ExamenPage() {
   const avgScore = totalDone > 0 ? Math.round(stats.sessions.reduce((a, s) => a + (s.percentage || 0), 0) / totalDone) : 0;
   const fichesCount = FICHES_DATA?.length || 0;
 
-  // ----- Question selection -----
-  const generateQuestions = useCallback((source, count) => {
+  // ----- Static question selection (fallback) -----
+  const generateStaticQuestions = useCallback((source, count) => {
     let pool = [];
     if (source.type === 'fiche') {
       pool = QUESTIONS.filter(q => q.subject === source.subject);
@@ -261,8 +289,42 @@ export default function ExamenPage() {
     return shuffled.slice(0, Math.min(count, shuffled.length));
   }, []);
 
-  // ----- Launch exam -----
-  const launchExam = useCallback((source) => {
+  // ----- Helper to launch exam with questions -----
+  const startWithQuestions = useCallback((qs) => {
+    if (!qs || qs.length === 0) {
+      setView('hero');
+      return;
+    }
+    setQuestions(qs);
+    setAnswers(new Array(qs.length).fill(null));
+    setCurrentQ(0);
+    setStartTime(Date.now());
+    timer.reset();
+    setTimeout(() => timer.start(), 50);
+    setView('exam');
+  }, [timer]);
+
+  // ----- Launch exam (AI generation + static fallback) -----
+  const launchExam = useCallback(async (source) => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    // Examen complet (40q) = Premium+ requis
+    if (source.type === 'mixed') {
+      if (!isPremiumPlus) {
+        setUpgradeTier('premium+');
+        setShowUpgradeModal(true);
+        return;
+      }
+    } else {
+      // Examen classique = Essentiel requis
+      if (!isEssentiel) {
+        setUpgradeTier('essentiel');
+        setShowUpgradeModal(true);
+        return;
+      }
+    }
     setSelectedTopic(source);
 
     let duration = 30;
@@ -275,25 +337,23 @@ export default function ExamenPage() {
     setExamQuestionCount(qCount);
     setView('loading');
 
-    // Fake loading delay
-    const timeout = setTimeout(() => {
-      const qs = generateQuestions(source, qCount);
-      if (qs.length === 0) {
-        setView('hero');
+    // Try AI generation first
+    const subjectId = source.subject || source.subjectId || null;
+    const subjectName = subjectId ? (source.subjectName || getSubjectName(subjectId)) : (source.title || source.subjectName);
+    const ficheTopic = source.title || null;
+
+    if (subjectId || ficheTopic) {
+      const aiQuestions = await generateAIQuestions(subjectId, subjectName, qCount, 'examen', ficheTopic);
+      if (aiQuestions && aiQuestions.length > 0) {
+        startWithQuestions(aiQuestions);
         return;
       }
-      setQuestions(qs);
-      setAnswers(new Array(qs.length).fill(null));
-      setCurrentQ(0);
-      setStartTime(Date.now());
-      timer.reset();
-      // Need a small delay after reset to start
-      setTimeout(() => timer.start(), 50);
-      setView('exam');
-    }, 1500 + Math.random() * 1500);
+    }
 
-    return () => clearTimeout(timeout);
-  }, [generateQuestions, timer]);
+    // Fallback to static questions
+    const qs = generateStaticQuestions(source, qCount);
+    startWithQuestions(qs);
+  }, [user, isEssentiel, isPremiumPlus, generateStaticQuestions, generateAIQuestions, startWithQuestions, timer]);
 
   // ----- Fiche selection -----
   const selectFiche = useCallback((ficheId) => {
@@ -411,6 +471,20 @@ export default function ExamenPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
+  // ----- Loading tips rotation -----
+  useEffect(() => {
+    if (view !== 'loading') return;
+    const interval = setInterval(() => setTipIndex(prev => (prev + 1) % LOADING_TIPS.length), 3500);
+    return () => clearInterval(interval);
+  }, [view]);
+
+  // ----- Auto-scroll active pill -----
+  useEffect(() => {
+    if (view !== 'exam' || !pillsRef.current) return;
+    const active = pillsRef.current.children[currentQ];
+    if (active) active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [currentQ, view]);
+
   // ----- Filtered fiches -----
   const getFilteredFiches = useCallback(() => {
     let fiches = FICHES_DATA || [];
@@ -464,7 +538,7 @@ export default function ExamenPage() {
                       <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
                     </div>
                     <div>
-                      <div className="text-xl font-black text-gray-900">{QUESTIONS.length}</div>
+                      <div className="text-xl font-black text-gray-900">&infin;</div>
                       <div className="text-xs font-medium text-gray-500">Questions</div>
                     </div>
                   </div>
@@ -661,6 +735,8 @@ export default function ExamenPage() {
             onCancel={() => setShowMixedModal(false)}
           />
         )}
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier={upgradeTier} onClose={() => setShowUpgradeModal(false)} />}
       </section>
     );
   }
@@ -779,6 +855,8 @@ export default function ExamenPage() {
             onCancel={() => setPendingFiche(null)}
           />
         )}
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier={upgradeTier} onClose={() => setShowUpgradeModal(false)} />}
       </section>
     );
   }
@@ -809,12 +887,29 @@ export default function ExamenPage() {
               </div>
             </div>
           </div>
+          {/* Specific topic input */}
+          <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-8 max-w-lg mx-auto">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 bg-violet-100 rounded-xl shadow-sm flex items-center justify-center">
+                <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+              </div>
+              <p className="text-base font-bold text-gray-900">Sujet pr&eacute;cis <span className="text-gray-400 font-normal text-sm">(optionnel)</span></p>
+            </div>
+            <p className="text-xs text-gray-500 mb-4 ml-[52px]">Pr&eacute;cisez un th&egrave;me pour cibler les questions g&eacute;n&eacute;r&eacute;es</p>
+            <input
+              type="text"
+              value={customTopic}
+              onChange={e => setCustomTopic(e.target.value)}
+              placeholder="Ex : Ost&eacute;ologie du membre sup&eacute;rieur, Cycle de Krebs, Loi normale..."
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all placeholder:text-gray-400"
+            />
+          </div>
           {/* Subject cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
             {SUBJECTS.map(s => {
               const colors = getColors(s.color);
               return (
-                <button key={s.id} onClick={() => launchExam({ type: 'custom', subject: s.id, subjectName: s.name, title: s.name })} className="bg-white rounded-xl p-4 text-left border border-gray-200 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-primary-300 cursor-pointer">
+                <button key={s.id} onClick={() => { launchExam({ type: 'custom', subject: s.id, subjectName: s.name, title: customTopic.trim() || s.name }); setCustomTopic(''); }} className="bg-white rounded-xl p-4 text-left border border-gray-200 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-primary-300 cursor-pointer">
                   <div className={`w-10 h-10 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center mb-3`}>
                     <SubjectIcon subjectId={s.id} className={`w-5 h-5 ${colors.icon}`} />
                   </div>
@@ -825,11 +920,13 @@ export default function ExamenPage() {
             })}
           </div>
           {/* All subjects */}
-          <button onClick={() => launchExam({ type: 'custom', subject: null, subjectName: 'Toutes mati\u00e8res', title: 'Toutes les mati\u00e8res' })} className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+          <button onClick={() => { launchExam({ type: 'custom', subject: null, subjectName: 'Toutes mati\u00e8res', title: customTopic.trim() || 'Toutes les mati\u00e8res' }); setCustomTopic(''); }} className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
             Toutes les mati&egrave;res (20 questions &middot; 30 min)
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
           </button>
         </div>
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier={upgradeTier} onClose={() => setShowUpgradeModal(false)} />}
       </section>
     );
   }
@@ -840,27 +937,40 @@ export default function ExamenPage() {
     const colors = selectedTopic?.type === 'mixed' ? getColors('emerald') : getColors(subject?.color);
     const qCount = selectedTopic?.type === 'mixed' ? 40 : 20;
     const topicTitle = selectedTopic?.type === 'mixed' ? 'Toutes les mati\u00e8res du tronc commun' : selectedTopic?.title;
+    const tip = LOADING_TIPS[tipIndex];
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center pt-16">
-        <div className="max-w-md mx-auto px-4 text-center">
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center pt-16">
+        <div className="max-w-md mx-auto px-4 text-center w-full">
+          <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-sm">
             <div className="mb-6">
               <div className={`w-20 h-20 mx-auto rounded-2xl ${colors.bg} ${colors.border} border flex items-center justify-center animate-pulse`}>
-                <svg className={`w-10 h-10 ${colors.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" />
-                </svg>
+                {subject ? (
+                  <SubjectIcon subjectId={subject.id} className={`w-10 h-10 ${colors.icon}`} />
+                ) : (
+                  <svg className={`w-10 h-10 ${colors.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+                  </svg>
+                )}
               </div>
             </div>
             <h2 className="text-xl font-black text-gray-900 mb-2">Pr&eacute;paration de l&apos;&eacute;preuve...</h2>
             <p className="text-sm text-gray-500 mb-1"><strong>{qCount} questions</strong> sur :</p>
             <p className="text-sm text-gray-700 font-semibold mb-6">{topicTitle}</p>
-            <div className="flex justify-center gap-2 mb-4">
-              <span className="w-2.5 h-2.5 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: '0s' }} />
-              <span className="w-2.5 h-2.5 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: '0.15s' }} />
-              <span className="w-2.5 h-2.5 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: '0.3s' }} />
+
+            {/* Progress bar */}
+            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-6">
+              <div className="h-full bg-gradient-to-r from-primary-500 to-violet-500 rounded-full loading-progress" />
             </div>
-            <p className="text-xs text-gray-400">Pr&eacute;paration des questions...</p>
-            <button onClick={() => setView('hero')} className="mt-6 text-sm text-gray-400 hover:text-gray-600 font-medium">Annuler</button>
+
+            {/* Rotating tip */}
+            <div className="bg-primary-50 rounded-xl p-4 mb-6 min-h-[72px] flex items-center justify-center">
+              <p key={tipIndex} className="text-sm text-primary-800 leading-relaxed tip-fade">
+                <span className="mr-1.5">{tip.icon}</span>
+                {tip.text}
+              </p>
+            </div>
+
+            <button onClick={() => setView('hero')} className="text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors">Annuler</button>
           </div>
         </div>
       </div>
@@ -886,7 +996,7 @@ export default function ExamenPage() {
     }
 
     return (
-      <div className="min-h-screen bg-slate-100 pt-20 pb-8">
+      <div className="min-h-screen bg-slate-50 pt-20 pb-8">
         <div className="max-w-3xl mx-auto px-4">
           {/* Top bar */}
           <div className="flex items-center justify-between mb-4">
@@ -903,20 +1013,20 @@ export default function ExamenPage() {
             </div>
           </div>
 
-          {/* Question pills -- free navigation */}
-          <div className="flex flex-wrap gap-1.5 mb-5 justify-center">
+          {/* Question pills -- horizontal scroll */}
+          <div ref={pillsRef} className="flex gap-1.5 mb-5 overflow-x-auto scrollbar-hide snap-x pb-1">
             {questions.map((_, i) => {
               let cls = 'bg-gray-100 text-gray-400'; // unanswered
               if (i === currentQ) cls = 'bg-primary-600 text-white shadow-md shadow-primary-500/40';
               else if (answers[i] !== null) cls = 'bg-primary-100 text-primary-700';
               return (
-                <button key={i} onClick={() => goToQuestion(i)} className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${cls}`}>{i + 1}</button>
+                <button key={i} onClick={() => goToQuestion(i)} className={`w-8 h-8 rounded-lg text-xs font-bold transition-all shrink-0 snap-center ${cls}`}>{i + 1}</button>
               );
             })}
           </div>
 
           {/* Question card */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm">
+          <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 md:p-8 shadow-sm">
             <div className="flex items-center justify-between mb-5">
               <span className="text-sm font-medium text-gray-500">Question {currentQ + 1}/{total}</span>
               <span className="px-3 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full">{badgeText}</span>
@@ -999,8 +1109,29 @@ export default function ExamenPage() {
     const color = pct >= 70 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
     const answeredTotal = answers.filter(a => a !== null).length;
 
+    const scoreMessage = pct >= 90 ? 'Excellent !' : pct >= 70 ? 'Très bien !' : pct >= 50 ? 'Pas mal !' : 'Courage !';
+    const showConfetti = pct >= 70;
+
     return (
-      <section className="py-24 md:py-28">
+      <section className="py-24 md:py-28 min-h-screen bg-slate-50">
+        {/* Confetti */}
+        {showConfetti && (
+          <div className="fixed inset-0 pointer-events-none z-50" aria-hidden="true">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-2.5 h-2.5 rounded-sm"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: '-5%',
+                  backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][i % 6],
+                  animation: `confettiFall ${2 + Math.random() * 2}s ease-in ${Math.random() * 1.5}s forwards`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">R&eacute;sultats de l&apos;&eacute;preuve</h2>
@@ -1008,66 +1139,74 @@ export default function ExamenPage() {
           </div>
 
           {/* Score circle */}
-          <div className="flex justify-center mb-8">
-            <div className="relative">
-              <svg width="140" height="140">
+          <div className="flex flex-col items-center justify-center mb-8">
+            <div className={`relative ${showConfetti ? 'celebrate-pulse' : ''}`}>
+              <svg className="w-36 h-36 sm:w-44 sm:h-44" viewBox="0 0 140 140">
                 <circle cx="70" cy="70" r="56" fill="none" stroke="#e5e7eb" strokeWidth="12" />
                 <circle cx="70" cy="70" r="56" fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"
                   strokeDasharray={circumference} strokeDashoffset={offset}
                   style={{ transition: 'stroke-dashoffset 1s ease', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-black" style={{ color }}>{pct}%</span>
+                <span className="text-3xl sm:text-4xl font-black" style={{ color }}>{pct}%</span>
                 <span className="text-xs text-gray-500">{correct}/{questions.length}</span>
               </div>
             </div>
+            <p className="text-lg font-bold mt-3" style={{ color }}>{scoreMessage}</p>
           </div>
 
-          {/* Stats row */}
-          <div className="flex flex-wrap justify-center gap-4 mb-8">
-            <div className="bg-gray-50 rounded-xl px-4 py-2.5 text-center">
+          {/* Stats grid */}
+          <div className="grid grid-cols-3 gap-3 mb-8">
+            <div className="bg-white rounded-xl px-4 py-3 text-center border border-gray-100">
               <p className="text-base font-bold text-gray-900">{subjectName}</p>
               <p className="text-xs text-gray-500">Mati&egrave;re</p>
             </div>
-            <div className="bg-gray-50 rounded-xl px-4 py-2.5 text-center">
+            <div className="bg-white rounded-xl px-4 py-3 text-center border border-gray-100">
               <p className="text-base font-bold text-gray-900">{minutes}m {seconds.toString().padStart(2, '0')}s</p>
               <p className="text-xs text-gray-500">Dur&eacute;e</p>
             </div>
-            <div className="bg-gray-50 rounded-xl px-4 py-2.5 text-center">
+            <div className="bg-white rounded-xl px-4 py-3 text-center border border-gray-100">
               <p className="text-base font-bold text-gray-900">{answeredTotal}/{questions.length}</p>
               <p className="text-xs text-gray-500">R&eacute;pondues</p>
             </div>
           </div>
 
           {/* Correction */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
-            <h3 className="font-bold text-gray-900 mb-5 text-lg">Correction d&eacute;taill&eacute;e</h3>
-            <div className="space-y-4">
-              {details.map((d, i) => (
-                <div key={i} className={`p-4 rounded-xl border ${d.isCorrect ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'}`}>
-                  <div className="flex items-start gap-3">
-                    <div className={`w-6 h-6 rounded-full ${d.isCorrect ? 'bg-green-500' : 'bg-red-500'} flex items-center justify-center shrink-0 mt-0.5`}>
-                      {d.isCorrect ? (
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                      ) : (
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900">Q{i + 1}. {d.question.question}</p>
-                      {d.selected !== null ? (
-                        <p className={`text-xs mt-1 ${d.isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-                          Votre r&eacute;ponse : <strong>{d.question.options[d.selected].text}</strong>
-                          {!d.isCorrect && <> &mdash; Bonne r&eacute;ponse : <strong>{d.question.options[d.correctIndex].text}</strong></>}
-                        </p>
-                      ) : (
-                        <p className="text-xs mt-1 text-gray-500">Non r&eacute;pondue &mdash; Bonne r&eacute;ponse : <strong>{d.question.options[d.correctIndex].text}</strong></p>
-                      )}
-                      <p className="text-xs text-gray-600 mt-2 leading-relaxed">{d.question.explanation}</p>
+          <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-8">
+            <div className="flex items-center justify-between mb-1">
+              <button onClick={() => setCorrectionOpen(!correctionOpen)} className="flex items-center gap-2 group">
+                <h3 className="font-bold text-gray-900 text-lg">Correction d&eacute;taill&eacute;e</h3>
+                <svg className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${correctionOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+              </button>
+            </div>
+            <div className={`correction-collapse ${correctionOpen ? 'open' : ''}`}>
+              <div className="space-y-4 pt-4">
+                {details.map((d, i) => (
+                  <div key={i} className={`p-4 rounded-xl border ${d.isCorrect ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'}`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`w-6 h-6 rounded-full ${d.isCorrect ? 'bg-green-500' : 'bg-red-500'} flex items-center justify-center shrink-0 mt-0.5`}>
+                        {d.isCorrect ? (
+                          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-900">Q{i + 1}. {d.question.question}</p>
+                        {d.selected !== null ? (
+                          <p className={`text-xs mt-1 ${d.isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+                            Votre r&eacute;ponse : <strong>{d.question.options[d.selected].text}</strong>
+                            {!d.isCorrect && <> &mdash; Bonne r&eacute;ponse : <strong>{d.question.options[d.correctIndex].text}</strong></>}
+                          </p>
+                        ) : (
+                          <p className="text-xs mt-1 text-gray-500">Non r&eacute;pondue &mdash; Bonne r&eacute;ponse : <strong>{d.question.options[d.correctIndex].text}</strong></p>
+                        )}
+                        <p className="text-xs text-gray-600 mt-2 leading-relaxed">{d.question.explanation}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 

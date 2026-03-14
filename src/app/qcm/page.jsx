@@ -8,6 +8,21 @@ import { SUBJECTS } from '@/data/subjects';
 import { FICHES_DATA } from '@/data/fiches';
 import { QUESTIONS } from '@/data/questions';
 import { SUBJECT_COLORS, SUBJECT_ICONS, getSubjectName } from '@/data/constants';
+import { useGeminiQuestions } from '@/hooks/useGeminiQuestions';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePremium } from '@/contexts/PremiumContext';
+import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
+import UpgradeModal from '@/components/ui/UpgradeModal';
+
+/* ========== CONSTANTS ========== */
+const LOADING_TIPS = [
+  { icon: '\u{1F4A1}', text: 'Relisez vos erreurs apr\u00e8s chaque QCM pour progresser plus vite.' },
+  { icon: '\u{1F3AF}', text: 'Visez 70% de bonnes r\u00e9ponses avant de passer \u00e0 un nouveau chapitre.' },
+  { icon: '\u23F1\uFE0F', text: 'En conditions r\u00e9elles, comptez ~1min30 par question.' },
+  { icon: '\u{1F4DA}', text: 'Alternez entre diff\u00e9rentes mati\u00e8res pour renforcer la m\u00e9morisation.' },
+  { icon: '\u{1F501}', text: 'La r\u00e9p\u00e9tition espac\u00e9e est la cl\u00e9 pour retenir sur le long terme.' },
+  { icon: '\u{1F9E0}', text: 'Faire des QCM est plus efficace que relire ses cours passivement.' },
+];
 
 /* ========== HELPERS ========== */
 function shuffleArray(arr) {
@@ -135,24 +150,31 @@ export default function QCMPage() {
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [pendingFiche, setPendingFiche] = useState(null);
   const [customText, setCustomText] = useState('');
+  const [customTopic, setCustomTopic] = useState('');
   const [resultsFilter, setResultsFilter] = useState('all');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [tipIndex, setTipIndex] = useState(0);
+  const [correctionOpen, setCorrectionOpen] = useState(true);
+  const pillsRef = useRef(null);
 
   // ----- Hooks -----
+  const { user } = useAuth();
+  const { isEssentiel } = usePremium();
   const timer = useTimer({ mode: 'up' });
   const [stats, setStats] = useLocalStorage('prepa-qcm-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
+  const { generateQuestions: generateAIQuestions, isGenerating } = useGeminiQuestions();
 
   const totalDone = stats.sessions?.length || 0;
   const avgScore = totalDone > 0 ? Math.round(stats.sessions.reduce((a, s) => a + (s.percentage || s.score || 0), 0) / totalDone) : 0;
   const fichesCount = FICHES_DATA?.length || 0;
 
-  // ----- Question selection logic -----
-  const generateQuestions = useCallback((topic, count) => {
+  // ----- Static question selection (fallback) -----
+  const generateStaticQuestions = useCallback((topic, count) => {
     let pool = [];
     if (topic.type === 'fiche') {
-      // Filter questions by the subject of the fiche
       pool = QUESTIONS.filter(q => q.subject === topic.subject);
     } else if (topic.type === 'custom') {
-      // Filter by selected subject if provided, otherwise use all
       if (topic.subject) {
         pool = QUESTIONS.filter(q => q.subject === topic.subject);
       } else {
@@ -163,32 +185,61 @@ export default function QCMPage() {
     return shuffled.slice(0, Math.min(count, shuffled.length));
   }, []);
 
-  // ----- Start quiz -----
-  const startQuiz = useCallback((topic) => {
+  // ----- Helper to launch quiz with questions -----
+  const launchWithQuestions = useCallback((qs) => {
+    if (!qs || qs.length === 0) {
+      setView('hero');
+      return;
+    }
+    setQuestions(qs);
+    setCurrentIndex(0);
+    setScore(0);
+    setAnswers(new Array(qs.length).fill(null));
+    setIsValidated(false);
+    setStreak(0);
+    setMaxStreak(0);
+    timer.reset();
+    timer.start();
+    setView('quiz');
+  }, [timer]);
+
+  // ----- Start quiz (AI generation + static fallback) -----
+  const startQuiz = useCallback(async (topic) => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    // Limite 1 QCM/jour en gratuit
+    if (!isEssentiel) {
+      const today = new Date().toISOString().split('T')[0];
+      const lastDate = localStorage.getItem('prepa-qcm-today-date') || '';
+      const todayCount = lastDate === today ? parseInt(localStorage.getItem('prepa-qcm-today-count') || '0') : 0;
+      if (todayCount >= 1) {
+        setShowUpgradeModal(true);
+        return;
+      }
+      localStorage.setItem('prepa-qcm-today-date', today);
+      localStorage.setItem('prepa-qcm-today-count', String(todayCount + 1));
+    }
     setSelectedTopic(topic);
     setView('loading');
 
-    // Fake loading delay
-    const timeout = setTimeout(() => {
-      const qs = generateQuestions(topic, questionCount);
-      if (qs.length === 0) {
-        setView('hero');
+    // Try AI generation first
+    const subjectName = topic.subject ? (topic.subjectName || getSubjectName(topic.subject)) : (topic.title || topic.subjectName);
+    const ficheTopic = topic.title || null;
+
+    if (topic.subject || ficheTopic) {
+      const aiQuestions = await generateAIQuestions(topic.subject, subjectName, questionCount, 'qcm', ficheTopic);
+      if (aiQuestions && aiQuestions.length > 0) {
+        launchWithQuestions(aiQuestions);
         return;
       }
-      setQuestions(qs);
-      setCurrentIndex(0);
-      setScore(0);
-      setAnswers(new Array(qs.length).fill(null));
-      setIsValidated(false);
-      setStreak(0);
-      setMaxStreak(0);
-      timer.reset();
-      timer.start();
-      setView('quiz');
-    }, 1500 + Math.random() * 1500);
+    }
 
-    return () => clearTimeout(timeout);
-  }, [questionCount, generateQuestions, timer]);
+    // Fallback to static questions
+    const qs = generateStaticQuestions(topic, questionCount);
+    launchWithQuestions(qs);
+  }, [user, isEssentiel, questionCount, generateStaticQuestions, generateAIQuestions, launchWithQuestions]);
 
   // ----- Fiche selection flow -----
   const selectFiche = useCallback((ficheId) => {
@@ -330,6 +381,24 @@ export default function QCMPage() {
     return () => document.removeEventListener('keydown', handler);
   }, [view, isValidated, showQuitModal, answerQuestion, handleNextOrResults]);
 
+  // ----- Loading tips rotation -----
+  useEffect(() => {
+    if (view !== 'loading') return;
+    const interval = setInterval(() => {
+      setTipIndex(prev => (prev + 1) % LOADING_TIPS.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [view]);
+
+  // ----- Auto-scroll active pill into view -----
+  useEffect(() => {
+    if (view !== 'quiz' || !pillsRef.current) return;
+    const active = pillsRef.current.children[currentIndex];
+    if (active) {
+      active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [view, currentIndex]);
+
   // ----- Filtered fiches -----
   const getFilteredFiches = useCallback(() => {
     let fiches = FICHES_DATA || [];
@@ -362,7 +431,7 @@ export default function QCMPage() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
                   </span>
-                  <span className="text-sm font-semibold text-primary-700">Banque de questions</span>
+                  <span className="text-sm font-semibold text-primary-700">Questions illimit&eacute;es</span>
                 </div>
                 <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-5">
                   QCM{' '}
@@ -371,8 +440,7 @@ export default function QCMPage() {
                   </span>
                 </h1>
                 <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-xl">
-                  Entra&icirc;nez-vous avec des QCM parmi nos <strong className="text-gray-900">{fichesCount} fiches</strong> ou
-                  choisissez un sujet personnalis&eacute;. <strong className="text-gray-900">Correction imm&eacute;diate</strong> avec
+                  Des <strong className="text-gray-900">questions illimit&eacute;es</strong> sur tous les sujets du programme PASS/LAS. <strong className="text-gray-900">Correction imm&eacute;diate</strong> avec
                   explications d&eacute;taill&eacute;es.
                 </p>
                 {/* Stats row */}
@@ -382,7 +450,7 @@ export default function QCMPage() {
                       <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
                     </div>
                     <div>
-                      <div className="text-xl font-black text-gray-900">{QUESTIONS.length}</div>
+                      <div className="text-xl font-black text-gray-900">&infin;</div>
                       <div className="text-xs font-medium text-gray-500">Questions</div>
                     </div>
                   </div>
@@ -502,7 +570,7 @@ export default function QCMPage() {
               <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">QCM par fiches</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">&Agrave; partir de nos fiches</h3>
               <p className="text-sm text-gray-500 leading-relaxed mb-4">G&eacute;n&eacute;rez un QCM &agrave; partir de nos fiches de r&eacute;vision et de nos cours, class&eacute;s par mati&egrave;re.</p>
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 bg-primary-50 px-3 py-1.5 rounded-lg">
@@ -516,8 +584,8 @@ export default function QCMPage() {
               <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">QCM personnalis&eacute;</h3>
-              <p className="text-sm text-gray-500 leading-relaxed mb-4">Choisissez une mati&egrave;re et le nombre de questions pour un QCM sur mesure.</p>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Sujet personnalis&eacute;</h3>
+              <p className="text-sm text-gray-500 leading-relaxed mb-4">Tapez n&rsquo;importe quel sujet et obtenez un QCM cibl&eacute; instantan&eacute;ment.</p>
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 bg-violet-50 px-3 py-1.5 rounded-lg">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
@@ -654,6 +722,8 @@ export default function QCMPage() {
             onCancel={() => setPendingFiche(null)}
           />
         )}
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier="essentiel" onClose={() => setShowUpgradeModal(false)} />}
       </section>
     );
   }
@@ -669,8 +739,26 @@ export default function QCMPage() {
             Retour
           </button>
           <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">QCM personnalis&eacute;</h2>
-            <p className="text-gray-500 text-base max-w-lg mx-auto">Choisissez une mati&egrave;re et le nombre de questions.</p>
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Sujet personnalis&eacute;</h2>
+            <p className="text-gray-500 text-base max-w-lg mx-auto">Choisissez une mati&egrave;re et le nombre de questions pour g&eacute;n&eacute;rer votre QCM.</p>
+          </div>
+          {/* Topic input */}
+          <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-6 max-w-lg mx-auto">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 bg-violet-100 rounded-xl shadow-sm flex items-center justify-center">
+                <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+              </div>
+              <p className="text-base font-bold text-gray-900">Quel sujet souhaitez-vous r&eacute;viser ?</p>
+            </div>
+            <p className="text-xs text-gray-500 mb-4 ml-[52px]">Des questions cibl&eacute;es seront g&eacute;n&eacute;r&eacute;es sur votre sujet</p>
+            <input
+              type="text"
+              value={customTopic}
+              onChange={e => setCustomTopic(e.target.value)}
+              placeholder="Ex : Ost&eacute;ologie du membre sup&eacute;rieur, Cycle de Krebs, Loi normale..."
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all placeholder:text-gray-400"
+              onKeyDown={e => { if (e.key === 'Enter' && customTopic.trim()) { startQuiz({ type: 'custom', subject: null, subjectName: customTopic.trim(), title: customTopic.trim() }); setCustomTopic(''); } }}
+            />
           </div>
           {/* Question count */}
           <div className="bg-gradient-to-br from-primary-50 to-violet-50 rounded-2xl border-2 border-primary-200 p-6 mb-8 max-w-lg mx-auto relative overflow-hidden">
@@ -692,27 +780,18 @@ export default function QCMPage() {
               </div>
             </div>
           </div>
-          {/* Subject cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-            {SUBJECTS.map(s => {
-              const colors = getColors(s.color);
-              return (
-                <button key={s.id} onClick={() => { startQuiz({ type: 'custom', subject: s.id, subjectName: s.name, title: s.name }); }} className="bg-white rounded-xl p-4 text-left border border-gray-200 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-primary-300 cursor-pointer">
-                  <div className={`w-10 h-10 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center mb-3`}>
-                    <SubjectIcon subjectId={s.id} className={`w-5 h-5 ${colors.icon}`} />
-                  </div>
-                  <h4 className="text-sm font-bold text-gray-900 mb-0.5">{s.name}</h4>
-                  <p className="text-xs text-gray-500">{QUESTIONS.filter(q => q.subject === s.id).length} questions</p>
-                </button>
-              );
-            })}
-          </div>
-          {/* Or: all subjects */}
-          <button onClick={() => { startQuiz({ type: 'custom', subject: null, subjectName: 'Toutes mati\u00e8res', title: 'Toutes les mati\u00e8res' }); }} className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-            Toutes les mati&egrave;res
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
+          {/* Launch button */}
+          <button
+            disabled={!customTopic.trim()}
+            onClick={() => { startQuiz({ type: 'custom', subject: null, subjectName: customTopic.trim(), title: customTopic.trim() }); setCustomTopic(''); }}
+            className={`w-full max-w-lg mx-auto block py-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${customTopic.trim() ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
+            Lancer le QCM
           </button>
         </div>
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier="essentiel" onClose={() => setShowUpgradeModal(false)} />}
       </section>
     );
   }
@@ -721,27 +800,38 @@ export default function QCMPage() {
   if (view === 'loading') {
     const subject = selectedTopic?.subject ? SUBJECTS.find(s => s.id === selectedTopic.subject) : null;
     const colors = getColors(subject?.color);
+    const tip = LOADING_TIPS[tipIndex];
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center pt-16">
-        <div className="max-w-md mx-auto px-4 text-center">
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center pt-16">
+        <div className="max-w-md mx-auto px-4 text-center w-full">
+          <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-sm">
             <div className="mb-6">
-              <div className={`w-20 h-20 mx-auto rounded-2xl ${colors.bg} ${colors.border} border flex items-center justify-center animate-pulse`}>
-                <svg className={`w-10 h-10 ${colors.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
-                </svg>
+              <div className={`w-20 h-20 mx-auto rounded-2xl ${colors.bg} ${colors.border} border-2 flex items-center justify-center`}>
+                {subject ? (
+                  <SubjectIcon subjectId={subject.id} className={`w-10 h-10 ${colors.icon} animate-pulse`} />
+                ) : (
+                  <svg className={`w-10 h-10 ${colors.icon} animate-pulse`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                  </svg>
+                )}
               </div>
             </div>
             <h2 className="text-xl font-black text-gray-900 mb-2">Pr&eacute;paration du QCM...</h2>
             <p className="text-sm text-gray-500 mb-1"><strong>{questionCount} questions</strong> sur :</p>
             <p className="text-sm text-gray-700 font-semibold mb-6">{selectedTopic?.title}</p>
-            <div className="flex justify-center gap-2 mb-4">
-              <span className="w-2.5 h-2.5 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: '0s' }} />
-              <span className="w-2.5 h-2.5 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: '0.15s' }} />
-              <span className="w-2.5 h-2.5 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: '0.3s' }} />
+
+            {/* Indeterminate progress bar */}
+            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-6">
+              <div className="h-full bg-primary-500 rounded-full loading-progress" />
             </div>
-            <p className="text-xs text-gray-400">G&eacute;n&eacute;ration des questions...</p>
-            <button onClick={() => { setView('hero'); }} className="mt-6 text-sm text-gray-400 hover:text-gray-600 font-medium">Annuler</button>
+
+            {/* Rotating tip */}
+            <div className="bg-primary-50 rounded-xl p-4 border border-primary-100 min-h-[72px] flex items-center gap-3 text-left">
+              <span className="text-2xl shrink-0">{tip.icon}</span>
+              <p key={tipIndex} className="text-xs text-primary-700 font-medium leading-relaxed tip-fade">{tip.text}</p>
+            </div>
+
+            <button onClick={() => { setView('hero'); }} className="mt-6 text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors">Annuler</button>
           </div>
         </div>
       </div>
@@ -762,7 +852,7 @@ export default function QCMPage() {
     const correctIndex = q.options.findIndex(o => o.correct);
 
     return (
-      <div className="min-h-screen bg-slate-100 pt-20 pb-8">
+      <div className="min-h-screen bg-slate-50 pt-20 pb-8">
         <div className="max-w-3xl mx-auto px-4">
           {/* Top bar */}
           <div className="flex items-center justify-between mb-4">
@@ -789,21 +879,21 @@ export default function QCMPage() {
             <div className="h-2 bg-primary-500 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
           </div>
 
-          {/* Question pills */}
-          <div className="flex flex-wrap gap-1.5 mb-5 justify-center">
+          {/* Question pills — horizontal scroll on mobile */}
+          <div ref={pillsRef} className="flex gap-1.5 mb-5 overflow-x-auto pb-2 scrollbar-hide snap-x">
             {questions.map((_, i) => {
               let cls = 'bg-gray-100 text-gray-400'; // unanswered
               if (i === currentIndex) cls = 'bg-primary-600 text-white shadow-md shadow-primary-500/40';
               else if (answers[i] !== null) cls = answers[i].correct ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
               const canClick = answers[i] !== null || i === currentIndex;
               return (
-                <button key={i} onClick={() => canClick && goToQuestion(i)} disabled={!canClick} className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${cls}`}>{i + 1}</button>
+                <button key={i} onClick={() => canClick && goToQuestion(i)} disabled={!canClick} className={`w-8 h-8 shrink-0 rounded-lg text-xs font-bold transition-all snap-center ${cls}`}>{i + 1}</button>
               );
             })}
           </div>
 
           {/* Question card */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm">
+          <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 md:p-8 shadow-sm">
             <div className="flex items-center justify-between mb-5">
               <span className="text-sm font-medium text-gray-500">Question {currentIndex + 1}</span>
               <span className={`px-3 py-1 ${colors.badge} text-xs font-bold rounded-full`}>{badgeText}</span>
@@ -834,7 +924,7 @@ export default function QCMPage() {
                 }
 
                 return (
-                  <button key={i} onClick={() => answerQuestion(i)} disabled={disabled} className={`w-full text-left px-5 py-4 rounded-xl text-sm md:text-base font-medium flex items-center gap-3 transition-all ${btnClass}`} style={!alreadyAnswered ? { animationDelay: `${i * 80}ms` } : undefined}>
+                  <button key={i} onClick={() => answerQuestion(i)} disabled={disabled} className={`w-full text-left px-5 py-4 rounded-xl text-sm md:text-base font-medium flex items-center gap-3 transition-all ${btnClass} ${!alreadyAnswered ? 'option-slide-in' : ''}`} style={!alreadyAnswered ? { animationDelay: `${i * 80}ms` } : undefined}>
                     <span className={`w-8 h-8 rounded-lg ${badgeClass} flex items-center justify-center text-sm font-bold shrink-0`}>{String.fromCharCode(65 + i)}</span>
                     <span className="flex-1">{opt.text}</span>
                     {icon}
@@ -921,8 +1011,29 @@ export default function QCMPage() {
 
     const filteredResults = resultsFilter === 'incorrect' ? validAnswers.filter(a => !a.correct) : validAnswers;
 
+    const scoreMessage = pct >= 90 ? 'Excellent !' : pct >= 70 ? 'Très bien !' : pct >= 50 ? 'Pas mal !' : 'Courage !';
+    const showConfetti = pct >= 70;
+
     return (
-      <section className="py-24 md:py-28">
+      <section className="py-24 md:py-28 min-h-screen bg-slate-50">
+        {/* Confetti */}
+        {showConfetti && (
+          <div className="fixed inset-0 pointer-events-none z-50" aria-hidden="true">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-2.5 h-2.5 rounded-sm"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: '-5%',
+                  backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][i % 6],
+                  animation: `confettiFall ${2 + Math.random() * 2}s ease-in ${Math.random() * 1.5}s forwards`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">R&eacute;sultats du QCM</h2>
@@ -931,37 +1042,38 @@ export default function QCMPage() {
 
           {/* Score circle */}
           <div className="flex flex-col items-center justify-center mb-8">
-            <div className="relative">
-              <svg width="140" height="140">
+            <div className={`relative ${showConfetti ? 'celebrate-pulse' : ''}`}>
+              <svg className="w-36 h-36 sm:w-44 sm:h-44" viewBox="0 0 140 140">
                 <circle cx="70" cy="70" r="56" fill="none" stroke="#e5e7eb" strokeWidth="12" />
                 <circle cx="70" cy="70" r="56" fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"
                   strokeDasharray={circumference} strokeDashoffset={offset}
                   style={{ transition: 'stroke-dashoffset 1s ease', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-black" style={{ color }}>{pct}%</span>
+                <span className="text-3xl sm:text-4xl font-black" style={{ color }}>{pct}%</span>
                 <span className="text-xs text-gray-500">{correctCount}/{validAnswers.length}</span>
               </div>
             </div>
+            <p className="text-lg font-bold mt-3" style={{ color }}>{scoreMessage}</p>
             {comparisonEl}
           </div>
 
-          {/* Stats row */}
-          <div className="flex flex-wrap justify-center gap-4 mb-8">
-            <div className="bg-gray-50 rounded-xl px-4 py-2.5 text-center">
+          {/* Stats grid */}
+          <div className={`grid ${maxStreak >= 2 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} gap-3 mb-8`}>
+            <div className="bg-white rounded-xl px-4 py-3 text-center border border-gray-100">
               <p className="text-base font-bold text-gray-900">{subject?.name || 'Libre'}</p>
               <p className="text-xs text-gray-500">Mati&egrave;re</p>
             </div>
-            <div className="bg-gray-50 rounded-xl px-4 py-2.5 text-center">
+            <div className="bg-white rounded-xl px-4 py-3 text-center border border-gray-100">
               <p className="text-base font-bold text-gray-900">{minutes}m {seconds.toString().padStart(2, '0')}s</p>
               <p className="text-xs text-gray-500">Dur&eacute;e</p>
             </div>
-            <div className="bg-gray-50 rounded-xl px-4 py-2.5 text-center">
+            <div className="bg-white rounded-xl px-4 py-3 text-center border border-gray-100">
               <p className="text-base font-bold text-gray-900">{validAnswers.length}</p>
               <p className="text-xs text-gray-500">Questions</p>
             </div>
             {maxStreak >= 2 && (
-              <div className="bg-gray-50 rounded-xl px-4 py-2.5 text-center">
+              <div className="bg-white rounded-xl px-4 py-3 text-center border border-gray-100">
                 <p className="text-base font-bold text-gray-900">&#x1F525; {maxStreak}</p>
                 <p className="text-xs text-gray-500">Meilleure s&eacute;rie</p>
               </div>
@@ -969,9 +1081,12 @@ export default function QCMPage() {
           </div>
 
           {/* Correction */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-bold text-gray-900 text-lg">Correction d&eacute;taill&eacute;e</h3>
+          <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-8">
+            <div className="flex items-center justify-between mb-1">
+              <button onClick={() => setCorrectionOpen(!correctionOpen)} className="flex items-center gap-2 group">
+                <h3 className="font-bold text-gray-900 text-lg">Correction d&eacute;taill&eacute;e</h3>
+                <svg className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${correctionOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+              </button>
               <div className="flex gap-2">
                 <button onClick={() => setResultsFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${resultsFilter === 'all' ? 'border-primary-600 bg-primary-50 text-primary-600' : 'border-gray-200 bg-white text-gray-500'}`}>
                   Toutes ({validAnswers.length})
@@ -983,32 +1098,34 @@ export default function QCMPage() {
                 )}
               </div>
             </div>
-            <div className="space-y-4">
-              {filteredResults.map((a, i) => {
-                const qIdx = answers.indexOf(a);
-                const num = qIdx >= 0 ? qIdx + 1 : i + 1;
-                return (
-                  <div key={i} className={`p-4 rounded-xl border ${a.correct ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'}`}>
-                    <div className="flex items-start gap-3">
-                      <div className={`w-6 h-6 rounded-full ${a.correct ? 'bg-green-500' : 'bg-red-500'} flex items-center justify-center shrink-0 mt-0.5`}>
-                        {a.correct ? (
-                          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                        ) : (
-                          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-gray-900">Q{num}. {a.question.question}</p>
-                        <p className={`text-xs mt-1 ${a.correct ? 'text-green-700' : 'text-red-700'}`}>
-                          Votre r&eacute;ponse : <strong>{a.question.options[a.selected].text}</strong>
-                          {!a.correct && <> &mdash; Bonne r&eacute;ponse : <strong>{a.question.options[a.correctIndex].text}</strong></>}
-                        </p>
-                        <p className="text-xs text-gray-600 mt-2 leading-relaxed">{a.question.explanation}</p>
+            <div className={`correction-collapse ${correctionOpen ? 'open' : ''}`}>
+              <div className="space-y-4 pt-4">
+                {filteredResults.map((a, i) => {
+                  const qIdx = answers.indexOf(a);
+                  const num = qIdx >= 0 ? qIdx + 1 : i + 1;
+                  return (
+                    <div key={i} className={`p-4 rounded-xl border ${a.correct ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'}`}>
+                      <div className="flex items-start gap-3">
+                        <div className={`w-6 h-6 rounded-full ${a.correct ? 'bg-green-500' : 'bg-red-500'} flex items-center justify-center shrink-0 mt-0.5`}>
+                          {a.correct ? (
+                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                          ) : (
+                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-900">Q{num}. {a.question.question}</p>
+                          <p className={`text-xs mt-1 ${a.correct ? 'text-green-700' : 'text-red-700'}`}>
+                            Votre r&eacute;ponse : <strong>{a.question.options[a.selected].text}</strong>
+                            {!a.correct && <> &mdash; Bonne r&eacute;ponse : <strong>{a.question.options[a.correctIndex].text}</strong></>}
+                          </p>
+                          <p className="text-xs text-gray-600 mt-2 leading-relaxed">{a.question.explanation}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -1023,6 +1140,8 @@ export default function QCMPage() {
             </button>
           </div>
         </div>
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier="essentiel" onClose={() => setShowUpgradeModal(false)} />}
       </section>
     );
   }

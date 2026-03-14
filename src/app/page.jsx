@@ -204,8 +204,16 @@ export default function Home() {
 
             {/* Right: Question du jour */}
             <div className="flex justify-center lg:justify-end">
-              <div className="phone-mockup w-full max-w-lg shadow-2xl shadow-primary-500/10">
-                <QuestionDuJour />
+              <div className="relative">
+                {/* Glow derrière */}
+                <div className="absolute -inset-4 bg-primary-400/15 rounded-[2.5rem] filter blur-2xl animate-pulse"></div>
+                {/* Petits éléments flottants */}
+                <div className="absolute -top-3 -right-3 w-7 h-7 bg-violet-400/30 rounded-full filter blur-sm pricing-float"></div>
+                <div className="absolute -bottom-2 -left-3 w-5 h-5 bg-primary-400/25 rounded-full filter blur-sm pricing-float pricing-float-delay"></div>
+                <div className="absolute top-1/2 -right-5 w-4 h-4 bg-indigo-300/20 rounded-full filter blur-sm pricing-float"></div>
+                <div className="phone-mockup w-full max-w-lg shadow-2xl shadow-primary-500/15 relative">
+                  <QuestionDuJour />
+                </div>
               </div>
             </div>
           </div>

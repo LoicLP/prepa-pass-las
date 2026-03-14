@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { loadCoursForFiche } from '@/data/cours';
 import { usePremium } from '@/contexts/PremiumContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { FICHES_DATA } from '@/data/fiches';
 import { SUBJECTS } from '@/data/subjects';
 import { SUBJECT_COLORS, getSubjectName } from '@/data/constants';
@@ -21,7 +22,8 @@ const SUBJECT_ICONS = {
 export default function CoursContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
-  const { isPremium, isLoaded } = usePremium();
+  const { isEssentiel, isLoaded } = usePremium();
+  const { user } = useAuth();
 
   const [cours, setCours] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,7 @@ export default function CoursContent() {
 
   /* ---------- Load cours data ---------- */
   useEffect(() => {
-    if (!id || !isPremium || !isLoaded) return;
+    if (!id || !isEssentiel || !isLoaded) return;
     setLoading(true);
     loadCoursForFiche(id).then((data) => {
       setCours(data);
@@ -48,7 +50,7 @@ export default function CoursContent() {
       setCours(null);
       setLoading(false);
     });
-  }, [id, isPremium, isLoaded]);
+  }, [id, isEssentiel, isLoaded]);
 
   /* ---------- Scroll progress bar ---------- */
   useEffect(() => {
@@ -116,8 +118,33 @@ export default function CoursContent() {
     );
   }
 
-  /* Premium wall */
-  if (!isPremium) {
+  /* Auth wall — non connecté → redirection */
+  if (!user) {
+    return (
+      <section className="pt-28 pb-20">
+        <div className="max-w-lg mx-auto px-4 text-center">
+          <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 mb-3">Connexion requise</h1>
+          <p className="text-gray-500 mb-8">Connectez-vous pour accéder aux cours détaillés.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/connexion" className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors">
+              Se connecter
+            </Link>
+            <Link href="/fiches" className="px-6 py-3 bg-white text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:border-indigo-300 transition-colors">
+              Retour aux fiches
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  /* Essentiel wall — connecté gratuit */
+  if (!isEssentiel) {
     return (
       <section className="pt-28 pb-20">
         <div className="max-w-lg mx-auto px-4 text-center">
@@ -126,11 +153,11 @@ export default function CoursContent() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-black text-gray-900 mb-3">Contenu reserve aux membres Premium</h1>
-          <p className="text-gray-500 mb-8">Les cours detailles sont accessibles uniquement avec un abonnement Premium. Profitez d&apos;explications approfondies pour chaque sujet.</p>
+          <h1 className="text-2xl font-black text-gray-900 mb-3">Contenu réservé aux membres Essentiel</h1>
+          <p className="text-gray-500 mb-8">Les cours détaillés sont accessibles à partir de la formule Essentiel. Profitez d&apos;explications approfondies pour chaque sujet.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/tarifs" className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors">
-              Voir les offres Premium
+              Voir les offres
             </Link>
             <Link href="/fiches" className="px-6 py-3 bg-white text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:border-indigo-300 transition-colors">
               Retour aux fiches
@@ -217,7 +244,7 @@ export default function CoursContent() {
             </span>
           </nav>
 
-          <div className="grid lg:grid-cols-[1fr,auto] gap-8 items-end">
+          <div className="grid lg:grid-cols-[1fr_auto] gap-8 items-end">
             <div>
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -225,7 +252,7 @@ export default function CoursContent() {
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                  Premium
+                  Essentiel
                 </span>
                 <span className="px-3 py-1 bg-white/[0.08] text-white/60 text-xs font-semibold rounded-full border border-white/10">
                   {subjectName}

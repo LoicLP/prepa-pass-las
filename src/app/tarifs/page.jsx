@@ -39,7 +39,7 @@ function PremiumCheckIcon() {
 }
 
 export default function TarifsPage() {
-  const { isPremium, togglePremium, isLoaded } = usePremium();
+  const { tier, setSubscription, isLoaded } = usePremium();
 
   return (
     <>
@@ -74,9 +74,19 @@ export default function TarifsPage() {
               <div className="mb-5">
                 <span className="text-4xl font-black text-gray-900">Gratuit</span>
               </div>
-              <Link href="/qcm" className="block w-full py-3 text-center bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors mb-5">
-                Commencer gratuitement
-              </Link>
+              {isLoaded && tier === 'gratuit' ? (
+                <button className="block w-full py-3 text-center bg-accent-500 text-white font-bold rounded-xl mb-2 cursor-default">
+                  Plan actuel &#10003;
+                </button>
+              ) : (
+                <button
+                  onClick={() => setSubscription('gratuit')}
+                  className="block w-full py-3 text-center bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors mb-2"
+                >
+                  R&eacute;initialiser (Simulation)
+                </button>
+              )}
+              <div className="mb-3" />
               <div className="border-t border-gray-100 pt-5">
                 <ul className="space-y-3">
                   <li className="flex items-center gap-2 text-sm text-gray-600">
@@ -131,9 +141,26 @@ export default function TarifsPage() {
                 <span className="text-4xl font-black text-gray-900">19,90&euro;</span>
                 <span className="text-sm text-gray-500">/mois</span>
               </div>
-              <Link href="/qcm" className="block w-full py-3 text-center bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25 mb-5">
-                Commencer l&apos;essentiel
-              </Link>
+              {isLoaded && tier === 'essentiel' ? (
+                <>
+                  <button className="block w-full py-3 text-center bg-accent-500 text-white font-bold rounded-xl mb-2 cursor-default">
+                    Essentiel activ&eacute; &#10003;
+                  </button>
+                  <button
+                    onClick={() => setSubscription('gratuit')}
+                    className="block w-full py-2 text-center text-xs text-gray-500 hover:text-red-400 transition-colors mb-3"
+                  >
+                    D&eacute;sactiver (simulation)
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setSubscription('essentiel')}
+                  className="block w-full py-3 text-center bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25 mb-5"
+                >
+                  Activer Essentiel (Simulation)
+                </button>
+              )}
               <div className="border-t border-primary-100 pt-5">
                 <ul className="space-y-3">
                   <li className="flex items-center gap-2 text-sm text-gray-600">
@@ -185,13 +212,13 @@ export default function TarifsPage() {
                 <span className="text-4xl font-black">39,90&euro;</span>
                 <span className="text-sm text-gray-400">/mois</span>
               </div>
-              {isLoaded && isPremium ? (
+              {isLoaded && tier === 'premium+' ? (
                 <>
                   <button className="block w-full py-3 text-center bg-accent-500 text-white font-bold rounded-xl mb-2 cursor-default">
                     Premium+ activ&eacute; &#10003;
                   </button>
                   <button
-                    onClick={() => togglePremium(false)}
+                    onClick={() => setSubscription('gratuit')}
                     className="block w-full py-2 text-center text-xs text-gray-500 hover:text-red-400 transition-colors mb-5"
                   >
                     D&eacute;sactiver (simulation)
@@ -199,7 +226,7 @@ export default function TarifsPage() {
                 </>
               ) : (
                 <button
-                  onClick={() => togglePremium(true)}
+                  onClick={() => setSubscription('premium+')}
                   className="block w-full py-3 text-center bg-white text-gray-900 font-bold rounded-xl hover:bg-gray-100 transition-colors mb-5"
                 >
                   Activer Premium+ (Simulation)
