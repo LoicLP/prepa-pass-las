@@ -465,137 +465,480 @@ function StatistiquesTab({ qcmSessions, examSessions, annalesSessions }) {
 }
 
 /* ============================================================
+   MINI PROGRESS RING (for objectives)
+   ============================================================ */
+function MiniProgressRing({ value, max, color }) {
+  const pct = Math.min(100, Math.round((value / Math.max(max, 1)) * 100));
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (pct / 100) * circumference;
+  return (
+    <div className="relative w-20 h-20 mx-auto">
+      <svg className="w-full h-full" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="6" />
+        <circle
+          cx="40" cy="40" r={radius} fill="none"
+          stroke={color} strokeWidth="6" strokeLinecap="round"
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 0.6s ease' }}
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-sm font-black text-gray-900">
+        {pct}%
+      </span>
+    </div>
+  );
+}
+
+/* ============================================================
    PROGRESSION TAB (PREMIUM)
    ============================================================ */
 function ProgressionTab({ isPremium, qcmSessions, examSessions, annalesSessions }) {
   if (!isPremium) {
-    return <PremiumLock title="Suivi de progression avanc&eacute;" description="Visualisez l'&eacute;volution de vos scores et votre calendrier d'activit&eacute; avec Premium+." />;
+    return <PremiumLock title="Suivi de progression avancé" description="Visualisez l'évolution de vos scores et votre calendrier d'activité avec Premium+." />;
   }
 
-  const allSessions = [...qcmSessions, ...examSessions, ...annalesSessions]
-    .filter(s => s.date)
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const allSessions = useMemo(() =>
+    [...qcmSessions, ...examSessions, ...annalesSessions]
+      .filter(s => s.date)
+      .sort((a, b) => new Date(a.date) - new Date(b.date)),
+    [qcmSessions, examSessions, annalesSessions]
+  );
+
+  const data = useMemo(() => {
+    const today = new Date();
+
+    // --- Score Evolution (last 20 sessions) ---
+    const last20 = allSessions.slice(-20);
+    const last5Avg = last20.length >= 5
+      ? Math.round(last20.slice(-5).reduce((s, x) => s + (x.percentage || 0), 0) / 5)
+      : null;
+    const prev5Avg = last20.length >= 10
+      ? Math.round(last20.slice(-10, -5).reduce((s, x) => s + (x.percentage || 0), 0) / 5)
+      : null;
+    const trend = (last5Avg !== null && prev5Avg !== null)
+      ? (last5Avg > prev5Avg + 2 ? 'up' : last5Avg < prev5Avg - 2 ? 'down' : 'stable')
+      : 'neutral';
+
+    // --- Study Streak ---
+    const dateSet = new Set(allSessions.map(s => s.date?.split('T')[0]).filter(Boolean));
+    let currentStreak = 0;
+    const d = new Date(today);
+    if (!dateSet.has(d.toISOString().split('T')[0])) {
+      d.setDate(d.getDate() - 1);
+    }
+    while (dateSet.has(d.toISOString().split('T')[0])) {
+      currentStreak++;
+      d.setDate(d.getDate() - 1);
+    }
+    let bestStreak = 0, tempStreak = 0, prevDate = null;
+    const sortedDates = [...dateSet].sort();
+    for (const ds of sortedDates) {
+      const dt = new Date(ds);
+      if (prevDate && (dt - prevDate) === 86400000) {
+        tempStreak++;
+      } else {
+        tempStreak = 1;
+      }
+      bestStreak = Math.max(bestStreak, tempStreak);
+      prevDate = dt;
+    }
+
+    // --- Subject Stats / Strengths & Weaknesses ---
+    const subjectStats = {};
+    SUBJECTS.forEach(s => {
+      const sess = allSessions.filter(x => x.subject === s.id);
+      const avg = sess.length > 0
+        ? Math.round(sess.reduce((sum, x) => sum + (x.percentage || 0), 0) / sess.length)
+        : 0;
+      subjectStats[s.id] = { id: s.id, name: s.name, color: s.color, avg, count: sess.length };
+    });
+    const withSessions = Object.values(subjectStats).filter(s => s.count > 0);
+    const sorted = [...withSessions].sort((a, b) => b.avg - a.avg);
+    const strengths = sorted.slice(0, 2);
+    const weaknesses = sorted.length > 2 ? sorted.slice(-2).reverse() : [];
+
+    // --- Session Type Breakdown ---
+    const qcmCount = qcmSessions.length;
+    const examCount = examSessions.length;
+    const annalesCount = annalesSessions.length;
+    const totalTypeCount = qcmCount + examCount + annalesCount;
+
+    // --- Weekly Study Time ---
+    const startOfThisWeek = new Date(today);
+    startOfThisWeek.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    startOfThisWeek.setHours(0, 0, 0, 0);
+    const startOfLastWeek = new Date(startOfThisWeek);
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+
+    const thisWeekTime = allSessions
+      .filter(s => new Date(s.date) >= startOfThisWeek)
+      .reduce((sum, s) => sum + (s.duration || 0), 0);
+    const lastWeekTime = allSessions
+      .filter(s => { const dd = new Date(s.date); return dd >= startOfLastWeek && dd < startOfThisWeek; })
+      .reduce((sum, s) => sum + (s.duration || 0), 0);
+
+    // --- Objectives ---
+    const thisWeekSessions = allSessions.filter(s => new Date(s.date) >= startOfThisWeek).length;
+    const overallAvg = allSessions.length > 0
+      ? Math.round(allSessions.reduce((s, x) => s + (x.percentage || 0), 0) / allSessions.length)
+      : 0;
+    const targetScore = Math.min(100, Math.ceil((overallAvg + 5) / 5) * 5);
+
+    // --- Heatmap (90 days, GitHub-style) ---
+    const dayMap = {};
+    allSessions.forEach(s => {
+      if (!s.date) return;
+      const dk = new Date(s.date).toISOString().split('T')[0];
+      dayMap[dk] = (dayMap[dk] || 0) + 1;
+    });
+    const heatStart = new Date(today);
+    heatStart.setDate(today.getDate() - 89);
+    while (heatStart.getDay() !== 1) heatStart.setDate(heatStart.getDate() - 1);
+    const heatmapDays = [];
+    const hd = new Date(heatStart);
+    while (hd <= today) {
+      const key = hd.toISOString().split('T')[0];
+      heatmapDays.push({ date: new Date(hd), count: dayMap[key] || 0, key });
+      hd.setDate(hd.getDate() + 1);
+    }
+    const maxHeatCount = Math.max(...heatmapDays.map(x => x.count), 1);
+    const weeks = [];
+    for (let i = 0; i < heatmapDays.length; i += 7) {
+      weeks.push(heatmapDays.slice(i, i + 7));
+    }
+
+    return {
+      last20, last5Avg, prev5Avg, trend,
+      currentStreak, bestStreak,
+      subjectStats, strengths, weaknesses,
+      qcmCount, examCount, annalesCount, totalTypeCount,
+      thisWeekTime, lastWeekTime,
+      thisWeekSessions, overallAvg, targetScore,
+      weeks, maxHeatCount,
+    };
+  }, [allSessions, qcmSessions, examSessions, annalesSessions]);
 
   if (allSessions.length === 0) {
-    return <EmptyState title="Aucune donn&eacute;e de progression" description="Effectuez des QCM ou examens pour suivre votre progression." ctaHref="/qcm" ctaLabel="Commencer un QCM" />;
+    return <EmptyState title="Aucune donnée de progression" description="Effectuez des QCM ou examens pour suivre votre progression." ctaHref="/qcm" ctaLabel="Commencer un QCM" />;
   }
 
-  // Weekly activity - last 7 days
-  const today = new Date();
-  const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-  const weekDays = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().split('T')[0];
-    const count = allSessions.filter(s => s.date && s.date.startsWith(key)).length;
-    weekDays.push({ label: dayNames[d.getDay()], count, key });
-  }
-  const maxDayCount = Math.max(...weekDays.map(d => d.count), 1);
+  const streakMessage = data.currentStreak === 0
+    ? "Commence une session aujourd'hui !"
+    : data.currentStreak < 3
+      ? 'Bon début, continue comme ça !'
+      : data.currentStreak < 7
+        ? 'Belle série ! Tu prends le rythme.'
+        : data.currentStreak < 14
+          ? 'Impressionnant ! La régularité paie.'
+          : 'Incroyable ! Tu es inarrêtable !';
 
-  // Subject mastery
-  const subjectMastery = {};
-  SUBJECTS.forEach(s => {
-    const sessions = allSessions.filter(ss => ss.subject === s.id);
-    const avg = sessions.length > 0
-      ? Math.round(sessions.reduce((sum, ss) => sum + (ss.percentage || 0), 0) / sessions.length)
-      : 0;
-    subjectMastery[s.id] = { avg, sessions: sessions.length };
-  });
-
-  // Activity heatmap - last 30 days
-  const thirtyDaysAgo = new Date(today);
-  thirtyDaysAgo.setDate(today.getDate() - 29);
-  const dayMap = {};
-  allSessions.forEach(s => {
-    if (!s.date) return;
-    const d = new Date(s.date).toISOString().split('T')[0];
-    dayMap[d] = (dayMap[d] || 0) + 1;
-  });
-  const heatmapDays = [];
-  for (let i = 0; i < 30; i++) {
-    const d = new Date(thirtyDaysAgo);
-    d.setDate(d.getDate() + i);
-    const key = d.toISOString().split('T')[0];
-    const count = dayMap[key] || 0;
-    heatmapDays.push({ date: d, count, key });
-  }
-  const maxHeatCount = Math.max(...heatmapDays.map(d => d.count), 1);
+  // Donut chart conic-gradient
+  const segments = [
+    { label: 'QCM', count: data.qcmCount, color: '#6366f1' },
+    { label: 'Examens', count: data.examCount, color: '#8b5cf6' },
+    { label: 'Annales', count: data.annalesCount, color: '#06b6d4' },
+  ];
+  let cumulative = 0;
+  const conicStops = segments.map(seg => {
+    const start = cumulative;
+    const end = cumulative + (seg.count / Math.max(data.totalTypeCount, 1)) * 100;
+    cumulative = end;
+    return `${seg.color} ${start}% ${end}%`;
+  }).join(', ');
 
   return (
-    <div className="space-y-8">
-      {/* Weekly activity */}
+    <div className="space-y-6">
+
+      {/* ===== 1. Score Evolution ===== */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Activit&eacute; de la semaine</h3>
-        <div className="flex items-end gap-3 h-40">
-          {weekDays.map((day, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <span className="text-xs font-bold text-primary-600">{day.count}</span>
-              <div className="w-full bg-gray-100 rounded-t-lg relative" style={{ height: '110px' }}>
-                <div
-                  className="absolute bottom-0 w-full rounded-t-lg bg-primary-500 transition-all"
-                  style={{ height: `${maxDayCount > 0 ? (day.count / maxDayCount) * 100 : 0}%` }}
-                ></div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900">Évolution des scores</h3>
+          {data.trend === 'up' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>
+              En progression
+            </span>
+          )}
+          {data.trend === 'down' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6 9 12.75l4.286-4.286a11.948 11.948 0 0 1 5.834 5.46l2.63 1.326m0 0 .311-6.228m-.311 6.228-5.94-2.281" /></svg>
+              En baisse
+            </span>
+          )}
+          {data.trend === 'stable' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
+              Stable
+            </span>
+          )}
+        </div>
+        <div className="flex items-end gap-1 h-44">
+          {data.last20.map((s, i) => {
+            const pct = s.percentage || Math.round((s.correct / s.total) * 100);
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group relative">
+                <span className={`text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity ${scoreClass(pct)}`}>{pct}%</span>
+                <div className="w-full bg-gray-100 rounded-t-md relative" style={{ height: '140px' }}>
+                  <div
+                    className={`absolute bottom-0 w-full rounded-t-md transition-all ${scoreBarClass(pct)}`}
+                    style={{ height: `${pct}%` }}
+                  />
+                </div>
               </div>
-              <span className="text-[10px] font-medium text-gray-400">{day.label}</span>
+            );
+          })}
+        </div>
+        {data.last5Avg !== null && data.prev5Avg !== null && (
+          <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center gap-1.5 text-sm">
+              <span className="text-gray-500">5 dernières :</span>
+              <span className={`font-bold ${scoreClass(data.last5Avg)}`}>{data.last5Avg}%</span>
             </div>
-          ))}
+            <div className="flex items-center gap-1.5 text-sm">
+              <span className="text-gray-500">5 précédentes :</span>
+              <span className={`font-bold ${scoreClass(data.prev5Avg)}`}>{data.prev5Avg}%</span>
+            </div>
+            <span className={`inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+              data.last5Avg >= data.prev5Avg ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+            }`}>
+              {data.last5Avg >= data.prev5Avg ? '+' : ''}{data.last5Avg - data.prev5Avg}%
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* ===== 2. Streak + Weekly Time ===== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Streak */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Streak d&apos;étude</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-4xl font-black text-gray-900 flex items-center justify-center gap-1">
+                {data.currentStreak > 0 && <span className="text-2xl">🔥</span>}
+                {data.currentStreak}
+              </div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-1">jours</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-black text-primary-600 flex items-center justify-center gap-1">
+                <span className="text-2xl">⭐</span>
+                {data.bestStreak}
+              </div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-1">record</p>
+            </div>
+          </div>
+          <p className="text-sm text-gray-500 text-center mt-4 pt-4 border-t border-gray-100">{streakMessage}</p>
+        </div>
+
+        {/* Weekly time */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Temps d&apos;étude</h3>
+          <div className="text-center">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Cette semaine</p>
+            <p className="text-3xl font-black text-gray-900">{formatDuration(data.thisWeekTime)}</p>
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <span className="text-sm text-gray-500">Semaine précédente :</span>
+              <span className="text-sm font-bold text-gray-700">{formatDuration(data.lastWeekTime)}</span>
+              {data.lastWeekTime > 0 && (
+                <span className={`inline-flex items-center gap-0.5 text-xs font-bold ${
+                  data.thisWeekTime >= data.lastWeekTime ? 'text-emerald-600' : 'text-red-500'
+                }`}>
+                  {data.thisWeekTime >= data.lastWeekTime ? '↑' : '↓'}
+                  {Math.abs(Math.round(((data.thisWeekTime - data.lastWeekTime) / Math.max(data.lastWeekTime, 1)) * 100))}%
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Subject mastery */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Ma&icirc;trise par mati&egrave;re</h3>
-        <div className="space-y-4">
-          {SUBJECTS.map(s => {
-            const mastery = subjectMastery[s.id];
-            const colors = SUBJECT_COLORS[s.color] || SUBJECT_COLORS.primary;
-            return (
-              <div key={s.id}>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">{s.name}</span>
-                  <span className={`text-sm font-bold ${scoreClass(mastery.avg)}`}>
-                    {mastery.avg > 0 ? `${mastery.avg}%` : '\u2014'}
+      {/* ===== 3. Strengths & Weaknesses ===== */}
+      {Object.values(data.subjectStats).filter(s => s.count > 0).length >= 2 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Points forts & axes d&apos;amélioration</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Strengths */}
+            <div>
+              <h4 className="text-sm font-bold text-emerald-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>
+                Points forts
+              </h4>
+              <div className="space-y-3">
+                {data.strengths.map(s => {
+                  const colors = SUBJECT_COLORS[s.color] || SUBJECT_COLORS.primary;
+                  return (
+                    <div key={s.id} className={`p-3 rounded-xl border ${colors.border} ${colors.bg}`}>
+                      <div className="flex justify-between items-center">
+                        <span className={`text-sm font-bold ${colors.text}`}>{s.name}</span>
+                        <span className={`text-lg font-black ${scoreClass(s.avg)}`}>{s.avg}%</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{s.count} session{s.count > 1 ? 's' : ''}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Weaknesses */}
+            <div>
+              <h4 className="text-sm font-bold text-amber-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
+                À améliorer
+              </h4>
+              <div className="space-y-3">
+                {data.weaknesses.map(s => {
+                  const colors = SUBJECT_COLORS[s.color] || SUBJECT_COLORS.primary;
+                  return (
+                    <div key={s.id} className={`p-3 rounded-xl border ${colors.border} ${colors.bg}`}>
+                      <div className="flex justify-between items-center">
+                        <span className={`text-sm font-bold ${colors.text}`}>{s.name}</span>
+                        <span className={`text-lg font-black ${scoreClass(s.avg)}`}>{s.avg}%</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{s.count} session{s.count > 1 ? 's' : ''}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              {data.weaknesses.length > 0 && (
+                <Link href="/qcm" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700">
+                  Travailler {data.weaknesses[0]?.name}
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== 4. Session Type Breakdown + Objectives ===== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Donut */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Répartition par type</h3>
+          <div className="flex items-center gap-6">
+            <div className="relative w-28 h-28 shrink-0">
+              <div
+                className="w-full h-full rounded-full"
+                style={{
+                  background: data.totalTypeCount > 0
+                    ? `conic-gradient(${conicStops})`
+                    : '#e5e7eb'
+                }}
+              />
+              <div className="absolute inset-3 bg-white rounded-full flex items-center justify-center">
+                <span className="text-lg font-black text-gray-900">{data.totalTypeCount}</span>
+              </div>
+            </div>
+            <div className="space-y-2.5">
+              {segments.map(seg => (
+                <div key={seg.label} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ background: seg.color }} />
+                  <span className="text-sm text-gray-700">{seg.label}</span>
+                  <span className="text-sm font-bold text-gray-900">{seg.count}</span>
+                  <span className="text-xs text-gray-400">
+                    ({data.totalTypeCount > 0 ? Math.round((seg.count / data.totalTypeCount) * 100) : 0}%)
                   </span>
                 </div>
-                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${colors.bar} transition-all`} style={{ width: `${mastery.avg}%` }}></div>
-                </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">{mastery.sessions} session{mastery.sessions > 1 ? 's' : ''}</p>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Objectives */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Mes objectifs</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <MiniProgressRing value={data.thisWeekSessions} max={5} color="#6366f1" />
+              <p className="text-xs font-medium text-gray-500 mt-2">Sessions / semaine</p>
+              <p className="text-sm font-bold text-gray-900">{data.thisWeekSessions}/5</p>
+            </div>
+            <div className="text-center">
+              <MiniProgressRing value={data.overallAvg} max={data.targetScore} color="#10b981" />
+              <p className="text-xs font-medium text-gray-500 mt-2">Score moyen</p>
+              <p className="text-sm font-bold text-gray-900">{data.overallAvg}% → {data.targetScore}%</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Activity heatmap */}
+      {/* ===== 5. Subject Mastery (enhanced) ===== */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Activit&eacute; des 30 derniers jours</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {heatmapDays.map((d, i) => {
-            let bg = 'bg-gray-100';
-            if (d.count > 0) {
-              const intensity = d.count / maxHeatCount;
-              if (intensity > 0.66) bg = 'bg-primary-500';
-              else if (intensity > 0.33) bg = 'bg-primary-300';
-              else bg = 'bg-primary-100';
-            }
-            return (
-              <div
-                key={i}
-                className={`w-6 h-6 rounded ${bg}`}
-                title={`${d.date.getDate()}/${d.date.getMonth() + 1} : ${d.count} session${d.count > 1 ? 's' : ''}`}
-              ></div>
-            );
-          })}
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Maîtrise par matière</h3>
+        <div className="space-y-4">
+          {SUBJECTS
+            .map(s => ({ ...s, ...(data.subjectStats[s.id] || { avg: 0, count: 0 }) }))
+            .sort((a, b) => b.count - a.count)
+            .map(s => {
+              const colors = SUBJECT_COLORS[s.color] || SUBJECT_COLORS.primary;
+              const aboveAvg = s.avg > data.overallAvg;
+              return (
+                <div key={s.id}>
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-700">{s.name}</span>
+                      <span className="text-[10px] text-gray-400">{s.count} session{s.count > 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {s.count > 0 && (
+                        <span className={`text-[10px] font-semibold ${aboveAvg ? 'text-emerald-500' : 'text-red-400'}`}>
+                          {aboveAvg ? '▲' : '▼'}
+                        </span>
+                      )}
+                      <span className={`text-sm font-bold ${scoreClass(s.avg)}`}>
+                        {s.avg > 0 ? `${s.avg}%` : '\u2014'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${colors.bar} transition-all`} style={{ width: `${s.avg}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+
+      {/* ===== 6. Activity Heatmap (90 days, GitHub-style) ===== */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Activité des 90 derniers jours</h3>
+        <div className="overflow-x-auto">
+          <div className="flex gap-[3px]">
+            <div className="flex flex-col gap-[3px] mr-1">
+              {['', 'Lun', '', 'Mer', '', 'Ven', ''].map((label, i) => (
+                <div key={i} className="h-[14px] text-[9px] text-gray-400 flex items-center">{label}</div>
+              ))}
+            </div>
+            {data.weeks.map((week, wi) => (
+              <div key={wi} className="flex flex-col gap-[3px]">
+                {week.map((day, di) => {
+                  let bg = 'bg-gray-100';
+                  if (day.count > 0) {
+                    const intensity = day.count / data.maxHeatCount;
+                    if (intensity > 0.66) bg = 'bg-primary-500';
+                    else if (intensity > 0.33) bg = 'bg-primary-300';
+                    else bg = 'bg-primary-100';
+                  }
+                  return (
+                    <div
+                      key={di}
+                      className={`w-[14px] h-[14px] rounded-sm ${bg}`}
+                      title={`${day.date.getDate()}/${day.date.getMonth() + 1} : ${day.count} session${day.count > 1 ? 's' : ''}`}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-3 mt-4 text-xs text-gray-400">
           <span>Moins</span>
           <div className="flex gap-1">
-            <div className="w-4 h-4 rounded bg-gray-100"></div>
-            <div className="w-4 h-4 rounded bg-primary-100"></div>
-            <div className="w-4 h-4 rounded bg-primary-300"></div>
-            <div className="w-4 h-4 rounded bg-primary-500"></div>
+            <div className="w-4 h-4 rounded-sm bg-gray-100"></div>
+            <div className="w-4 h-4 rounded-sm bg-primary-100"></div>
+            <div className="w-4 h-4 rounded-sm bg-primary-300"></div>
+            <div className="w-4 h-4 rounded-sm bg-primary-500"></div>
           </div>
           <span>Plus</span>
         </div>
