@@ -35,13 +35,7 @@ const MENU_ITEMS = [
     iconActiveClass: 'text-emerald-600',
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>,
   },
-  {
-    id: 'activite', label: 'Activite', premium: false, color: 'cyan',
-    activeClasses: 'bg-cyan-50 text-cyan-700 border-cyan-600',
-    iconActiveClass: 'text-cyan-600',
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>,
-  },
-  {
+{
     id: 'historique', label: 'Historique', premium: false, color: 'amber',
     activeClasses: 'bg-amber-50 text-amber-700 border-amber-600',
     iconActiveClass: 'text-amber-600',
@@ -557,84 +551,6 @@ export default function DashboardPage() {
                   </>
                 )}
               </>
-            )}
-
-            {/* ===== ACTIVITE ===== */}
-            {activeSection === 'activite' && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-cyan-500"></span>Activite</h3>
-                {!data.hasAnySessions ? (
-                  <p className="text-sm text-gray-500 text-center py-8">Aucune activite pour le moment. Lancez une session pour commencer !</p>
-                ) : (
-                  <>
-                    {/* This week */}
-                    <div className="flex items-center gap-2 mb-4">
-                      {data.thisWeekDays.map((day, i) => {
-                        let bg = 'bg-gray-100';
-                        if (day.count > 0) { if (day.count >= 3) bg = 'bg-primary-500'; else if (day.count >= 2) bg = 'bg-primary-300'; else bg = 'bg-primary-100'; }
-                        const isToday = day.key === new Date().toISOString().split('T')[0];
-                        return (
-                          <div key={i} className="flex-1 text-center">
-                            <p className="text-[10px] text-gray-400 mb-1">{day.label}</p>
-                            <div className={`w-full aspect-square rounded-lg ${bg} ${isToday ? 'ring-2 ring-primary-400' : ''}`} title={`${day.count} session${day.count > 1 ? 's' : ''}`} />
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Premium: full 90-day heatmap */}
-                    {isPremiumPlus ? (
-                      <div className="pt-4 border-t border-gray-100">
-                        <p className="text-sm font-semibold text-gray-700 mb-3">90 derniers jours</p>
-                        <div className="overflow-x-auto">
-                          <div className="flex gap-[3px]">
-                            <div className="flex flex-col gap-[3px] mr-1">
-                              {['', 'Lun', '', 'Mer', '', 'Ven', ''].map((label, i) => (
-                                <div key={i} className="h-[14px] text-[9px] text-gray-400 flex items-center">{label}</div>
-                              ))}
-                            </div>
-                            {data.weeks.map((week, wi) => (
-                              <div key={wi} className="flex flex-col gap-[3px]">
-                                {week.map((day, di) => {
-                                  let bg = 'bg-gray-100';
-                                  if (day.count > 0) { const intensity = day.count / data.maxHeatCount; if (intensity > 0.66) bg = 'bg-primary-500'; else if (intensity > 0.33) bg = 'bg-primary-300'; else bg = 'bg-primary-100'; }
-                                  return <div key={di} className={`w-[14px] h-[14px] rounded-sm ${bg}`} title={`${day.date.getDate()}/${day.date.getMonth() + 1} : ${day.count} session${day.count > 1 ? 's' : ''}`} />;
-                                })}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 mt-3 text-xs text-gray-400">
-                          <span>Moins</span>
-                          <div className="flex gap-1"><div className="w-4 h-4 rounded-sm bg-gray-100"></div><div className="w-4 h-4 rounded-sm bg-primary-100"></div><div className="w-4 h-4 rounded-sm bg-primary-300"></div><div className="w-4 h-4 rounded-sm bg-primary-500"></div></div>
-                          <span>Plus</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="pt-4 border-t border-gray-100 text-center">
-                        <div className="relative">
-                          <div className="pointer-events-none select-none" style={{ filter: 'blur(4px)' }}>
-                            <div className="flex gap-[3px] justify-center">
-                              {Array.from({ length: 8 }, (_, i) => (
-                                <div key={i} className="flex flex-col gap-[3px]">
-                                  {Array.from({ length: 7 }, (_, j) => (
-                                    <div key={j} className={`w-[14px] h-[14px] rounded-sm ${Math.random() > 0.6 ? 'bg-primary-200' : 'bg-gray-100'}`} />
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Link href="/tarifs" className="px-4 py-2 bg-white/95 rounded-xl border border-gray-200 shadow-sm text-xs font-semibold text-primary-600 hover:text-primary-700">
-                              Voir les 90 derniers jours avec Premium+ →
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
             )}
 
             {/* ===== HISTORIQUE ===== */}
