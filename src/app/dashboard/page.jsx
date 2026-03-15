@@ -169,6 +169,7 @@ export default function DashboardPage() {
     const thisWeekStart = new Date(today); thisWeekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7)); thisWeekStart.setHours(0, 0, 0, 0);
     const thisWeekDays = [];
     for (let i = 0; i < 7; i++) { const dd = new Date(thisWeekStart); dd.setDate(dd.getDate() + i); const key = dd.toISOString().split('T')[0]; thisWeekDays.push({ date: new Date(dd), count: dayMap[key] || 0, key, label: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][i] }); }
+    const thisWeekActiveDays = thisWeekDays.filter(d => d.count > 0).length;
 
     const overallAvg = avgScore;
     const targetScore = Math.min(100, Math.ceil((overallAvg + 5) / 5) * 5);
@@ -179,7 +180,7 @@ export default function DashboardPage() {
       subjectStats, strengths, weaknesses,
       recent5, last20, last5Avg: last5AvgFull, prev5Avg: prev5AvgFull,
       qcmCount, examCount,
-      weeks, maxHeatCount, thisWeekDays,
+      weeks, maxHeatCount, thisWeekDays, thisWeekActiveDays,
       overallAvg, targetScore,
       hasAnySessions: totalSessions > 0,
       hasMultipleSubjects: withSessions.length >= 2,
@@ -711,15 +712,177 @@ export default function DashboardPage() {
                 <EmptyState title="Aucune donnee" description="Effectuez des sessions pour voir vos objectifs." ctaHref="/qcm" ctaLabel="Commencer un QCM" />
               ) : (
                 <div className="space-y-6">
-                  {/* Donut */}
+                  {/* Carte 1 : Objectifs de la semaine */}
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-violet-500"></span>Repartition par type</h3>
-                    <div className="flex items-center gap-6">
-                      <div className="relative w-28 h-28 shrink-0">
-                        <div className="w-full h-full rounded-full" style={{ background: totalTypeCount > 0 ? `conic-gradient(${conicStops})` : '#e5e7eb' }} />
-                        <div className="absolute inset-3 bg-white rounded-full flex items-center justify-center"><span className="text-lg font-black text-gray-900">{totalTypeCount}</span></div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-violet-500"></span>
+                      Objectifs de la semaine
+                    </h3>
+                    <div className="space-y-4">
+                      {(() => {
+                        const pct = Math.min(100, Math.round((data.thisWeekSessions / 5) * 100));
+                        return (
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm text-gray-600">Sessions réalisées</span>
+                              <span className="text-sm font-bold text-gray-900">{data.thisWeekSessions}/5 {pct >= 100 && <span className="text-emerald-500">✓</span>}</span>
+                            </div>
+                            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-violet-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {(() => {
+                        const mins = Math.round(data.thisWeekTime / 60000);
+                        const target = 120;
+                        const pct = Math.min(100, Math.round((mins / target) * 100));
+                        return (
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm text-gray-600">Temps d&apos;étude</span>
+                              <span className="text-sm font-bold text-gray-900">
+                                {mins >= 60 ? `${Math.floor(mins / 60)}h${mins % 60 > 0 ? String(mins % 60).padStart(2, '0') : ''}` : `${mins} min`} / 2h
+                                {pct >= 100 && <span className="text-emerald-500 ml-1">✓</span>}
+                              </span>
+                            </div>
+                            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {(() => {
+                        const pct = Math.min(100, Math.round((data.thisWeekActiveDays / 5) * 100));
+                        return (
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm text-gray-600">Jours actifs</span>
+                              <span className="text-sm font-bold text-gray-900">{data.thisWeekActiveDays}/5 {pct >= 100 && <span className="text-emerald-500">✓</span>}</span>
+                            </div>
+                            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-purple-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Carte 2 : Régularité */}
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-violet-400"></span>
+                      Régularité
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-violet-50 rounded-xl p-4 text-center">
+                        <p className="text-3xl font-black text-violet-700">{data.currentStreak}</p>
+                        <p className="text-xs font-medium text-violet-500 mt-1">Jours consécutifs</p>
+                        <p className="text-xs text-gray-400 mt-1">Record : {data.bestStreak} jours</p>
                       </div>
-                      <div className="space-y-2.5">
+                      <div className="bg-indigo-50 rounded-xl p-4 text-center">
+                        {(() => {
+                          const thisW = Math.round(data.thisWeekTime / 60000);
+                          const lastW = Math.round(data.lastWeekTime / 60000);
+                          const diff = lastW > 0 ? Math.round(((thisW - lastW) / lastW) * 100) : (thisW > 0 ? 100 : 0);
+                          return (
+                            <>
+                              <p className="text-3xl font-black text-indigo-700">
+                                {thisW >= 60 ? `${Math.floor(thisW / 60)}h${thisW % 60 > 0 ? String(thisW % 60).padStart(2, '0') : ''}` : `${thisW}m`}
+                              </p>
+                              <p className="text-xs font-medium text-indigo-500 mt-1">Cette semaine</p>
+                              <p className={`text-xs mt-1 font-semibold ${diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                {diff > 0 ? `↑ +${diff}%` : diff < 0 ? `↓ ${diff}%` : '→ Identique'} vs sem. passée
+                              </p>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Carte 3 : Objectif score */}
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      Objectif score
+                    </h3>
+                    <div className="flex items-center gap-6">
+                      <MiniProgressRing value={data.overallAvg} max={data.targetScore} color="#8b5cf6" />
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-gray-900">Score moyen : {data.overallAvg}%</p>
+                        <p className="text-sm text-gray-500">Prochain palier : {data.targetScore}%</p>
+                        {data.last5Avg !== null && data.prev5Avg !== null && (
+                          <p className={`text-xs font-semibold mt-2 ${data.last5Avg > data.prev5Avg ? 'text-emerald-600' : data.last5Avg < data.prev5Avg ? 'text-red-500' : 'text-amber-600'}`}>
+                            {data.last5Avg > data.prev5Avg
+                              ? `En progression (+${data.last5Avg - data.prev5Avg} pts)`
+                              : data.last5Avg < data.prev5Avg
+                                ? `En baisse (${data.last5Avg - data.prev5Avg} pts)`
+                                : 'Score stable'}
+                          </p>
+                        )}
+                        <div className="mt-3">
+                          <div className="flex justify-between text-xs text-gray-400 mb-1">
+                            <span>0%</span><span>Objectif 80%</span><span>100%</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden relative">
+                            <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, data.overallAvg)}%` }} />
+                            <div className="absolute top-0 h-full w-0.5 bg-gray-400" style={{ left: '80%' }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Carte 4 : Maîtrise par matière */}
+                  {data.hasMultipleSubjects && (
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-violet-500"></span>
+                        Maîtrise par matière
+                      </h3>
+                      <div className="space-y-3">
+                        {Object.values(data.subjectStats)
+                          .filter(s => s.count > 0)
+                          .sort((a, b) => b.avg - a.avg)
+                          .map(s => (
+                            <div key={s.id}>
+                              <div className="flex justify-between items-center mb-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
+                                  <span className="text-sm font-medium text-gray-700">{s.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-400">Record : {s.bestScore}%</span>
+                                  <span className="text-sm font-bold text-gray-900">{s.avg}%</span>
+                                </div>
+                              </div>
+                              <div className="h-2 bg-gray-100 rounded-full overflow-hidden relative">
+                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${s.avg}%`, background: s.color }} />
+                                <div className="absolute top-0 h-full w-0.5 bg-gray-300" style={{ left: '70%' }} />
+                              </div>
+                            </div>
+                          ))}
+                        <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                          <span className="w-3 h-0.5 bg-gray-300 inline-block"></span> Seuil recommandé : 70%
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Carte 5 : Répartition QCM / Examen */}
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-violet-400"></span>
+                      Répartition des sessions
+                    </h3>
+                    <div className="flex items-center gap-6">
+                      <div className="relative w-24 h-24 shrink-0">
+                        <div className="w-full h-full rounded-full" style={{ background: totalTypeCount > 0 ? `conic-gradient(${conicStops})` : '#e5e7eb' }} />
+                        <div className="absolute inset-3 bg-white rounded-full flex items-center justify-center"><span className="text-base font-black text-gray-900">{totalTypeCount}</span></div>
+                      </div>
+                      <div className="space-y-2">
                         {segments.map(seg => (
                           <div key={seg.label} className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full shrink-0" style={{ background: seg.color }} />
@@ -728,22 +891,6 @@ export default function DashboardPage() {
                             <span className="text-xs text-gray-400">({totalTypeCount > 0 ? Math.round((seg.count / totalTypeCount) * 100) : 0}%)</span>
                           </div>
                         ))}
-                      </div>
-                    </div>
-                  </div>
-                  {/* Objectives */}
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-violet-400"></span>Mes objectifs</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center">
-                        <MiniProgressRing value={data.thisWeekSessions} max={5} color="#6366f1" />
-                        <p className="text-xs font-medium text-gray-500 mt-2">Sessions / semaine</p>
-                        <p className="text-sm font-bold text-gray-900">{data.thisWeekSessions}/5</p>
-                      </div>
-                      <div className="text-center">
-                        <MiniProgressRing value={data.overallAvg} max={data.targetScore} color="#10b981" />
-                        <p className="text-xs font-medium text-gray-500 mt-2">Score moyen</p>
-                        <p className="text-sm font-bold text-gray-900">{data.overallAvg}% → {data.targetScore}%</p>
                       </div>
                     </div>
                   </div>
