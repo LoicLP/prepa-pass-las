@@ -1,59 +1,87 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import {
-  onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut,
-  updateProfile,
-} from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 
 const AuthContext = createContext();
-const googleProvider = new GoogleAuthProvider();
+
+/**
+ * Normalise l'objet user Supabase pour garder la même API que Firebase
+ * → user.displayName, user.email restent accessibles partout
+ */
+function normalizeUser(supabaseUser) {
+  if (!supabaseUser) return null;
+  return {
+    ...supabaseUser,
+    displayName: supabaseUser.user_metadata?.full_name || null,
+    email: supabaseUser.email,
+  };
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Si Firebase n'est pas configuré (clés manquantes), on skip l'écoute
-    if (!auth) {
+    // Si Supabase n'est pas configuré (clés manquantes), on skip
+    if (!supabase) {
       setLoading(false);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    // Récupérer la session initiale
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(normalizeUser(session?.user ?? null));
       setLoading(false);
     });
-    return unsubscribe;
+
+    // Écouter les changements d'état auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(normalizeUser(session?.user ?? null));
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signUp = async (name, email, password) => {
-    if (!auth) throw new Error('Firebase non configuré');
-    const credential = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(credential.user, { displayName: name });
-    // Force refresh pour que l'objet user ait displayName immédiatement
-    setUser({ ...credential.user, displayName: name });
+    if (!supabase) throw new Error('Supabase non configuré');
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name },
+      },
+    });
+    if (error) throw error;
+    // Mettre à jour immédiatement avec le displayName
+    if (data.user) {
+      setUser(normalizeUser(data.user));
+    }
   };
 
   const signIn = async (email, password) => {
-    if (!auth) throw new Error('Firebase non configuré');
-    await signInWithEmailAndPassword(auth, email, password);
+    if (!supabase) throw new Error('Supabase non configuré');
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
   };
 
   const signInWithGoogle = async () => {
-    if (!auth) throw new Error('Firebase non configuré');
-    await signInWithPopup(auth, googleProvider);
+    if (!supabase) throw new Error('Supabase non configuré');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined,
+      },
+    });
+    if (error) throw error;
   };
 
   const logOut = async () => {
-    if (!auth) return;
-    await signOut(auth);
+    if (!supabase) return;
+    await supabase.auth.signOut();
   };
 
   return (

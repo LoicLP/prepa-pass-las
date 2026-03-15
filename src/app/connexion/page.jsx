@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAuthErrorMessage } from '@/utils/auth-errors';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 
 export default function ConnexionPage() {
   const [email, setEmail] = useState('');
@@ -49,12 +48,13 @@ export default function ConnexionPage() {
       setError('Entrez votre adresse e-mail pour réinitialiser votre mot de passe.');
       return;
     }
-    if (!auth) {
-      setError('Firebase non configuré. Contactez l\'administrateur.');
+    if (!supabase) {
+      setError('Service non configuré. Contactez l\'administrateur.');
       return;
     }
     try {
-      await sendPasswordResetEmail(auth, email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
       setResetSent(true);
       setError('');
     } catch (err) {
