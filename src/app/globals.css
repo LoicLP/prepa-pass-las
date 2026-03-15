@@ -49,7 +49,6 @@ html { scroll-behavior: smooth; }
 .qcm-gradient-text,
 .fiches-gradient-text,
 .examen-gradient-text,
-.annales-gradient-text,
 .blog-gradient-text,
 .programme-gradient-text {
   background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #6366f1 100%);

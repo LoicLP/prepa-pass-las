@@ -19,7 +19,6 @@ function getSubjectBadgeColors(subjectId) {
 const TYPE_BADGE = {
   QCM: 'bg-primary-100 text-primary-700',
   Examen: 'bg-violet-100 text-violet-700',
-  Annale: 'bg-cyan-100 text-cyan-700',
 };
 
 /* ========== SIDEBAR MENU ITEMS ========== */
@@ -78,7 +77,6 @@ export default function DashboardPage() {
 
   const [qcmStats] = useLocalStorage('prepa-qcm-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
   const [examStats] = useLocalStorage('prepa-examen-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
-  const [annalesStats] = useLocalStorage('prepa-annales-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
 
   const { isPremiumPlus } = usePremium();
 
@@ -86,8 +84,7 @@ export default function DashboardPage() {
   const allSessions = useMemo(() => [
     ...qcmStats.sessions.map(s => ({ ...s, _type: 'QCM' })),
     ...examStats.sessions.map(s => ({ ...s, _type: 'Examen' })),
-    ...annalesStats.sessions.map(s => ({ ...s, _type: 'Annale' })),
-  ], [qcmStats.sessions, examStats.sessions, annalesStats.sessions]);
+  ], [qcmStats.sessions, examStats.sessions]);
 
   // ---- Centralized data computation ----
   const data = useMemo(() => {
@@ -155,7 +152,6 @@ export default function DashboardPage() {
     // Type counts
     const qcmCount = qcmStats.sessions.length;
     const examCount = examStats.sessions.length;
-    const annalesCount = annalesStats.sessions.length;
 
     // Heatmap (90 days)
     const dayMap = {};
@@ -180,19 +176,19 @@ export default function DashboardPage() {
       thisWeekSessions, thisWeekTime, lastWeekTime,
       subjectStats, strengths, weaknesses,
       recent5, last20, last5Avg: last5AvgFull, prev5Avg: prev5AvgFull,
-      qcmCount, examCount, annalesCount,
+      qcmCount, examCount,
       weeks, maxHeatCount, thisWeekDays,
       overallAvg, targetScore,
       hasAnySessions: totalSessions > 0,
       hasMultipleSubjects: withSessions.length >= 2,
     };
-  }, [allSessions, qcmStats.sessions, examStats.sessions, annalesStats.sessions]);
+  }, [allSessions, qcmStats.sessions, examStats.sessions]);
 
   // ---- Filtered history ----
   const filteredHistory = useMemo(() => {
     let sessions = allSessions;
     if (historyFilter !== 'all') {
-      const filterMap = { qcm: 'QCM', examen: 'Examen', annale: 'Annale' };
+      const filterMap = { qcm: 'QCM', examen: 'Examen' };
       sessions = sessions.filter(s => s._type === filterMap[historyFilter]);
     }
     return sessions.filter(s => s.date).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -225,10 +221,9 @@ export default function DashboardPage() {
   const segments = [
     { label: 'QCM', count: data.qcmCount, color: '#6366f1' },
     { label: 'Examens', count: data.examCount, color: '#8b5cf6' },
-    { label: 'Annales', count: data.annalesCount, color: '#06b6d4' },
   ];
   let cumulative = 0;
-  const totalTypeCount = data.qcmCount + data.examCount + data.annalesCount;
+  const totalTypeCount = data.qcmCount + data.examCount;
   const conicStops = segments.map(seg => {
     const start = cumulative;
     const end = cumulative + (seg.count / Math.max(totalTypeCount, 1)) * 100;
@@ -260,7 +255,7 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {/* ===== ACTIONS RAPIDES ===== */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <Link href="/qcm" className="group flex items-center gap-4 p-5 bg-gradient-to-br from-primary-50/40 to-white rounded-2xl border border-primary-100/50 shadow-sm hover:border-primary-300 hover:shadow-lg hover:shadow-primary-600/10 hover:-translate-y-[2px] transition-all">
             <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-primary-200 transition-colors">
               <svg className="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -280,16 +275,6 @@ export default function DashboardPage() {
               <p className="text-xs text-gray-500 mt-0.5">Conditions reelles</p>
             </div>
             <svg className="w-5 h-5 text-gray-300 group-hover:text-violet-500 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-          </Link>
-          <Link href="/annales" className="group flex items-center gap-4 p-5 bg-gradient-to-br from-cyan-50/40 to-white rounded-2xl border border-cyan-100/50 shadow-sm hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-600/10 hover:-translate-y-[2px] transition-all">
-            <div className="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-cyan-200 transition-colors">
-              <svg className="w-6 h-6 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900 group-hover:text-cyan-700 transition-colors">Annales</p>
-              <p className="text-xs text-gray-500 mt-0.5">Sujets des annees precedentes</p>
-            </div>
-            <svg className="w-5 h-5 text-gray-300 group-hover:text-cyan-500 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
           </Link>
         </div>
 
@@ -605,7 +590,6 @@ export default function DashboardPage() {
                       { key: 'all', label: 'Tout', count: allSessions.length },
                       { key: 'qcm', label: 'QCM', count: data.qcmCount },
                       { key: 'examen', label: 'Examens', count: data.examCount },
-                      { key: 'annale', label: 'Annales', count: data.annalesCount },
                     ].map(f => (
                       <button key={f.key} onClick={() => setHistoryFilter(f.key)}
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${historyFilter === f.key ? 'bg-primary-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
