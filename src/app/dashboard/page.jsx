@@ -139,8 +139,9 @@ export default function DashboardPage() {
     });
     const withSessions = Object.values(subjectStats).filter(s => s.count > 0);
     const sortedByAvg = [...withSessions].sort((a, b) => b.avg - a.avg);
-    const strengths = sortedByAvg.slice(0, 2);
-    const weaknesses = sortedByAvg.length > 2 ? sortedByAvg.slice(-2).reverse() : [];
+    const strengths = sortedByAvg.slice(0, Math.min(2, Math.ceil(sortedByAvg.length / 2)));
+    const strengthIds = new Set(strengths.map(s => s.id));
+    const weaknesses = sortedByAvg.filter(s => !strengthIds.has(s.id)).slice(-2).reverse();
 
     // Recent 5
     const recent5 = [...allSessions].filter(s => s.date).sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
