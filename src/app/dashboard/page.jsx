@@ -25,27 +25,39 @@ const TYPE_BADGE = {
 /* ========== SIDEBAR MENU ITEMS ========== */
 const MENU_ITEMS = [
   {
-    id: 'overview', label: 'Vue d\'ensemble', premium: false,
+    id: 'overview', label: 'Vue d\'ensemble', premium: false, color: 'primary',
+    activeClasses: 'bg-primary-50 text-primary-700 border-primary-600',
+    iconActiveClass: 'text-primary-600',
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg>,
   },
   {
-    id: 'progression', label: 'Progression', premium: false,
+    id: 'progression', label: 'Progression', premium: false, color: 'emerald',
+    activeClasses: 'bg-emerald-50 text-emerald-700 border-emerald-600',
+    iconActiveClass: 'text-emerald-600',
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>,
   },
   {
-    id: 'activite', label: 'Activite', premium: false,
+    id: 'activite', label: 'Activite', premium: false, color: 'cyan',
+    activeClasses: 'bg-cyan-50 text-cyan-700 border-cyan-600',
+    iconActiveClass: 'text-cyan-600',
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>,
   },
   {
-    id: 'historique', label: 'Historique', premium: false,
+    id: 'historique', label: 'Historique', premium: false, color: 'amber',
+    activeClasses: 'bg-amber-50 text-amber-700 border-amber-600',
+    iconActiveClass: 'text-amber-600',
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg>,
   },
   {
-    id: 'objectifs', label: 'Objectifs', premium: true,
+    id: 'objectifs', label: 'Objectifs', premium: true, color: 'violet',
+    activeClasses: 'bg-violet-50 text-violet-700 border-violet-600',
+    iconActiveClass: 'text-violet-600',
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" /></svg>,
   },
   {
-    id: 'classement', label: 'Classement', premium: true,
+    id: 'classement', label: 'Classement', premium: true, color: 'rose',
+    activeClasses: 'bg-rose-50 text-rose-700 border-rose-600',
+    iconActiveClass: 'text-rose-600',
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0 1 16.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 0 1-2.52.587 6.023 6.023 0 0 1-2.52-.587" /></svg>,
   },
 ];
@@ -249,7 +261,7 @@ export default function DashboardPage() {
 
         {/* ===== ACTIONS RAPIDES ===== */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <Link href="/qcm" className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-primary-300 hover:shadow-lg hover:shadow-primary-600/10 hover:-translate-y-[2px] transition-all">
+          <Link href="/qcm" className="group flex items-center gap-4 p-5 bg-gradient-to-br from-primary-50/40 to-white rounded-2xl border border-primary-100/50 shadow-sm hover:border-primary-300 hover:shadow-lg hover:shadow-primary-600/10 hover:-translate-y-[2px] transition-all">
             <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-primary-200 transition-colors">
               <svg className="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
             </div>
@@ -259,7 +271,7 @@ export default function DashboardPage() {
             </div>
             <svg className="w-5 h-5 text-gray-300 group-hover:text-primary-500 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
           </Link>
-          <Link href="/examen" className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-violet-300 hover:shadow-lg hover:shadow-violet-600/10 hover:-translate-y-[2px] transition-all">
+          <Link href="/examen" className="group flex items-center gap-4 p-5 bg-gradient-to-br from-violet-50/40 to-white rounded-2xl border border-violet-100/50 shadow-sm hover:border-violet-300 hover:shadow-lg hover:shadow-violet-600/10 hover:-translate-y-[2px] transition-all">
             <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-violet-200 transition-colors">
               <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" /></svg>
             </div>
@@ -269,7 +281,7 @@ export default function DashboardPage() {
             </div>
             <svg className="w-5 h-5 text-gray-300 group-hover:text-violet-500 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
           </Link>
-          <Link href="/annales" className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-600/10 hover:-translate-y-[2px] transition-all">
+          <Link href="/annales" className="group flex items-center gap-4 p-5 bg-gradient-to-br from-cyan-50/40 to-white rounded-2xl border border-cyan-100/50 shadow-sm hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-600/10 hover:-translate-y-[2px] transition-all">
             <div className="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-cyan-200 transition-colors">
               <svg className="w-6 h-6 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
             </div>
@@ -283,10 +295,10 @@ export default function DashboardPage() {
 
         {/* ===== METRIQUES CLES ===== */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Streak" value={data.currentStreak > 0 ? `${data.currentStreak}j` : '0j'} badge={data.currentStreak > 0 ? '🔥' : null} icon={<svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" /></svg>} />
-          <StatCard label="Score moyen" value={data.hasAnySessions ? `${data.avgScore}%` : '--'} trend={data.trend} icon={<svg className="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>} />
-          <StatCard label="Cette semaine" value={`${data.thisWeekSessions}`} sublabel={data.thisWeekSessions === 1 ? 'session' : 'sessions'} icon={<svg className="w-6 h-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>} />
-          <StatCard label="Temps total" value={data.hasAnySessions ? formatDuration(data.totalTime) : '--'} icon={<svg className="w-6 h-6 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>} />
+          <StatCard label="Streak" value={data.currentStreak > 0 ? `${data.currentStreak}j` : '0j'} badge={data.currentStreak > 0 ? '🔥' : null} tint="bg-amber-50/60 border-amber-100" icon={<svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" /></svg>} />
+          <StatCard label="Score moyen" value={data.hasAnySessions ? `${data.avgScore}%` : '--'} trend={data.trend} tint="bg-emerald-50/60 border-emerald-100" icon={<svg className="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>} />
+          <StatCard label="Cette semaine" value={`${data.thisWeekSessions}`} sublabel={data.thisWeekSessions === 1 ? 'session' : 'sessions'} tint="bg-primary-50/60 border-primary-100" icon={<svg className="w-6 h-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>} />
+          <StatCard label="Temps total" value={data.hasAnySessions ? formatDuration(data.totalTime) : '--'} tint="bg-violet-50/60 border-violet-100" icon={<svg className="w-6 h-6 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>} />
         </div>
 
         {/* ===== MOBILE: HORIZONTAL PILLS ===== */}
@@ -300,7 +312,7 @@ export default function DashboardPage() {
                 onClick={() => setActiveSection(item.id)}
                 className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shrink-0 ${
                   isActive
-                    ? 'bg-primary-600 text-white shadow-md shadow-primary-600/20'
+                    ? `${item.activeClasses} shadow-sm border border-current/10`
                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                 }`}
               >
@@ -319,6 +331,9 @@ export default function DashboardPage() {
           {/* Desktop sidebar */}
           <aside className="hidden md:block w-56 shrink-0">
             <nav className="sticky top-24 bg-white rounded-2xl border border-gray-100 shadow-sm p-2 space-y-1">
+              <div className="px-3 py-2 mb-1">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Navigation</p>
+              </div>
               {MENU_ITEMS.map(item => {
                 const isActive = activeSection === item.id;
                 const showLock = item.premium && !isPremiumPlus;
@@ -328,11 +343,11 @@ export default function DashboardPage() {
                     onClick={() => setActiveSection(item.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
                       isActive
-                        ? 'bg-primary-50 text-primary-700 font-semibold border-l-[3px] border-primary-600 pl-[9px]'
+                        ? `${item.activeClasses} font-semibold border-l-[3px] pl-[9px]`
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <span className={isActive ? 'text-primary-600' : 'text-gray-400'}>{item.icon}</span>
+                    <span className={isActive ? item.iconActiveClass : 'text-gray-400'}>{item.icon}</span>
                     <span className="flex-1">{item.label}</span>
                     {showLock && (
                       <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
@@ -354,7 +369,7 @@ export default function DashboardPage() {
                   <>
                     {/* Maitrise par matiere */}
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-5">Maitrise par matiere</h3>
+                      <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-primary-500"></span>Maitrise par matiere</h3>
                       <div className="space-y-4">
                         {SUBJECTS.map(s => ({ ...s, ...(data.subjectStats[s.id] || { avg: 0, count: 0 }) })).sort((a, b) => b.count - a.count).map(s => {
                           const colors = SUBJECT_COLORS[s.color] || SUBJECT_COLORS.primary;
@@ -382,7 +397,7 @@ export default function DashboardPage() {
 
                     {/* Dernieres sessions */}
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-4">Dernieres sessions</h3>
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-primary-400"></span>Dernieres sessions</h3>
                       <div className="space-y-3">
                         {data.recent5.map((s, i) => {
                           const subjectColors = getSubjectBadgeColors(s.subject);
@@ -422,7 +437,7 @@ export default function DashboardPage() {
                     {/* Score evolution */}
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-gray-900">Evolution des scores</h3>
+                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Evolution des scores</h3>
                         {data.trend === 'up' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>En progression</span>}
                         {data.trend === 'down' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6 9 12.75l4.286-4.286a11.948 11.948 0 0 1 5.834 5.46l2.63 1.326m0 0 .311-6.228m-.311 6.228-5.94-2.281" /></svg>En baisse</span>}
                         {data.trend === 'stable' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Stable</span>}
@@ -457,7 +472,7 @@ export default function DashboardPage() {
                     {/* Points forts & faiblesses */}
                     {data.hasMultipleSubjects && (
                       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Points forts & axes d&apos;amelioration</h3>
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-400"></span>Points forts & axes d&apos;amelioration</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                           <div>
                             <h4 className="text-sm font-bold text-emerald-600 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -505,7 +520,7 @@ export default function DashboardPage() {
             {/* ===== ACTIVITE ===== */}
             {activeSection === 'activite' && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Activite</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-cyan-500"></span>Activite</h3>
                 {!data.hasAnySessions ? (
                   <p className="text-sm text-gray-500 text-center py-8">Aucune activite pour le moment. Lancez une session pour commencer !</p>
                 ) : (
@@ -584,7 +599,7 @@ export default function DashboardPage() {
             {activeSection === 'historique' && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="p-6 pb-4">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Historique des sessions</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500"></span>Historique des sessions</h3>
                   <div className="flex gap-2 flex-wrap">
                     {[
                       { key: 'all', label: 'Tout', count: allSessions.length },
@@ -658,7 +673,7 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                   {/* Donut */}
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Repartition par type</h3>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-violet-500"></span>Repartition par type</h3>
                     <div className="flex items-center gap-6">
                       <div className="relative w-28 h-28 shrink-0">
                         <div className="w-full h-full rounded-full" style={{ background: totalTypeCount > 0 ? `conic-gradient(${conicStops})` : '#e5e7eb' }} />
@@ -678,7 +693,7 @@ export default function DashboardPage() {
                   </div>
                   {/* Objectives */}
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Mes objectifs</h3>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-violet-400"></span>Mes objectifs</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center">
                         <MiniProgressRing value={data.thisWeekSessions} max={5} color="#6366f1" />
@@ -709,7 +724,7 @@ export default function DashboardPage() {
 
         {/* ===== BANNIERE CONTACT ===== */}
         <div className="mt-8">
-          <Link href="/contact" className="flex items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-primary-200 hover:shadow-md transition-all group">
+          <Link href="/contact" className="flex items-center justify-between p-5 bg-gradient-to-r from-amber-50/80 to-orange-50/50 rounded-2xl border border-amber-100/60 shadow-sm hover:border-amber-200 hover:shadow-md transition-all group">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
                 <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 12.75c1.148 0 2.278.08 3.383.237 1.037.146 1.866.966 1.866 2.013 0 3.728-2.35 6.75-5.25 6.75S6.75 18.728 6.75 15c0-1.046.83-1.867 1.866-2.013A24.204 24.204 0 0 1 12 12.75Zm0 0c2.883 0 5.647.508 8.207 1.44a23.91 23.91 0 0 1-1.152-6.135c-.22-2.057-1.907-3.555-3.967-3.555H8.912c-2.06 0-3.747 1.498-3.967 3.555A23.867 23.867 0 0 1 3.793 14.19c2.56-.932 5.324-1.44 8.207-1.44ZM12 6a2.25 2.25 0 1 0 0-4.5A2.25 2.25 0 0 0 12 6Z" /></svg>
@@ -730,9 +745,9 @@ export default function DashboardPage() {
 /* ============================================================
    STAT CARD
    ============================================================ */
-function StatCard({ label, value, icon, badge, trend, sublabel }) {
+function StatCard({ label, value, icon, badge, trend, sublabel, tint }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:-translate-y-[2px] transition-transform">
+    <div className={`rounded-2xl border p-5 shadow-sm hover:-translate-y-[2px] transition-transform ${tint || 'bg-white border-gray-100'}`}>
       <div className="flex items-center gap-3 mb-2">
         {icon}
         <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
@@ -837,7 +852,7 @@ function ClassementSection({ allSessions }) {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Classement</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-rose-500"></span>Classement</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
           <div><p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Votre position</p><p className="text-3xl font-black text-gray-900">{userRank}<span className="text-lg text-gray-400">/{totalParticipants}</span></p></div>
           <div><p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Percentile</p><p className="text-3xl font-black text-primary-600">Top {100 - percentile}%</p></div>
