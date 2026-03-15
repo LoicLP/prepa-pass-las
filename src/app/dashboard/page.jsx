@@ -30,16 +30,16 @@ const MENU_ITEMS = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg>,
   },
   {
-    id: 'progression', label: 'Progression', premium: true, color: 'emerald',
-    activeClasses: 'bg-emerald-50 text-emerald-700 border-emerald-600',
-    iconActiveClass: 'text-emerald-600',
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>,
-  },
-{
     id: 'historique', label: 'Historique', premium: false, color: 'amber',
     activeClasses: 'bg-amber-50 text-amber-700 border-amber-600',
     iconActiveClass: 'text-amber-600',
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg>,
+  },
+  {
+    id: 'progression', label: 'Progression', premium: true, color: 'emerald',
+    activeClasses: 'bg-emerald-50 text-emerald-700 border-emerald-600',
+    iconActiveClass: 'text-emerald-600',
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>,
   },
   {
     id: 'objectifs', label: 'Objectifs', premium: true, color: 'violet',
@@ -458,6 +458,73 @@ export default function DashboardPage() {
               </>
             )}
 
+            {/* ===== HISTORIQUE ===== */}
+            {activeSection === 'historique' && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="p-6 pb-4">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500"></span>Historique des sessions</h3>
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      { key: 'all', label: 'Tout', count: allSessions.length },
+                      { key: 'qcm', label: 'QCM', count: data.qcmCount },
+                      { key: 'examen', label: 'Examens', count: data.examCount },
+                    ].map(f => (
+                      <button key={f.key} onClick={() => setHistoryFilter(f.key)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${historyFilter === f.key ? 'bg-primary-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      >
+                        {f.label} ({f.count})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {filteredHistory.length === 0 ? (
+                  <div className="px-6 pb-6">
+                    <EmptyState title="Aucune session" description="Aucune session trouvee pour ce filtre." ctaHref="/qcm" ctaLabel="Commencer un QCM" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-gray-50/80 border-b border-gray-100">
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Type</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Matiere</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Theme</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Score</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Duree</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredHistory.slice(0, visibleCount).map((s, i) => {
+                            const colors = getSubjectBadgeColors(s.subject);
+                            const pct = s.percentage || Math.round((s.correct / s.total) * 100);
+                            return (
+                              <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50">
+                                <td className="py-3 px-4 text-sm text-gray-500">{formatDate(s.date)}</td>
+                                <td className="py-3 px-4"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${TYPE_BADGE[s._type] || TYPE_BADGE.QCM}`}>{s._type}</span></td>
+                                <td className="py-3 px-4"><span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${colors.badge}`}>{s.subjectName || getSubjectName(s.subject)}</span></td>
+                                <td className="py-3 px-4 text-sm text-gray-700 hidden md:table-cell">{s.topic || '\u2014'}</td>
+                                <td className="py-3 px-4"><div className="flex items-center gap-2"><div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${scoreBarClass(pct)}`} style={{ width: `${pct}%` }} /></div><span className={`text-sm font-bold ${scoreClass(pct)}`}>{pct}%</span></div></td>
+                                <td className="py-3 px-4 text-sm text-gray-500">{formatDuration(s.duration)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {visibleCount < filteredHistory.length && (
+                      <div className="p-4 text-center border-t border-gray-100">
+                        <button onClick={() => setVisibleCount(v => v + 10)} className="px-5 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-colors">
+                          Voir plus ({Math.min(visibleCount + 10, filteredHistory.length)} / {filteredHistory.length})
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
             {/* ===== PROGRESSION (Premium) ===== */}
             {activeSection === 'progression' && (
               !isPremiumPlus ? (
@@ -551,73 +618,6 @@ export default function DashboardPage() {
                     )}
                   </>
                 )
-            )}
-
-            {/* ===== HISTORIQUE ===== */}
-            {activeSection === 'historique' && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="p-6 pb-4">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500"></span>Historique des sessions</h3>
-                  <div className="flex gap-2 flex-wrap">
-                    {[
-                      { key: 'all', label: 'Tout', count: allSessions.length },
-                      { key: 'qcm', label: 'QCM', count: data.qcmCount },
-                      { key: 'examen', label: 'Examens', count: data.examCount },
-                    ].map(f => (
-                      <button key={f.key} onClick={() => setHistoryFilter(f.key)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${historyFilter === f.key ? 'bg-primary-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                      >
-                        {f.label} ({f.count})
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {filteredHistory.length === 0 ? (
-                  <div className="px-6 pb-6">
-                    <EmptyState title="Aucune session" description="Aucune session trouvee pour ce filtre." ctaHref="/qcm" ctaLabel="Commencer un QCM" />
-                  </div>
-                ) : (
-                  <>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-gray-50/80 border-b border-gray-100">
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Type</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Matiere</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Theme</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Score</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Duree</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredHistory.slice(0, visibleCount).map((s, i) => {
-                            const colors = getSubjectBadgeColors(s.subject);
-                            const pct = s.percentage || Math.round((s.correct / s.total) * 100);
-                            return (
-                              <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50">
-                                <td className="py-3 px-4 text-sm text-gray-500">{formatDate(s.date)}</td>
-                                <td className="py-3 px-4"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${TYPE_BADGE[s._type] || TYPE_BADGE.QCM}`}>{s._type}</span></td>
-                                <td className="py-3 px-4"><span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${colors.badge}`}>{s.subjectName || getSubjectName(s.subject)}</span></td>
-                                <td className="py-3 px-4 text-sm text-gray-700 hidden md:table-cell">{s.topic || '\u2014'}</td>
-                                <td className="py-3 px-4"><div className="flex items-center gap-2"><div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${scoreBarClass(pct)}`} style={{ width: `${pct}%` }} /></div><span className={`text-sm font-bold ${scoreClass(pct)}`}>{pct}%</span></div></td>
-                                <td className="py-3 px-4 text-sm text-gray-500">{formatDuration(s.duration)}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    {visibleCount < filteredHistory.length && (
-                      <div className="p-4 text-center border-t border-gray-100">
-                        <button onClick={() => setVisibleCount(v => v + 10)} className="px-5 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-colors">
-                          Voir plus ({Math.min(visibleCount + 10, filteredHistory.length)} / {filteredHistory.length})
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
             )}
 
             {/* ===== OBJECTIFS (Premium) ===== */}
