@@ -26,10 +26,11 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Légal</h4>
+            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Support</h4>
             <ul className="space-y-2.5 text-sm">
+              <li><Link href="/contact" className="hover:text-primary-400 transition-colors">Signaler un bug</Link></li>
+              <li><Link href="/contact" className="hover:text-primary-400 transition-colors">Nous contacter</Link></li>
               <li><a href="#" className="hover:text-primary-400 transition-colors">Mentions légales</a></li>
-              <li><a href="#" className="hover:text-primary-400 transition-colors">Politique de confidentialité</a></li>
               <li><a href="#" className="hover:text-primary-400 transition-colors">CGV</a></li>
             </ul>
           </div>

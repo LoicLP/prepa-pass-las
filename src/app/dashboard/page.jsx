@@ -152,6 +152,29 @@ export default function DashboardPage() {
           {activeTab === 'progression' && <ProgressionTab isPremium={isPremiumPlus} qcmSessions={qcmStats.sessions} examSessions={examStats.sessions} annalesSessions={annalesStats.sessions} />}
           {activeTab === 'classement' && <ClassementTab isPremium={isPremiumPlus} qcmSessions={qcmStats.sessions} examSessions={examStats.sessions} annalesSessions={annalesStats.sessions} />}
         </div>
+
+        {/* Contact / Bug Report */}
+        <div className="mt-10 pt-8 border-t border-gray-100">
+          <Link
+            href="/contact"
+            className="flex items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-primary-200 hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 12.75c1.148 0 2.278.08 3.383.237 1.037.146 1.866.966 1.866 2.013 0 3.728-2.35 6.75-5.25 6.75S6.75 18.728 6.75 15c0-1.046.83-1.867 1.866-2.013A24.204 24.204 0 0 1 12 12.75Zm0 0c2.883 0 5.647.508 8.207 1.44a23.91 23.91 0 0 1-1.152-6.135c-.22-2.057-1.907-3.555-3.967-3.555H8.912c-2.06 0-3.747 1.498-3.967 3.555A23.867 23.867 0 0 1 3.793 14.19c2.56-.932 5.324-1.44 8.207-1.44ZM12 6a2.25 2.25 0 1 0 0-4.5A2.25 2.25 0 0 0 12 6Z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">Un bug ou une suggestion ?</p>
+                <p className="text-xs text-gray-500">Aidez-nous à améliorer la plateforme en nous signalant un problème.</p>
+              </div>
+            </div>
+            <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-600 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+            </svg>
+          </Link>
+        </div>
       </div>
     </>
   );
