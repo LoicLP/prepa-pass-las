@@ -72,35 +72,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Gate Essentiel : utilisateur gratuit → wall upgrade
-  if (!isEssentiel) {
-    return (
-      <>
-        <section className="gradient-hero noise-overlay dot-grid pt-28 pb-10 md:pt-36 md:pb-14 relative overflow-hidden">
-          <div className="blob-1"></div>
-          <div className="blob-2"></div>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-            <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-4">
-              Mon <span className="bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600 bg-clip-text text-transparent">tableau de bord</span>
-            </h1>
-          </div>
-        </section>
-        <div className="max-w-lg mx-auto px-4 py-16 text-center">
-          <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-black text-gray-900 mb-3">Réservé aux membres Essentiel</h2>
-          <p className="text-gray-500 mb-8">Le tableau de bord est accessible à partir de la formule Essentiel. Suivez votre progression, consultez vos historiques et analysez vos performances.</p>
-          <Link href="/tarifs" className="inline-flex px-6 py-3 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25">
-            Voir les offres
-          </Link>
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
       {/* Hero */}
