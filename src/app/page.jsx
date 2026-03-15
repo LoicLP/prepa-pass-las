@@ -369,7 +369,7 @@ export default function Home() {
               />
             </svg>
             <div className="bg-gray-900 rounded-2xl px-8 py-5 inline-flex items-center gap-3">
-              <div className="w-10 h-10 bg-accent-500 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 min-w-[40px] min-h-[40px] bg-accent-500 rounded-full flex items-center justify-center shrink-0">
                 <svg
                   className="w-5 h-5 text-white"
                   fill="none"
