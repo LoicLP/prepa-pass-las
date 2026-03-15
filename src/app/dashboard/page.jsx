@@ -68,6 +68,7 @@ export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState('overview');
   const [historyFilter, setHistoryFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(10);
+  const [chartMode, setChartMode] = useState('epreuves');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -195,6 +196,55 @@ export default function DashboardPage() {
   }, [allSessions, historyFilter]);
 
   useEffect(() => { setVisibleCount(10); }, [historyFilter]);
+
+  // ---- Chart data for score evolution ----
+  const chartData = useMemo(() => {
+    const sorted = [...allSessions].filter(s => s.date).sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (sorted.length === 0) return [];
+
+    if (chartMode === 'epreuves') {
+      const sessions = isPremiumPlus ? sorted.slice(-20) : sorted.slice(-10);
+      return sessions.map(s => ({
+        label: new Date(s.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+        value: s.percentage || Math.round((s.correct / s.total) * 100),
+      }));
+    }
+
+    if (chartMode === 'jours') {
+      const dayMap = {};
+      sorted.forEach(s => {
+        const key = s.date.split('T')[0];
+        if (!dayMap[key]) dayMap[key] = [];
+        dayMap[key].push(s.percentage || Math.round((s.correct / s.total) * 100));
+      });
+      const days = Object.entries(dayMap).sort(([a], [b]) => a.localeCompare(b));
+      const sliced = isPremiumPlus ? days.slice(-30) : days.slice(-14);
+      return sliced.map(([key, scores]) => ({
+        label: new Date(key).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+        value: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+      }));
+    }
+
+    if (chartMode === 'semaines') {
+      const weekMap = {};
+      sorted.forEach(s => {
+        const d = new Date(s.date);
+        const monday = new Date(d);
+        monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+        const key = monday.toISOString().split('T')[0];
+        if (!weekMap[key]) weekMap[key] = [];
+        weekMap[key].push(s.percentage || Math.round((s.correct / s.total) * 100));
+      });
+      const weeks = Object.entries(weekMap).sort(([a], [b]) => a.localeCompare(b));
+      const sliced = isPremiumPlus ? weeks.slice(-12) : weeks.slice(-8);
+      return sliced.map(([key, scores]) => ({
+        label: new Date(key).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+        value: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+      }));
+    }
+
+    return [];
+  }, [allSessions, chartMode, isPremiumPlus]);
 
   // Dynamic subtitle
   const heroSubtitle = !data.hasAnySessions
@@ -421,25 +471,30 @@ export default function DashboardPage() {
                   <>
                     {/* Score evolution */}
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                         <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Evolution des scores</h3>
-                        {data.trend === 'up' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>En progression</span>}
-                        {data.trend === 'down' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6 9 12.75l4.286-4.286a11.948 11.948 0 0 1 5.834 5.46l2.63 1.326m0 0 .311-6.228m-.311 6.228-5.94-2.281" /></svg>En baisse</span>}
-                        {data.trend === 'stable' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Stable</span>}
+                        <div className="flex items-center gap-2">
+                          {data.trend === 'up' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>En progression</span>}
+                          {data.trend === 'down' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6 9 12.75l4.286-4.286a11.948 11.948 0 0 1 5.834 5.46l2.63 1.326m0 0 .311-6.228m-.311 6.228-5.94-2.281" /></svg>En baisse</span>}
+                          {data.trend === 'stable' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Stable</span>}
+                        </div>
                       </div>
-                      <div className="flex items-end gap-1 h-44">
-                        {(isPremiumPlus ? data.last20 : data.last20.slice(-10)).map((s, i) => {
-                          const pct = s.percentage || Math.round((s.correct / s.total) * 100);
-                          return (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group relative">
-                              <span className={`text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity ${scoreClass(pct)}`}>{pct}%</span>
-                              <div className="w-full bg-gray-100 rounded-t-md relative" style={{ height: '140px' }}>
-                                <div className={`absolute bottom-0 w-full rounded-t-md transition-all ${scoreBarClass(pct)}`} style={{ height: `${pct}%` }} />
-                              </div>
-                            </div>
-                          );
-                        })}
+                      <div className="flex gap-2 mb-4">
+                        {[
+                          { key: 'epreuves', label: 'Par epreuve' },
+                          { key: 'jours', label: 'Par jour' },
+                          { key: 'semaines', label: 'Par semaine' },
+                        ].map(f => (
+                          <button key={f.key} onClick={() => setChartMode(f.key)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                              chartMode === f.key ? 'bg-emerald-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {f.label}
+                          </button>
+                        ))}
                       </div>
+                      <ScoreLineChart points={chartData} />
                       {isPremiumPlus && data.last5Avg !== null && data.prev5Avg !== null && (
                         <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-gray-100">
                           <div className="flex items-center gap-1.5 text-sm"><span className="text-gray-500">5 dernieres :</span><span className={`font-bold ${scoreClass(data.last5Avg)}`}>{data.last5Avg}%</span></div>
@@ -808,6 +863,98 @@ function MiniProgressRing({ value, max, color }) {
         <circle cx="40" cy="40" r={radius} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 0.6s ease' }} />
       </svg>
       <span className="absolute inset-0 flex items-center justify-center text-sm font-black text-gray-900">{pct}%</span>
+    </div>
+  );
+}
+
+/* ============================================================
+   SCORE LINE CHART
+   ============================================================ */
+function ScoreLineChart({ points }) {
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+
+  if (!points || points.length === 0) {
+    return <p className="text-sm text-gray-400 text-center py-8">Pas assez de donnees pour afficher le graphique.</p>;
+  }
+
+  const W = 600;
+  const H = 200;
+  const padLeft = 40;
+  const padRight = 20;
+  const padTop = 24;
+  const padBottom = 32;
+  const chartW = W - padLeft - padRight;
+  const chartH = H - padTop - padBottom;
+
+  const minVal = 0;
+  const maxVal = 100;
+
+  const getX = (i) => padLeft + (points.length === 1 ? chartW / 2 : (i / (points.length - 1)) * chartW);
+  const getY = (v) => padTop + chartH - ((v - minVal) / (maxVal - minVal)) * chartH;
+
+  const linePoints = points.map((p, i) => `${getX(i)},${getY(p.value)}`).join(' ');
+  const areaPath = `M${getX(0)},${getY(points[0].value)} ${points.map((p, i) => `L${getX(i)},${getY(p.value)}`).join(' ')} L${getX(points.length - 1)},${padTop + chartH} L${getX(0)},${padTop + chartH} Z`;
+
+  const yTicks = [0, 25, 50, 75, 100];
+
+  // Show fewer X labels on small datasets
+  const maxLabels = points.length <= 10 ? points.length : Math.min(points.length, 8);
+  const labelStep = Math.max(1, Math.ceil(points.length / maxLabels));
+
+  return (
+    <div className="w-full overflow-hidden">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet" onMouseLeave={() => setHoveredIndex(null)}>
+        <defs>
+          <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+
+        {/* Y-axis grid lines */}
+        {yTicks.map(tick => (
+          <g key={tick}>
+            <line x1={padLeft} y1={getY(tick)} x2={W - padRight} y2={getY(tick)} stroke="#e5e7eb" strokeWidth="1" strokeDasharray={tick === 0 ? 'none' : '4 4'} />
+            <text x={padLeft - 6} y={getY(tick) + 4} textAnchor="end" className="text-[10px]" fill="#9ca3af">{tick}%</text>
+          </g>
+        ))}
+
+        {/* Filled area under curve */}
+        <path d={areaPath} fill="url(#chartGradient)" />
+
+        {/* Main curve line */}
+        <polyline points={linePoints} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Data points + hover zones */}
+        {points.map((p, i) => {
+          const cx = getX(i);
+          const cy = getY(p.value);
+          const isHovered = hoveredIndex === i;
+          return (
+            <g key={i} onMouseEnter={() => setHoveredIndex(i)} style={{ cursor: 'pointer' }}>
+              {/* Invisible wider hit area */}
+              <circle cx={cx} cy={cy} r={16} fill="transparent" />
+              {/* Visible point */}
+              <circle cx={cx} cy={cy} r={isHovered ? 5.5 : 3.5} fill={isHovered ? '#6366f1' : '#fff'} stroke="#6366f1" strokeWidth="2" style={{ transition: 'r 0.15s ease' }} />
+              {/* Tooltip */}
+              {isHovered && (
+                <g>
+                  <rect x={cx - 24} y={cy - 28} width="48" height="20" rx="6" fill="#1f2937" />
+                  <text x={cx} y={cy - 15} textAnchor="middle" fill="#fff" className="text-[11px]" fontWeight="700">{p.value}%</text>
+                </g>
+              )}
+            </g>
+          );
+        })}
+
+        {/* X-axis labels */}
+        {points.map((p, i) => {
+          if (i % labelStep !== 0 && i !== points.length - 1) return null;
+          return (
+            <text key={i} x={getX(i)} y={H - 6} textAnchor="middle" className="text-[10px]" fill="#9ca3af">{p.label}</text>
+          );
+        })}
+      </svg>
     </div>
   );
 }
