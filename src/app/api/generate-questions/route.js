@@ -4,6 +4,16 @@ import { buildQCMPrompt, buildExamenPrompt } from '@/utils/prompts';
 const VALID_SUBJECTS = ['anatomie', 'chimie', 'biocell', 'biostats', 'biophysique', 'ssh'];
 const VALID_MODES = ['qcm', 'examen'];
 
+// Fisher-Yates shuffle pour mélanger les options de réponse
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export async function POST(request) {
   // Check API key
   const apiKey = process.env.GEMINI_API_KEY;
@@ -113,10 +123,10 @@ export async function POST(request) {
         id: index + 1,
         subject: subject || 'custom',
         question: q.question,
-        options: q.options.map(o => ({
+        options: shuffleArray(q.options.map(o => ({
           text: o.text,
           correct: o.correct === true,
-        })),
+        }))),
         explanation: q.explanation || 'Pas d\'explication disponible.',
       }));
 
