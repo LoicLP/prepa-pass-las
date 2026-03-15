@@ -266,12 +266,12 @@ export default function TarifsPage() {
             </div>
             <div className="space-y-4">
               <FaqItem
-                question="Puis-je changer de formule \u00e0 tout moment ?"
-                answer="Oui, vous pouvez passer d&#39;une formule \u00e0 l&#39;autre \u00e0 tout moment. Le changement prend effet imm\u00e9diatement et votre facturation est ajust\u00e9e au prorata."
+                question="Puis-je changer de formule à tout moment ?"
+                answer="Oui, vous pouvez passer d'une formule à l'autre à tout moment. Le changement prend effet immédiatement et votre facturation est ajustée au prorata."
               />
               <FaqItem
-                question="Y a-t-il un engagement de dur\u00e9e ?"
-                answer="Non, aucun engagement. Vous pouvez r\u00e9silier \u00e0 tout moment depuis votre tableau de bord. Votre acc\u00e8s reste actif jusqu&#39;\u00e0 la fin de la p\u00e9riode pay\u00e9e."
+                question="Y a-t-il un engagement de durée ?"
+                answer="Non, aucun engagement. Vous pouvez résilier à tout moment depuis votre tableau de bord. Votre accès reste actif jusqu'à la fin de la période payée."
               />
             </div>
           </div>
