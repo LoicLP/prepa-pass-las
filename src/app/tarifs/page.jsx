@@ -121,6 +121,10 @@ export default function TarifsPage() {
                     <CrossIcon />
                     Suivi de progression avanc&eacute;
                   </li>
+                  <li className="flex items-center gap-2 text-sm text-gray-400">
+                    <CrossIcon />
+                    Objectifs personnalis&eacute;s
+                  </li>
                 </ul>
               </div>
             </div>
@@ -193,6 +197,10 @@ export default function TarifsPage() {
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-400">
                     <CrossIcon />
+                    Objectifs personnalis&eacute;s
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-gray-400">
+                    <CrossIcon />
                     Classement et comparaison
                   </li>
                 </ul>
@@ -245,6 +253,10 @@ export default function TarifsPage() {
                   <li className="flex items-center gap-2 text-sm text-gray-300">
                     <PremiumCheckIcon />
                     <strong className="text-white">Suivi de progression avanc&eacute;</strong>
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-gray-300">
+                    <PremiumCheckIcon />
+                    <strong className="text-white">Objectifs personnalis&eacute;s</strong>
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-300">
                     <PremiumCheckIcon />

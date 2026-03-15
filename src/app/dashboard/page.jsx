@@ -30,7 +30,7 @@ const MENU_ITEMS = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg>,
   },
   {
-    id: 'progression', label: 'Progression', premium: false, color: 'emerald',
+    id: 'progression', label: 'Progression', premium: true, color: 'emerald',
     activeClasses: 'bg-emerald-50 text-emerald-700 border-emerald-600',
     iconActiveClass: 'text-emerald-600',
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>,
@@ -458,10 +458,11 @@ export default function DashboardPage() {
               </>
             )}
 
-            {/* ===== PROGRESSION ===== */}
+            {/* ===== PROGRESSION (Premium) ===== */}
             {activeSection === 'progression' && (
-              <>
-                {!data.hasAnySessions || data.last20.length < 2 ? (
+              !isPremiumPlus ? (
+                <PremiumLock title="Progression detaillee" description="Visualisez votre courbe de progression, vos points forts et axes d'amelioration avec Premium+." />
+              ) : !data.hasAnySessions || data.last20.length < 2 ? (
                   <EmptyState title="Pas assez de donnees" description="Effectuez plusieurs sessions pour voir votre progression." ctaHref="/qcm" ctaLabel="Commencer un QCM" />
                 ) : (
                   <>
@@ -549,8 +550,7 @@ export default function DashboardPage() {
                       </div>
                     )}
                   </>
-                )}
-              </>
+                )
             )}
 
             {/* ===== HISTORIQUE ===== */}
