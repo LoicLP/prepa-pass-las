@@ -52,9 +52,9 @@ export default function ContactPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-black text-gray-900 mb-3">Message préparé !</h2>
+              <h2 className="text-2xl font-black text-gray-900 mb-3">Message envoyé !</h2>
               <p className="text-gray-500 mb-6">
-                Votre client mail s&apos;est ouvert avec le message pré-rempli. Envoyez-le pour finaliser votre demande.
+                Merci pour votre message. Notre équipe vous répondra dans les plus brefs délais à l&apos;adresse mail associée à votre compte.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
