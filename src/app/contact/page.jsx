@@ -32,10 +32,11 @@ export default function ContactPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: userEmail, category: cat?.label || category, subject, message }),
       });
-      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur serveur');
       setSent(true);
-    } catch {
-      setError('Une erreur est survenue. Veuillez r\u00e9essayer.');
+    } catch (err) {
+      setError(err.message || 'Une erreur est survenue. Veuillez r\u00e9essayer.');
     } finally {
       setSending(false);
     }

@@ -8,13 +8,27 @@ export async function POST(request) {
       return Response.json({ error: 'Email, sujet et message requis.' }, { status: 400 });
     }
 
+    // Vérifier que les variables SMTP sont configurées
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+      console.error('Variables SMTP manquantes:', {
+        host: !!process.env.SMTP_HOST,
+        port: !!process.env.SMTP_PORT,
+        user: !!process.env.SMTP_USER,
+        pass: !!process.env.SMTP_PASSWORD,
+      });
+      return Response.json({ error: 'Configuration email manquante sur le serveur.' }, { status: 500 });
+    }
+
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
+      port: Number(process.env.SMTP_PORT) || 587,
       secure: false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false,
       },
     });
 
@@ -39,7 +53,10 @@ export async function POST(request) {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('Erreur envoi email:', error);
-    return Response.json({ error: "Erreur lors de l'envoi du message." }, { status: 500 });
+    console.error('Erreur envoi email:', error.message, error.code);
+    return Response.json(
+      { error: `Erreur d'envoi: ${error.message || 'Erreur inconnue'}` },
+      { status: 500 }
+    );
   }
 }
