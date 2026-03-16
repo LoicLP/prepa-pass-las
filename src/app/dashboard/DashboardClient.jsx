@@ -1180,6 +1180,7 @@ function generateFakeUsers() {
 function ClassementSection({ allSessions }) {
   const userAvg = allSessions.length > 0 ? Math.round(allSessions.reduce((sum, s) => sum + (s.percentage || 0), 0) / allSessions.length) : 0;
   const userSessionCount = allSessions.length;
+  const [expandedGaps, setExpandedGaps] = useState(new Set());
 
   const fakeUsers = generateFakeUsers();
 
@@ -1190,15 +1191,54 @@ function ClassementSection({ allSessions }) {
   const medals = ['🥇', '🥈', '🥉'];
 
   // Afficher les 10 premiers + les 5 autour de l'utilisateur + les 3 derniers
-  const visibleSet = new Set();
-  // Top 10
-  for (let i = 0; i < Math.min(10, allRanked.length); i++) visibleSet.add(i);
-  // Autour de l'utilisateur (±3)
+  const baseVisible = new Set();
+  for (let i = 0; i < Math.min(10, allRanked.length); i++) baseVisible.add(i);
   const userIdx = userRank - 1;
-  for (let i = Math.max(0, userIdx - 3); i <= Math.min(allRanked.length - 1, userIdx + 3); i++) visibleSet.add(i);
-  // Derniers 3
-  for (let i = Math.max(0, allRanked.length - 3); i < allRanked.length; i++) visibleSet.add(i);
+  for (let i = Math.max(0, userIdx - 3); i <= Math.min(allRanked.length - 1, userIdx + 3); i++) baseVisible.add(i);
+  for (let i = Math.max(0, allRanked.length - 3); i < allRanked.length; i++) baseVisible.add(i);
+  const baseIndices = [...baseVisible].sort((a, b) => a - b);
+
+  // Identifier les gaps et ajouter les indices des gaps expandés
+  const gaps = [];
+  for (let p = 1; p < baseIndices.length; p++) {
+    if (baseIndices[p] - baseIndices[p - 1] > 1) {
+      const from = baseIndices[p - 1] + 1;
+      const to = baseIndices[p] - 1;
+      gaps.push({ from, to, key: `${from}-${to}` });
+    }
+  }
+
+  const visibleSet = new Set(baseVisible);
+  for (const gap of gaps) {
+    if (expandedGaps.has(gap.key)) {
+      for (let i = gap.from; i <= gap.to; i++) visibleSet.add(i);
+    }
+  }
   const visibleIndices = [...visibleSet].sort((a, b) => a - b);
+
+  const toggleGap = (gapKey) => {
+    setExpandedGaps(prev => {
+      const next = new Set(prev);
+      if (next.has(gapKey)) next.delete(gapKey);
+      else next.add(gapKey);
+      return next;
+    });
+  };
+
+  // Construire les lignes du tableau
+  const rows = [];
+  let gapIdx = 0;
+  for (let pos = 0; pos < visibleIndices.length; pos++) {
+    const idx = visibleIndices[pos];
+    // Vérifier s'il y a un gap avant cette ligne
+    if (pos > 0 && visibleIndices[pos - 1] < idx - 1) {
+      const gap = gaps.find(g => g.from === visibleIndices[pos - 1] + 1);
+      if (gap) {
+        rows.push({ type: 'gap', gap });
+      }
+    }
+    rows.push({ type: 'user', idx, user: allRanked[idx] });
+  }
 
   return (
     <div className="space-y-6">
@@ -1222,23 +1262,40 @@ function ClassementSection({ allSessions }) {
               </tr>
             </thead>
             <tbody>
-              {visibleIndices.map((idx, pos) => {
-                const u = allRanked[idx];
-                const rank = idx + 1;
-                const medal = rank <= 3 ? medals[rank - 1] : `${rank}`;
-                const showSeparator = pos > 0 && visibleIndices[pos - 1] < idx - 1;
-                return (
-                  <Fragment key={idx}>
-                    {showSeparator && (
-                      <tr><td colSpan="4" className="py-1 text-center text-xs text-gray-300">• • •</td></tr>
-                    )}
-                    <tr className={`border-b hover:bg-gray-50/50 ${u.isUser ? 'bg-primary-50 border-primary-200 font-bold' : 'border-gray-50'}`}>
-                      <td className="py-3 px-4 text-center text-lg">{medal}</td>
-                      <td className={`py-3 px-4 text-sm ${u.isUser ? 'text-primary-700 font-bold' : 'text-gray-700'}`}>{u.name}</td>
-                      <td className="py-3 px-4"><span className={`text-sm font-bold ${scoreClass(u.avg)}`}>{u.avg}%</span></td>
-                      <td className="py-3 px-4 text-sm text-gray-500">{u.sessions}</td>
+              {rows.map((row, i) => {
+                if (row.type === 'gap') {
+                  const isExpanded = expandedGaps.has(row.gap.key);
+                  const hiddenCount = row.gap.to - row.gap.from + 1;
+                  return (
+                    <tr key={`gap-${row.gap.key}`} onClick={() => toggleGap(row.gap.key)} className="cursor-pointer hover:bg-gray-50 transition-colors">
+                      <td colSpan="4" className="py-2 text-center text-xs text-gray-400">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                          {isExpanded ? (
+                            <>
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>
+                              Masquer
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                              Afficher {hiddenCount} étudiant{hiddenCount > 1 ? 's' : ''}
+                            </>
+                          )}
+                        </span>
+                      </td>
                     </tr>
-                  </Fragment>
+                  );
+                }
+                const u = row.user;
+                const rank = row.idx + 1;
+                const medal = rank <= 3 ? medals[rank - 1] : `${rank}`;
+                return (
+                  <tr key={row.idx} className={`border-b hover:bg-gray-50/50 ${u.isUser ? 'bg-primary-50 border-primary-200 font-bold' : 'border-gray-50'}`}>
+                    <td className="py-3 px-4 text-center text-lg">{medal}</td>
+                    <td className={`py-3 px-4 text-sm ${u.isUser ? 'text-primary-700 font-bold' : 'text-gray-700'}`}>{u.name}</td>
+                    <td className="py-3 px-4"><span className={`text-sm font-bold ${scoreClass(u.avg)}`}>{u.avg}%</span></td>
+                    <td className="py-3 px-4 text-sm text-gray-500">{u.sessions}</td>
+                  </tr>
                 );
               })}
             </tbody>
