@@ -33,8 +33,7 @@ export default function CGVPage() {
                   Les pr&eacute;sentes Conditions G&eacute;n&eacute;rales de Vente (ci-apr&egrave;s &laquo; CGV &raquo;) r&eacute;gissent les relations contractuelles entre :
                 </p>
                 <p className="pl-4 border-l-2 border-primary-200">
-                  <strong className="text-gray-900">LP Labs</strong>, Soci&eacute;t&eacute; par Actions Simplifi&eacute;e (S.A.S.) au capital de 50,00 &euro;,
-                  dont le si&egrave;ge social est situ&eacute; au 20 route de la Rousserie, 50200 Monthuchon, France.
+                  <strong className="text-gray-900">LP Labs</strong>, Soci&eacute;t&eacute; par Actions Simplifi&eacute;e (S.A.S.) au capital de 50,00 &euro;.
                   <br />
                   Email : <a href="mailto:support@prepa-pass-las.fr" className="text-primary-600 hover:underline">support@prepa-pass-las.fr</a>
                 </p>
@@ -327,7 +326,7 @@ export default function CGVPage() {
             {/* Footer CGV */}
             <div className="pt-6 border-t border-gray-100 text-center">
               <p className="text-xs text-gray-400">
-                LP Labs S.A.S. &ndash; 20 route de la Rousserie, 50200 Monthuchon
+                LP Labs S.A.S.
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 Contact : <a href="mailto:support@prepa-pass-las.fr" className="text-primary-500 hover:underline">support@prepa-pass-las.fr</a>
