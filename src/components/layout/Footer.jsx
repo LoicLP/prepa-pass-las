@@ -31,7 +31,7 @@ export default function Footer() {
               <li><Link href="/contact" className="hover:text-primary-400 transition-colors">Signaler un bug</Link></li>
               <li><Link href="/contact" className="hover:text-primary-400 transition-colors">Nous contacter</Link></li>
               <li><a href="#" className="hover:text-primary-400 transition-colors">Mentions légales</a></li>
-              <li><a href="#" className="hover:text-primary-400 transition-colors">CGV</a></li>
+              <li><Link href="/cgv" className="hover:text-primary-400 transition-colors">CGV</Link></li>
             </ul>
           </div>
         </div>
