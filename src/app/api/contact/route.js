@@ -8,13 +8,18 @@ export async function POST(request) {
       return Response.json({ error: 'Email, sujet et message requis.' }, { status: 400 });
     }
 
+    // Décoder le mot de passe (stocké en base64 pour éviter les problèmes de caractères spéciaux)
+    const smtpPassword = process.env.SMTP_PASSWORD_B64
+      ? Buffer.from(process.env.SMTP_PASSWORD_B64, 'base64').toString('utf-8')
+      : process.env.SMTP_PASSWORD;
+
     // Vérifier que les variables SMTP sont configurées
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !smtpPassword) {
       console.error('Variables SMTP manquantes:', {
         host: !!process.env.SMTP_HOST,
         port: !!process.env.SMTP_PORT,
         user: !!process.env.SMTP_USER,
-        pass: !!process.env.SMTP_PASSWORD,
+        pass: !!(process.env.SMTP_PASSWORD_B64 || process.env.SMTP_PASSWORD),
       });
       return Response.json({ error: 'Configuration email manquante sur le serveur.' }, { status: 500 });
     }
@@ -25,7 +30,7 @@ export async function POST(request) {
       secure: false,
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
+        pass: smtpPassword,
       },
       tls: {
         rejectUnauthorized: false,
