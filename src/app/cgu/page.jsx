@@ -1,3 +1,9 @@
+export const metadata = {
+  title: "Conditions G\u00e9n\u00e9rales d'Utilisation",
+  description: "Consultez les Conditions G\u00e9n\u00e9rales d'Utilisation de Pr\u00e9pa PASS/LAS. R\u00e8gles d'acc\u00e8s, propri\u00e9t\u00e9 intellectuelle et donn\u00e9es personnelles.",
+  alternates: { canonical: '/cgu' },
+};
+
 export default function CGUPage() {
   return (
     <>

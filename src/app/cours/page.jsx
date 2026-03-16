@@ -1,22 +1,11 @@
-'use client';
+import CoursPage from './CoursClient';
 
-import { Suspense } from 'react';
-import CoursContent from './CoursContent';
+export const metadata = {
+  title: 'Cours d\u00e9taill\u00e9s PASS/LAS',
+  description: 'Acc\u00e9dez \u00e0 des cours complets par mati\u00e8re pour le programme PASS et LAS. Contenus structur\u00e9s et p\u00e9dagogiques.',
+  alternates: { canonical: '/cours' },
+};
 
-export default function CoursPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="pt-28 pb-16 text-center">
-          <div className="animate-pulse flex flex-col items-center gap-4">
-            <div className="w-12 h-12 bg-gray-200 rounded-xl" />
-            <div className="w-64 h-6 bg-gray-200 rounded-lg" />
-            <div className="w-96 h-4 bg-gray-100 rounded-lg" />
-          </div>
-        </div>
-      }
-    >
-      <CoursContent />
-    </Suspense>
-  );
+export default function Page() {
+  return <CoursPage />;
 }

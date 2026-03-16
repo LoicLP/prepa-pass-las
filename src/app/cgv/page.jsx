@@ -1,3 +1,9 @@
+export const metadata = {
+  title: 'Conditions G\u00e9n\u00e9rales de Vente',
+  description: 'Consultez les Conditions G\u00e9n\u00e9rales de Vente de Pr\u00e9pa PASS/LAS. Abonnements, tarifs, r\u00e9tractation et r\u00e9siliation.',
+  alternates: { canonical: '/cgv' },
+};
+
 export default function CGVPage() {
   return (
     <>
