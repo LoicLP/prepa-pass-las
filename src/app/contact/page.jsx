@@ -21,7 +21,7 @@ export default function ContactPage() {
     const cat = CATEGORIES.find(c => c.id === category);
     const mailSubject = `[${cat?.label || 'Contact'}] ${subject}`;
     const mailBody = `Catégorie : ${cat?.label || category}\n\nMessage :\n${message}`;
-    window.location.href = `mailto:contact@lplabs.fr?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
+    window.location.href = `mailto:support@prepa-pass-las.fr?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
     setSent(true);
   };
 
@@ -136,7 +136,7 @@ export default function ContactPage() {
               </button>
 
               <p className="text-xs text-gray-400 text-center mt-4">
-                Le message sera envoyé à <span className="font-medium">contact@lplabs.fr</span> via votre client mail.
+                Le message sera envoyé à <span className="font-medium">support@prepa-pass-las.fr</span> via votre client mail.
               </p>
             </form>
           )}
