@@ -59,9 +59,6 @@ export async function POST(request) {
     return Response.json({ success: true });
   } catch (error) {
     console.error('Erreur envoi email:', error.message, error.code);
-    return Response.json(
-      { error: `Erreur d'envoi: ${error.message || 'Erreur inconnue'}` },
-      { status: 500 }
-    );
+    return Response.json({ error: "Une erreur est survenue. Veuillez r\u00e9essayer." }, { status: 500 });
   }
 }
