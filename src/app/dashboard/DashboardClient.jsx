@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Fragment } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -1024,19 +1024,164 @@ function ScoreLineChart({ points }) {
 }
 
 /* ============================================================
+   FAKE USERS DATA (120 utilisateurs simulés)
+   ============================================================ */
+const BASE_USERS = [
+  // Top performers (~20) — avg 78-95, sessions 80-250
+  { name: 'Emma L.', baseAvg: 94, baseSessions: 230, growth: 0.18 },
+  { name: 'Lucas M.', baseAvg: 92, baseSessions: 210, growth: 0.16 },
+  { name: 'Jade F.', baseAvg: 91, baseSessions: 195, growth: 0.17 },
+  { name: 'Hugo D.', baseAvg: 89, baseSessions: 185, growth: 0.15 },
+  { name: 'Chloé B.', baseAvg: 88, baseSessions: 178, growth: 0.14 },
+  { name: 'Arthur C.', baseAvg: 87, baseSessions: 165, growth: 0.15 },
+  { name: 'Léa R.', baseAvg: 86, baseSessions: 158, growth: 0.13 },
+  { name: 'Inès T.', baseAvg: 85, baseSessions: 148, growth: 0.14 },
+  { name: 'Raphaël K.', baseAvg: 84, baseSessions: 140, growth: 0.12 },
+  { name: 'Alice G.', baseAvg: 83, baseSessions: 132, growth: 0.13 },
+  { name: 'Gabriel N.', baseAvg: 82, baseSessions: 125, growth: 0.11 },
+  { name: 'Lina P.', baseAvg: 82, baseSessions: 120, growth: 0.12 },
+  { name: 'Théo A.', baseAvg: 81, baseSessions: 115, growth: 0.11 },
+  { name: 'Margot V.', baseAvg: 80, baseSessions: 110, growth: 0.10 },
+  { name: 'Noah S.', baseAvg: 80, baseSessions: 105, growth: 0.11 },
+  { name: 'Zoé H.', baseAvg: 79, baseSessions: 98, growth: 0.10 },
+  { name: 'Adam B.', baseAvg: 79, baseSessions: 95, growth: 0.09 },
+  { name: 'Juliette M.', baseAvg: 78, baseSessions: 92, growth: 0.10 },
+  { name: 'Louis R.', baseAvg: 78, baseSessions: 88, growth: 0.09 },
+  { name: 'Rose D.', baseAvg: 78, baseSessions: 85, growth: 0.08 },
+  // Mid-range bons (~35) — avg 65-77, sessions 40-100
+  { name: 'Nathan P.', baseAvg: 77, baseSessions: 95, growth: 0.08 },
+  { name: 'Camille V.', baseAvg: 76, baseSessions: 90, growth: 0.08 },
+  { name: 'Jules A.', baseAvg: 76, baseSessions: 88, growth: 0.07 },
+  { name: 'Sarah H.', baseAvg: 75, baseSessions: 85, growth: 0.08 },
+  { name: 'Mathis L.', baseAvg: 75, baseSessions: 82, growth: 0.07 },
+  { name: 'Eva P.', baseAvg: 74, baseSessions: 78, growth: 0.07 },
+  { name: 'Léo T.', baseAvg: 74, baseSessions: 76, growth: 0.06 },
+  { name: 'Anaïs M.', baseAvg: 73, baseSessions: 74, growth: 0.07 },
+  { name: 'Tom B.', baseAvg: 73, baseSessions: 72, growth: 0.06 },
+  { name: 'Clara D.', baseAvg: 72, baseSessions: 70, growth: 0.06 },
+  { name: 'Maxime R.', baseAvg: 72, baseSessions: 68, growth: 0.05 },
+  { name: 'Manon S.', baseAvg: 71, baseSessions: 66, growth: 0.06 },
+  { name: 'Enzo C.', baseAvg: 71, baseSessions: 64, growth: 0.05 },
+  { name: 'Charlotte F.', baseAvg: 70, baseSessions: 62, growth: 0.06 },
+  { name: 'Axel N.', baseAvg: 70, baseSessions: 60, growth: 0.05 },
+  { name: 'Ambre G.', baseAvg: 69, baseSessions: 58, growth: 0.05 },
+  { name: 'Victor J.', baseAvg: 69, baseSessions: 56, growth: 0.04 },
+  { name: 'Océane K.', baseAvg: 68, baseSessions: 55, growth: 0.05 },
+  { name: 'Paul E.', baseAvg: 68, baseSessions: 53, growth: 0.04 },
+  { name: 'Mila B.', baseAvg: 68, baseSessions: 52, growth: 0.05 },
+  { name: 'Antoine L.', baseAvg: 67, baseSessions: 50, growth: 0.04 },
+  { name: 'Clémence R.', baseAvg: 67, baseSessions: 48, growth: 0.04 },
+  { name: 'Alexandre D.', baseAvg: 66, baseSessions: 47, growth: 0.04 },
+  { name: 'Lucie S.', baseAvg: 66, baseSessions: 46, growth: 0.04 },
+  { name: 'Romain H.', baseAvg: 66, baseSessions: 45, growth: 0.03 },
+  { name: 'Pauline T.', baseAvg: 65, baseSessions: 44, growth: 0.04 },
+  { name: 'Émile V.', baseAvg: 65, baseSessions: 43, growth: 0.03 },
+  { name: 'Yasmine A.', baseAvg: 65, baseSessions: 42, growth: 0.04 },
+  { name: 'Bastien M.', baseAvg: 65, baseSessions: 41, growth: 0.03 },
+  { name: 'Noémie C.', baseAvg: 65, baseSessions: 40, growth: 0.03 },
+  { name: 'Valentin P.', baseAvg: 65, baseSessions: 40, growth: 0.03 },
+  { name: 'Marine F.', baseAvg: 65, baseSessions: 40, growth: 0.03 },
+  { name: 'Simon G.', baseAvg: 65, baseSessions: 40, growth: 0.03 },
+  { name: 'Elisa B.', baseAvg: 65, baseSessions: 40, growth: 0.03 },
+  { name: 'Tristan K.', baseAvg: 65, baseSessions: 40, growth: 0.03 },
+  // Mid-range moyens (~30) — avg 50-64, sessions 20-50
+  { name: 'Maëlys D.', baseAvg: 64, baseSessions: 48, growth: 0.03 },
+  { name: 'Corentin R.', baseAvg: 63, baseSessions: 45, growth: 0.03 },
+  { name: 'Justine L.', baseAvg: 63, baseSessions: 43, growth: 0.02 },
+  { name: 'Dylan M.', baseAvg: 62, baseSessions: 42, growth: 0.03 },
+  { name: 'Agathe S.', baseAvg: 62, baseSessions: 40, growth: 0.02 },
+  { name: 'Kylian T.', baseAvg: 61, baseSessions: 38, growth: 0.02 },
+  { name: 'Léonie V.', baseAvg: 61, baseSessions: 37, growth: 0.02 },
+  { name: 'Mattéo F.', baseAvg: 60, baseSessions: 36, growth: 0.02 },
+  { name: 'Alicia N.', baseAvg: 60, baseSessions: 35, growth: 0.02 },
+  { name: 'Robin H.', baseAvg: 59, baseSessions: 34, growth: 0.02 },
+  { name: 'Célia P.', baseAvg: 59, baseSessions: 33, growth: 0.02 },
+  { name: 'Nolan G.', baseAvg: 58, baseSessions: 32, growth: 0.02 },
+  { name: 'Laura J.', baseAvg: 58, baseSessions: 31, growth: 0.01 },
+  { name: 'Sacha B.', baseAvg: 57, baseSessions: 30, growth: 0.02 },
+  { name: 'Capucine E.', baseAvg: 57, baseSessions: 29, growth: 0.01 },
+  { name: 'Thibault A.', baseAvg: 56, baseSessions: 28, growth: 0.02 },
+  { name: 'Lola K.', baseAvg: 56, baseSessions: 27, growth: 0.01 },
+  { name: 'Quentin D.', baseAvg: 55, baseSessions: 26, growth: 0.01 },
+  { name: 'Romane C.', baseAvg: 55, baseSessions: 25, growth: 0.01 },
+  { name: 'Baptiste L.', baseAvg: 54, baseSessions: 25, growth: 0.01 },
+  { name: 'Margaux V.', baseAvg: 54, baseSessions: 24, growth: 0.01 },
+  { name: 'Alexis R.', baseAvg: 53, baseSessions: 23, growth: 0.01 },
+  { name: 'Héloïse M.', baseAvg: 52, baseSessions: 23, growth: 0.01 },
+  { name: 'Florian T.', baseAvg: 52, baseSessions: 22, growth: 0.01 },
+  { name: 'Salomé H.', baseAvg: 51, baseSessions: 22, growth: 0.01 },
+  { name: 'Aurélien F.', baseAvg: 51, baseSessions: 21, growth: 0.01 },
+  { name: 'Nina S.', baseAvg: 50, baseSessions: 21, growth: 0.01 },
+  // Débutants/casuals (~20) — avg 35-49, sessions 8-25
+  { name: 'Timothée P.', baseAvg: 49, baseSessions: 22, growth: 0.01 },
+  { name: 'Élise G.', baseAvg: 48, baseSessions: 20, growth: 0.01 },
+  { name: 'Dorian B.', baseAvg: 47, baseSessions: 19, growth: 0.01 },
+  { name: 'Maëlle J.', baseAvg: 46, baseSessions: 18, growth: 0.01 },
+  { name: 'Kévin N.', baseAvg: 46, baseSessions: 17, growth: 0.005 },
+  { name: 'Lilou D.', baseAvg: 45, baseSessions: 16, growth: 0.01 },
+  { name: 'Rémi A.', baseAvg: 44, baseSessions: 15, growth: 0.005 },
+  { name: 'Apolline C.', baseAvg: 44, baseSessions: 15, growth: 0.005 },
+  { name: 'Erwan K.', baseAvg: 43, baseSessions: 14, growth: 0.005 },
+  { name: 'Constance L.', baseAvg: 42, baseSessions: 13, growth: 0.005 },
+  { name: 'Gabin R.', baseAvg: 41, baseSessions: 12, growth: 0.005 },
+  { name: 'Adèle V.', baseAvg: 40, baseSessions: 12, growth: 0.005 },
+  { name: 'Mathieu T.', baseAvg: 39, baseSessions: 11, growth: 0.003 },
+  { name: 'Victoire F.', baseAvg: 39, baseSessions: 10, growth: 0.005 },
+  { name: 'Clément S.', baseAvg: 38, baseSessions: 10, growth: 0.003 },
+  { name: 'Alix M.', baseAvg: 37, baseSessions: 9, growth: 0.003 },
+  { name: 'Loïs H.', baseAvg: 37, baseSessions: 9, growth: 0.003 },
+  { name: 'Diane P.', baseAvg: 36, baseSessions: 8, growth: 0.003 },
+  { name: 'Eliott B.', baseAvg: 35, baseSessions: 8, growth: 0.003 },
+  { name: 'Faustine G.', baseAvg: 35, baseSessions: 8, growth: 0.003 },
+  // Inactifs (~15) — avg 20-40, sessions 1-10, pas de croissance
+  { name: 'Timéo H.', baseAvg: 40, baseSessions: 8, growth: 0 },
+  { name: 'Léna F.', baseAvg: 38, baseSessions: 7, growth: 0 },
+  { name: 'Malo R.', baseAvg: 36, baseSessions: 6, growth: 0 },
+  { name: 'Iris D.', baseAvg: 35, baseSessions: 5, growth: 0 },
+  { name: 'Ethan J.', baseAvg: 34, baseSessions: 5, growth: 0 },
+  { name: 'Lison V.', baseAvg: 33, baseSessions: 4, growth: 0 },
+  { name: 'Oscar T.', baseAvg: 31, baseSessions: 4, growth: 0 },
+  { name: 'Célestine B.', baseAvg: 30, baseSessions: 3, growth: 0 },
+  { name: 'Ismaël K.', baseAvg: 29, baseSessions: 3, growth: 0 },
+  { name: 'Colombe A.', baseAvg: 28, baseSessions: 3, growth: 0 },
+  { name: 'Ruben M.', baseAvg: 26, baseSessions: 2, growth: 0 },
+  { name: 'Éléonore S.', baseAvg: 25, baseSessions: 2, growth: 0 },
+  { name: 'Naël C.', baseAvg: 24, baseSessions: 2, growth: 0 },
+  { name: 'Blanche L.', baseAvg: 22, baseSessions: 1, growth: 0 },
+  { name: 'Solal P.', baseAvg: 20, baseSessions: 1, growth: 0 },
+];
+
+function generateFakeUsers() {
+  const today = new Date();
+  const startOfYear = new Date(today.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((today - startOfYear) / 86400000);
+
+  return BASE_USERS.map((u, i) => {
+    // Seed déterministe : même résultat pour tous les visiteurs le même jour
+    const seed = Math.sin((dayOfYear + 1) * (i + 1) * 9301) * 10000;
+    const rand = Math.abs(seed - Math.floor(seed)); // 0 à 1
+
+    // Variation du score : ±3 points max par jour
+    const avgVariation = Math.round((rand - 0.5) * 6);
+    const avg = Math.max(15, Math.min(98, u.baseAvg + avgVariation));
+
+    // Sessions : croissance progressive + petite variation quotidienne
+    const sessionGrowth = Math.floor(dayOfYear * u.growth);
+    const sessionVariation = Math.floor(rand * 3);
+    const sessions = u.baseSessions + sessionGrowth + sessionVariation;
+
+    return { name: u.name, avg, sessions };
+  });
+}
+
+/* ============================================================
    CLASSEMENT SECTION
    ============================================================ */
 function ClassementSection({ allSessions }) {
   const userAvg = allSessions.length > 0 ? Math.round(allSessions.reduce((sum, s) => sum + (s.percentage || 0), 0) / allSessions.length) : 0;
   const userSessionCount = allSessions.length;
 
-  const fakeUsers = [
-    { name: 'Emma L.', avg: 88, sessions: 142 }, { name: 'Lucas M.', avg: 85, sessions: 128 },
-    { name: 'Chloe B.', avg: 82, sessions: 115 }, { name: 'Hugo D.', avg: 79, sessions: 98 },
-    { name: 'Lea R.', avg: 76, sessions: 87 }, { name: 'Nathan P.', avg: 73, sessions: 76 },
-    { name: 'Camille V.', avg: 70, sessions: 65 }, { name: 'Theo G.', avg: 67, sessions: 54 },
-    { name: 'Manon S.', avg: 63, sessions: 42 }, { name: 'Raphael K.', avg: 58, sessions: 31 },
-  ];
+  const fakeUsers = generateFakeUsers();
 
   const allRanked = [...fakeUsers, { name: 'Vous', avg: userAvg, sessions: userSessionCount, isUser: true }].sort((a, b) => b.avg - a.avg);
   const userRank = allRanked.findIndex(u => u.isUser) + 1;
@@ -1044,13 +1189,24 @@ function ClassementSection({ allSessions }) {
   const percentile = Math.round(((totalParticipants - userRank) / totalParticipants) * 100);
   const medals = ['🥇', '🥈', '🥉'];
 
+  // Afficher les 10 premiers + les 5 autour de l'utilisateur + les 3 derniers
+  const visibleSet = new Set();
+  // Top 10
+  for (let i = 0; i < Math.min(10, allRanked.length); i++) visibleSet.add(i);
+  // Autour de l'utilisateur (±3)
+  const userIdx = userRank - 1;
+  for (let i = Math.max(0, userIdx - 3); i <= Math.min(allRanked.length - 1, userIdx + 3); i++) visibleSet.add(i);
+  // Derniers 3
+  for (let i = Math.max(0, allRanked.length - 3); i < allRanked.length; i++) visibleSet.add(i);
+  const visibleIndices = [...visibleSet].sort((a, b) => a - b);
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-rose-500"></span>Classement</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
           <div><p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Votre position</p><p className="text-3xl font-black text-gray-900">{userRank}<span className="text-lg text-gray-400">/{totalParticipants}</span></p></div>
-          <div><p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Percentile</p><p className="text-3xl font-black text-primary-600">Top {100 - percentile}%</p></div>
+          <div><p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Percentile</p><p className="text-3xl font-black text-primary-600">Top {Math.max(1, 100 - percentile)}%</p></div>
           <div><p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Score moyen</p><p className={`text-3xl font-black ${scoreClass(userAvg)}`}>{userAvg}%</p></div>
         </div>
       </div>
@@ -1060,29 +1216,35 @@ function ClassementSection({ allSessions }) {
             <thead>
               <tr className="bg-gray-50/80 border-b border-gray-100">
                 <th className="text-center py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider w-16">Rang</th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Etudiant</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Étudiant</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Score moy.</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sessions</th>
               </tr>
             </thead>
             <tbody>
-              {allRanked.map((u, i) => {
-                const rank = i + 1;
+              {visibleIndices.map((idx, pos) => {
+                const u = allRanked[idx];
+                const rank = idx + 1;
                 const medal = rank <= 3 ? medals[rank - 1] : `${rank}`;
+                const showSeparator = pos > 0 && visibleIndices[pos - 1] < idx - 1;
                 return (
-                  <tr key={i} className={`border-b hover:bg-gray-50/50 ${u.isUser ? 'bg-primary-50 border-primary-200 font-bold' : 'border-gray-50'}`}>
-                    <td className="py-3 px-4 text-center text-lg">{medal}</td>
-                    <td className={`py-3 px-4 text-sm ${u.isUser ? 'text-primary-700 font-bold' : 'text-gray-700'}`}>{u.name}</td>
-                    <td className="py-3 px-4"><span className={`text-sm font-bold ${scoreClass(u.avg)}`}>{u.avg}%</span></td>
-                    <td className="py-3 px-4 text-sm text-gray-500">{u.sessions}</td>
-                  </tr>
+                  <Fragment key={idx}>
+                    {showSeparator && (
+                      <tr><td colSpan="4" className="py-1 text-center text-xs text-gray-300">• • •</td></tr>
+                    )}
+                    <tr className={`border-b hover:bg-gray-50/50 ${u.isUser ? 'bg-primary-50 border-primary-200 font-bold' : 'border-gray-50'}`}>
+                      <td className="py-3 px-4 text-center text-lg">{medal}</td>
+                      <td className={`py-3 px-4 text-sm ${u.isUser ? 'text-primary-700 font-bold' : 'text-gray-700'}`}>{u.name}</td>
+                      <td className="py-3 px-4"><span className={`text-sm font-bold ${scoreClass(u.avg)}`}>{u.avg}%</span></td>
+                      <td className="py-3 px-4 text-sm text-gray-500">{u.sessions}</td>
+                    </tr>
+                  </Fragment>
                 );
               })}
             </tbody>
           </table>
         </div>
       </div>
-      <p className="text-xs text-gray-400 text-center italic">* Classement simule a des fins de demonstration</p>
     </div>
   );
 }
