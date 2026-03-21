@@ -38,8 +38,34 @@ function PremiumCheckIcon() {
   );
 }
 
+const BILLING_PERIODS = [
+  { id: 'monthly', label: 'Mensuel', discount: 0 },
+  { id: 'quarterly', label: 'Trimestriel', discount: 15, badge: '-15%' },
+  { id: 'yearly', label: 'Annuel', discount: 30, badge: '-30%' },
+];
+
+const BASE_PRICES = { essentiel: 19.90, premium: 39.90 };
+
+function getPrice(base, discount) {
+  return (base * (1 - discount / 100)).toFixed(2).replace('.', ',');
+}
+
+function getSaving(base, discount, period) {
+  const months = period === 'yearly' ? 12 : period === 'quarterly' ? 3 : 1;
+  const saving = (base * discount / 100 * months).toFixed(0);
+  return saving;
+}
+
 export default function TarifsPage() {
   const { tier, setSubscription, isLoaded } = usePremium();
+  const [billing, setBilling] = useState('monthly');
+  const currentPeriod = BILLING_PERIODS.find(p => p.id === billing);
+  const discount = currentPeriod.discount;
+
+  const essentielPrice = getPrice(BASE_PRICES.essentiel, discount);
+  const premiumPrice = getPrice(BASE_PRICES.premium, discount);
+
+  const periodLabel = billing === 'yearly' ? '/mois, factur\u00e9 annuellement' : billing === 'quarterly' ? '/mois, factur\u00e9 trimestriellement' : '/mois';
 
   return (
     <>
@@ -60,6 +86,33 @@ export default function TarifsPage() {
       {/* Pricing Cards */}
       <section id="formules" className="py-16 md:py-20 -mt-8">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* Billing Toggle */}
+          <div className="flex justify-center mb-10">
+            <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
+              {BILLING_PERIODS.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => setBilling(p.id)}
+                  className={`flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                    billing === p.id
+                      ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {p.label}
+                  {p.badge && (
+                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
+                      billing === p.id ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {p.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid md:grid-cols-3 gap-6">
 
             {/* FREE */}
@@ -142,8 +195,16 @@ export default function TarifsPage() {
                 <p className="text-sm text-gray-500 mt-1">Pour une pr&eacute;paration compl&egrave;te</p>
               </div>
               <div className="mb-5">
-                <span className="text-4xl font-black text-gray-900">19,90&euro;</span>
-                <span className="text-sm text-gray-500">/mois</span>
+                {discount > 0 && (
+                  <span className="text-lg text-gray-400 line-through mr-2">19,90&euro;</span>
+                )}
+                <span className="text-4xl font-black text-gray-900">{essentielPrice}&euro;</span>
+                <span className="text-sm text-gray-500">{periodLabel}</span>
+                {discount > 0 && (
+                  <span className="ml-2 inline-flex px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">
+                    -{getSaving(BASE_PRICES.essentiel, discount, billing)}&euro;/{billing === 'yearly' ? 'an' : 'trim.'}
+                  </span>
+                )}
               </div>
               {isLoaded && tier === 'essentiel' ? (
                 <>
@@ -217,8 +278,16 @@ export default function TarifsPage() {
                 <p className="text-sm text-gray-400 mt-1">La pr&eacute;paration ultime</p>
               </div>
               <div className="mb-5">
-                <span className="text-4xl font-black">39,90&euro;</span>
-                <span className="text-sm text-gray-400">/mois</span>
+                {discount > 0 && (
+                  <span className="text-lg text-gray-500 line-through mr-2">39,90&euro;</span>
+                )}
+                <span className="text-4xl font-black">{premiumPrice}&euro;</span>
+                <span className="text-sm text-gray-400">{periodLabel}</span>
+                {discount > 0 && (
+                  <span className="ml-2 inline-flex px-2 py-0.5 bg-accent-500/20 text-accent-400 text-xs font-bold rounded-full">
+                    -{getSaving(BASE_PRICES.premium, discount, billing)}&euro;/{billing === 'yearly' ? 'an' : 'trim.'}
+                  </span>
+                )}
               </div>
               {isLoaded && tier === 'premium+' ? (
                 <>
