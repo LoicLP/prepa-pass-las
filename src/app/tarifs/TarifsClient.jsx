@@ -61,7 +61,7 @@ function getSaving(base, discount, period) {
 
 export default function TarifsPage() {
   const { tier, setSubscription, isLoaded } = usePremium();
-  const [billing, setBilling] = useState('monthly');
+  const [billing, setBilling] = useState('yearly');
   const currentPeriod = BILLING_PERIODS.find(p => p.id === billing);
   const discount = currentPeriod.discount;
 
