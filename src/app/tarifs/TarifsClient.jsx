@@ -47,12 +47,15 @@ const BILLING_PERIODS = [
 const BASE_PRICES = { essentiel: 19.90, premium: 39.90 };
 
 function getPrice(base, discount) {
-  return (base * (1 - discount / 100)).toFixed(2).replace('.', ',');
+  if (discount === 0) return base.toFixed(2).replace('.', ',');
+  return Math.ceil(base * (1 - discount / 100));
 }
 
 function getSaving(base, discount, period) {
+  const roundedBase = Math.ceil(base);
+  const discountedMonthly = Math.ceil(base * (1 - discount / 100));
   const months = period === 'yearly' ? 12 : period === 'quarterly' ? 3 : 1;
-  const saving = (base * discount / 100 * months).toFixed(0);
+  const saving = (roundedBase - discountedMonthly) * months;
   return saving;
 }
 
@@ -196,7 +199,7 @@ export default function TarifsPage() {
               </div>
               <div className="mb-5">
                 {discount > 0 && (
-                  <span className="text-lg text-gray-400 line-through mr-2">19,90&euro;</span>
+                  <span className="text-lg text-gray-400 line-through mr-2">20&euro;</span>
                 )}
                 <span className="text-4xl font-black text-gray-900">{essentielPrice}&euro;</span>
                 <span className="text-sm text-gray-500">{periodLabel}</span>
@@ -279,7 +282,7 @@ export default function TarifsPage() {
               </div>
               <div className="mb-5">
                 {discount > 0 && (
-                  <span className="text-lg text-gray-500 line-through mr-2">39,90&euro;</span>
+                  <span className="text-lg text-gray-500 line-through mr-2">40&euro;</span>
                 )}
                 <span className="text-4xl font-black">{premiumPrice}&euro;</span>
                 <span className="text-sm text-gray-400">{periodLabel}</span>
