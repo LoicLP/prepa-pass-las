@@ -5,8 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 const navLinks = [
-  { href: '/qcm', label: 'QCM' },
   { href: '/fiches', label: 'Fiches/Cours' },
+  { href: '/qcm', label: 'QCM' },
   { href: '/examen', label: 'Mode Examen' },
   { href: '/blog', label: 'Blog' },
   { href: '/tarifs', label: 'Tarifs' },
