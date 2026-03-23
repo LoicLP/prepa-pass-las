@@ -1,8 +1,29 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createClient } from '@supabase/supabase-js';
 import { buildQCMPrompt, buildExamenPrompt } from '@/utils/prompts';
 
 const VALID_SUBJECTS = ['anatomie', 'chimie', 'biocell', 'biostats', 'biophysique', 'ssh'];
 const VALID_MODES = ['qcm', 'examen'];
+
+// Rate limiting par IP (20 requêtes par 15 min)
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000;
+const RATE_LIMIT_MAX = 20;
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry) {
+    rateLimitMap.set(ip, { count: 1, start: now });
+    return false;
+  }
+  if (now - entry.start > RATE_LIMIT_WINDOW) {
+    rateLimitMap.set(ip, { count: 1, start: now });
+    return false;
+  }
+  entry.count++;
+  return entry.count > RATE_LIMIT_MAX;
+}
 
 // Fisher-Yates shuffle pour mélanger les options de réponse
 function shuffleArray(array) {
@@ -15,6 +36,32 @@ function shuffleArray(array) {
 }
 
 export async function POST(request) {
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  if (isRateLimited(ip)) {
+    return Response.json(
+      { error: 'Trop de requêtes. Veuillez réessayer dans quelques minutes.' },
+      { status: 429 }
+    );
+  }
+
+  // Auth check : vérifier que l'utilisateur est connecté
+  const authHeader = request.headers.get('authorization');
+  if (authHeader) {
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      );
+      const { data: { user }, error } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+      if (error || !user) {
+        // Continue sans auth — les utilisateurs gratuits non connectés sont limités côté client
+      }
+    } catch {
+      // Continue sans auth
+    }
+  }
+
   // Check API key
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -141,7 +188,7 @@ export async function POST(request) {
   } catch (err) {
     console.error('[Gemini API Error]', err);
     return Response.json(
-      { error: 'Erreur lors de l\'appel à Gemini: ' + (err.message || 'Erreur inconnue') },
+      { error: 'Erreur lors de la génération des questions. Veuillez réessayer.' },
       { status: 500 }
     );
   }

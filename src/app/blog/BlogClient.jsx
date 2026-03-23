@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { BLOG_ARTICLES } from '@/data/blog';
+import { sanitizeHtml } from '@/utils/sanitize';
 
 const categoryColors = {
   'Orientation': 'bg-blue-100 text-blue-700',
@@ -262,7 +263,7 @@ export default function BlogPage() {
                 </p>
                 <div
                   className="prose prose-gray max-w-none text-gray-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: activeArticle.content }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeArticle.content) }}
                 />
               </div>
             </div>

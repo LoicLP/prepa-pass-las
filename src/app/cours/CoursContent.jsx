@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -416,7 +417,7 @@ export default function CoursContent() {
                   </div>
                   <div
                     className="prose prose-gray max-w-none text-gray-700 leading-relaxed text-[15px] pl-0 md:pl-14"
-                    dangerouslySetInnerHTML={{ __html: sec.content }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(sec.content) }}
                   />
                 </div>
               ))}

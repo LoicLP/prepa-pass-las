@@ -6,6 +6,7 @@ import { FICHES_DATA } from '@/data/fiches';
 import { SUBJECTS } from '@/data/subjects';
 import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { sanitizeHtml } from '@/utils/sanitize';
 import { SUBJECT_COLORS } from '@/data/constants';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
 import UpgradeModal from '@/components/ui/UpgradeModal';
@@ -381,7 +382,7 @@ function FicheModal({ fiche, onClose, premiumUser, user, onLoginRequired, onUpgr
             <h2 className="text-2xl font-black text-gray-900 mb-6">{fiche.title}</h2>
             <div
               className="prose prose-gray max-w-none text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: fiche.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(fiche.content) }}
             />
 
             {/* Cours CTA */}
