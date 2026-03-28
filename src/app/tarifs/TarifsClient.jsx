@@ -78,7 +78,7 @@ export default function TarifsPage() {
         <div className="blob-2"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-4">
-            Des tarifs <span className="tarif-gradient-text">adapt&eacute;s</span> &agrave; chaque &eacute;tudiant
+            Des tarifs <span className="tarif-gradient-text">adapt&eacute;s</span> à chaque étudiant
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
             Choisissez la formule qui correspond &agrave; votre rythme. <strong className="text-gray-900">Sans engagement</strong>, annulable &agrave; tout moment.
