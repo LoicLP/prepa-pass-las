@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useTimer } from '@/hooks/useTimer';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useSupabaseStats } from '@/hooks/useSupabaseStats';
 import { SUBJECTS } from '@/data/subjects';
 import { FICHES_DATA } from '@/data/fiches';
 import { QUESTIONS } from '@/data/questions';
@@ -261,7 +261,7 @@ export default function ExamenPage() {
   const { generateQuestions: generateAIQuestions, isGenerating } = useGeminiQuestions();
 
   // ----- Stats -----
-  const [stats, setStats] = useLocalStorage('prepa-examen-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
+  const [stats, setStats] = useSupabaseStats(user?.id, 'examen_stats');
 
   const totalDone = stats.sessions?.length || 0;
   const avgScore = totalDone > 0 ? Math.round(stats.sessions.reduce((a, s) => a + (s.percentage || 0), 0) / totalDone) : 0;

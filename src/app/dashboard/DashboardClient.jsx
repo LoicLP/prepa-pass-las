@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useSupabaseStats } from '@/hooks/useSupabaseStats';
 import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { SUBJECTS } from '@/data/subjects';
@@ -70,8 +70,8 @@ export default function DashboardPage() {
     }
   }, [authLoading, user, router]);
 
-  const [qcmStats] = useLocalStorage('prepa-qcm-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
-  const [examStats] = useLocalStorage('prepa-examen-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
+  const [qcmStats] = useSupabaseStats(user?.id, 'qcm_stats');
+  const [examStats] = useSupabaseStats(user?.id, 'examen_stats');
 
   const { isPremiumPlus } = usePremium();
 

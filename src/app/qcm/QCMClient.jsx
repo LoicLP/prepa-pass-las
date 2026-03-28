@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useTimer } from '@/hooks/useTimer';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { SUBJECTS } from '@/data/subjects';
 import { FICHES_DATA } from '@/data/fiches';
 import { QUESTIONS } from '@/data/questions';
@@ -12,6 +11,7 @@ import { useGeminiQuestions } from '@/hooks/useGeminiQuestions';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePremium } from '@/contexts/PremiumContext';
 import { supabase } from '@/lib/supabase';
+import { useSupabaseStats } from '@/hooks/useSupabaseStats';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
 import UpgradeModal from '@/components/ui/UpgradeModal';
 
@@ -163,7 +163,7 @@ export default function QCMPage() {
   const { user } = useAuth();
   const { isEssentiel } = usePremium();
   const timer = useTimer({ mode: 'up' });
-  const [stats, setStats] = useLocalStorage('prepa-qcm-stats', { sessions: [], totalCorrect: 0, totalAnswered: 0 });
+  const [stats, setStats] = useSupabaseStats(user?.id, 'qcm_stats');
   const { generateQuestions: generateAIQuestions, isGenerating } = useGeminiQuestions();
 
   const totalDone = stats.sessions?.length || 0;
