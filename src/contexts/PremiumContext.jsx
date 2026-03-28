@@ -1,48 +1,58 @@
 'use client';
 import { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 const TIERS = ['gratuit', 'essentiel', 'premium+'];
 
 const PremiumContext = createContext();
 
 export function PremiumProvider({ children }) {
+  const { user } = useAuth();
   const [tier, setTier] = useState('gratuit');
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Migration depuis l'ancien système booléen
-    const oldPremium = localStorage.getItem('prepa-premium');
-    const savedTier = localStorage.getItem('prepa-tier');
-
-    if (savedTier && TIERS.includes(savedTier)) {
-      setTier(savedTier);
-    } else if (oldPremium === 'true') {
-      // Migration : ancien isPremium=true → premium+
-      setTier('premium+');
-      localStorage.setItem('prepa-tier', 'premium+');
+    if (!user || !supabase) {
+      setTier('gratuit');
+      setIsLoaded(true);
+      return;
     }
-    // Sinon, reste 'gratuit' par défaut
 
-    setIsLoaded(true);
-  }, []);
+    const loadProfile = async () => {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('tier')
+        .eq('id', user.id)
+        .single();
 
-  // Helpers
+      if (error || !data) {
+        // Créer le profil s'il n'existe pas
+        await supabase.from('user_profiles').insert({ id: user.id, tier: 'gratuit' });
+        setTier('gratuit');
+      } else {
+        setTier(TIERS.includes(data.tier) ? data.tier : 'gratuit');
+      }
+      setIsLoaded(true);
+    };
+
+    loadProfile();
+  }, [user]);
+
   const isEssentiel = tier === 'essentiel' || tier === 'premium+';
   const isPremiumPlus = tier === 'premium+';
-
-  // Rétrocompatibilité
   const isPremium = isPremiumPlus;
 
-  const setSubscription = (newTier) => {
-    if (TIERS.includes(newTier)) {
-      localStorage.setItem('prepa-tier', newTier);
-      // Sync ancien flag pour rétrocompatibilité
-      localStorage.setItem('prepa-premium', newTier === 'premium+' ? 'true' : 'false');
-      setTier(newTier);
+  const setSubscription = async (newTier) => {
+    if (!TIERS.includes(newTier)) return;
+    setTier(newTier);
+    if (user && supabase) {
+      await supabase
+        .from('user_profiles')
+        .upsert({ id: user.id, tier: newTier, updated_at: new Date().toISOString() });
     }
   };
 
-  // Rétrocompatibilité : togglePremium pour les anciens usages
   const togglePremium = (value) => {
     const newVal = typeof value === 'boolean' ? value : !isPremium;
     setSubscription(newVal ? 'premium+' : 'gratuit');

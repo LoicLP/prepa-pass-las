@@ -11,6 +11,7 @@ import { SUBJECT_COLORS, SUBJECT_ICONS, getSubjectName } from '@/data/constants'
 import { useGeminiQuestions } from '@/hooks/useGeminiQuestions';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePremium } from '@/contexts/PremiumContext';
+import { supabase } from '@/lib/supabase';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
 import UpgradeModal from '@/components/ui/UpgradeModal';
 
@@ -212,14 +213,26 @@ export default function QCMPage() {
     // Limite 1 QCM/jour en gratuit
     if (!isEssentiel) {
       const today = new Date().toISOString().split('T')[0];
-      const lastDate = localStorage.getItem('prepa-qcm-today-date') || '';
-      const todayCount = lastDate === today ? parseInt(localStorage.getItem('prepa-qcm-today-count') || '0') : 0;
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('qcm_today_date, qcm_today_count')
+        .eq('id', user.id)
+        .single();
+
+      const lastDate = profile?.qcm_today_date || '';
+      const todayCount = lastDate === today ? (profile?.qcm_today_count || 0) : 0;
+
       if (todayCount >= 1) {
         setShowUpgradeModal(true);
         return;
       }
-      localStorage.setItem('prepa-qcm-today-date', today);
-      localStorage.setItem('prepa-qcm-today-count', String(todayCount + 1));
+
+      await supabase.from('user_profiles').upsert({
+        id: user.id,
+        qcm_today_date: today,
+        qcm_today_count: todayCount + 1,
+        updated_at: new Date().toISOString(),
+      });
     }
     setSelectedTopic(topic);
     setView('loading');
