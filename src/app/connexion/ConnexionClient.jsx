@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAuthErrorMessage } from '@/utils/auth-errors';
-import { supabase } from '@/lib/supabase';
 
 export default function ConnexionPage() {
   const [email, setEmail] = useState('');
@@ -48,24 +47,20 @@ export default function ConnexionPage() {
       setError('Entrez votre adresse e-mail pour réinitialiser votre mot de passe.');
       return;
     }
-    if (!supabase) {
-      setError('Service non configuré. Contactez l\'administrateur.');
-      return;
-    }
     try {
-      const redirectTo = `${window.location.origin}/reset-password`;
-      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-      if (error) throw error;
-      // Envoyer l'email brandé de notification
-      fetch('/api/reset-password-email', {
+      const res = await fetch('/api/reset-password-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
-      }).catch(() => {});
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Erreur lors de l\'envoi.');
+      }
       setResetSent(true);
       setError('');
     } catch (err) {
-      setError(getAuthErrorMessage(err));
+      setError(err.message || 'Une erreur est survenue. Réessayez.');
     }
   };
 

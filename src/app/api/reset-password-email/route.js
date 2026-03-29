@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
 
 const rateLimitMap = new Map();
 
@@ -13,11 +14,15 @@ function isRateLimited(ip) {
   return entry.count > 3;
 }
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+}
+
 export async function POST(request) {
   try {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     if (isRateLimited(ip)) {
-      return Response.json({ error: 'Trop de requêtes.' }, { status: 429 });
+      return Response.json({ error: 'Trop de requêtes. Réessayez dans une heure.' }, { status: 429 });
     }
 
     const origin = request.headers.get('origin');
@@ -32,20 +37,50 @@ export async function POST(request) {
     }
 
     const { email } = await request.json();
-    if (!email) {
-      return Response.json({ error: 'Email manquant.' }, { status: 400 });
+    if (!email || !isValidEmail(email)) {
+      return Response.json({ error: 'Email invalide.' }, { status: 400 });
     }
 
+    // Vérifier les variables d'environnement
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error('[reset-password-email] Variables Supabase manquantes');
+      return Response.json({ error: 'Configuration manquante.' }, { status: 500 });
+    }
+
+    // Générer le lien de réinitialisation via l'admin API
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const redirectTo = `${origin || 'https://prepa-pass-las-kappa.vercel.app'}/reset-password`;
+
+    const { data, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+      options: { redirectTo },
+    });
+
+    if (linkError) {
+      console.error('[reset-password-email] Erreur generateLink:', linkError.message);
+      // Répondre succès quand même pour ne pas révéler si l'email existe
+      return Response.json({ success: true });
+    }
+
+    const resetLink = data?.properties?.action_link;
+    if (!resetLink) {
+      console.error('[reset-password-email] Pas de lien généré');
+      return Response.json({ success: true });
+    }
+
+    // Envoyer l'email brandé avec le lien
     const smtpPassword = process.env.SMTP_PASSWORD_B64
       ? Buffer.from(process.env.SMTP_PASSWORD_B64, 'base64').toString('utf-8')
       : process.env.SMTP_PASSWORD;
 
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !smtpPassword) {
-      console.error('[reset-password-email] Variables SMTP manquantes:', {
-        host: !!process.env.SMTP_HOST,
-        user: !!process.env.SMTP_USER,
-        pass: !!smtpPassword,
-      });
+      console.error('[reset-password-email] Variables SMTP manquantes');
       return Response.json({ success: false }, { status: 500 });
     }
 
@@ -60,7 +95,7 @@ export async function POST(request) {
       from: `"Prépa PASS/LAS" <${process.env.SMTP_USER}>`,
       to: email,
       subject: 'Réinitialisation de votre mot de passe',
-      text: `Bonjour,\n\nNous avons reçu une demande de réinitialisation de mot de passe pour votre compte Prépa PASS/LAS.\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email — votre mot de passe restera inchangé.\n\nUn lien de réinitialisation vous a été envoyé dans un email séparé. Il est valable 1 heure.\n\nL'équipe Prépa PASS/LAS`,
+      text: `Bonjour,\n\nVous avez demandé à réinitialiser votre mot de passe Prépa PASS/LAS.\n\nCliquez sur ce lien pour choisir un nouveau mot de passe (valable 1 heure) :\n${resetLink}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email.\n\nL'équipe Prépa PASS/LAS`,
       html: `
 <!DOCTYPE html>
 <html lang="fr">
@@ -88,20 +123,36 @@ export async function POST(request) {
           <!-- Body -->
           <tr>
             <td style="padding:36px 32px;">
-              <h2 style="margin:0 0 8px;font-size:20px;font-weight:800;color:#1e1b4b;">Réinitialisation du mot de passe</h2>
-              <p style="margin:0 0 20px;font-size:15px;color:#6b7280;line-height:1.6;">
-                Nous avons reçu une demande de réinitialisation du mot de passe pour le compte associé à <strong style="color:#1e1b4b;">${email}</strong>.
+              <h2 style="margin:0 0 8px;font-size:20px;font-weight:800;color:#1e1b4b;">Réinitialiser votre mot de passe</h2>
+              <p style="margin:0 0 24px;font-size:15px;color:#6b7280;line-height:1.6;">
+                Nous avons reçu une demande de réinitialisation du mot de passe pour votre compte. Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.
               </p>
 
-              <!-- Info box -->
+              <!-- CTA -->
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                 <tr>
-                  <td style="padding:16px;background:#fef9c3;border:1px solid #fde047;border-radius:14px;">
+                  <td align="center">
+                    <a href="${resetLink}"
+                       style="display:inline-block;padding:14px 36px;background:#4f46e5;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;border-radius:14px;letter-spacing:-0.2px;">
+                      Réinitialiser mon mot de passe →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 20px;font-size:13px;color:#9ca3af;line-height:1.5;text-align:center;">
+                Ce lien est valable pendant <strong style="color:#6b7280;">1 heure</strong>.
+              </p>
+
+              <!-- Warning box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                <tr>
+                  <td style="padding:14px;background:#fef9c3;border:1px solid #fde047;border-radius:12px;">
                     <table cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="font-size:20px;vertical-align:top;padding-right:10px;">⚠️</td>
+                        <td style="font-size:18px;vertical-align:top;padding-right:10px;">⚠️</td>
                         <td style="font-size:13px;color:#854d0e;line-height:1.5;">
-                          Si vous n'êtes <strong>pas à l'origine de cette demande</strong>, ignorez cet email. Votre mot de passe restera inchangé.
+                          Si vous n'avez pas demandé cette réinitialisation, ignorez cet email. Votre mot de passe restera inchangé.
                         </td>
                       </tr>
                     </table>
@@ -109,16 +160,10 @@ export async function POST(request) {
                 </tr>
               </table>
 
-              <p style="margin:0 0 24px;font-size:14px;color:#9ca3af;line-height:1.6;">
-                Un lien de réinitialisation a été envoyé à votre adresse email. Il est valable pendant <strong style="color:#6b7280;">1 heure</strong>. Après avoir cliqué sur ce lien, vous pourrez choisir un nouveau mot de passe.
-              </p>
-
-              <!-- Divider -->
-              <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 20px;" />
-
-              <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.5;">
-                Vous avez un problème ? Contactez-nous à
-                <a href="mailto:support@prepa-pass-las.fr" style="color:#6366f1;text-decoration:none;"> support@prepa-pass-las.fr</a>
+              <!-- Fallback link -->
+              <p style="margin:0;font-size:12px;color:#d1d5db;line-height:1.5;">
+                Le bouton ne fonctionne pas ? Copiez ce lien dans votre navigateur :<br/>
+                <span style="color:#9ca3af;word-break:break-all;">${resetLink}</span>
               </p>
             </td>
           </tr>
@@ -126,7 +171,10 @@ export async function POST(request) {
           <!-- Footer -->
           <tr>
             <td style="padding:20px 32px;border-top:1px solid #f3f4f6;text-align:center;">
-              <p style="margin:0;font-size:11px;color:#e5e7eb;">
+              <p style="margin:0;font-size:12px;color:#d1d5db;">
+                Des questions ? <a href="mailto:support@prepa-pass-las.fr" style="color:#6366f1;text-decoration:none;">support@prepa-pass-las.fr</a>
+              </p>
+              <p style="margin:8px 0 0;font-size:11px;color:#e5e7eb;">
                 © ${new Date().getFullYear()} Prépa PASS/LAS · LP Labs
               </p>
             </td>
@@ -143,7 +191,7 @@ export async function POST(request) {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('[reset-password-email] Erreur:', error.message, error.code, error.response);
+    console.error('[reset-password-email] Erreur:', error.message, error.code);
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 }
