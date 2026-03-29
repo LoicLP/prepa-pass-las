@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const DEFAULT_STATS = { sessions: [], totalCorrect: 0, totalAnswered: 0 };
@@ -12,6 +12,8 @@ const LOCAL_STORAGE_KEYS = {
 export function useSupabaseStats(userId, statKey) {
   const [value, setValue] = useState(DEFAULT_STATS);
   const [isLoaded, setIsLoaded] = useState(false);
+  // Ref pour toujours avoir la valeur courante sans dépendance dans le callback
+  const valueRef = useRef(DEFAULT_STATS);
 
   useEffect(() => {
     if (!userId || !supabase) {
@@ -30,8 +32,8 @@ export function useSupabaseStats(userId, statKey) {
       const hasSessions = supabaseStats?.sessions?.length > 0;
 
       if (hasSessions) {
-        // Données déjà dans Supabase
         setValue(supabaseStats);
+        valueRef.current = supabaseStats;
       } else {
         // Tenter une migration depuis localStorage
         const localKey = LOCAL_STORAGE_KEYS[statKey];
@@ -41,14 +43,13 @@ export function useSupabaseStats(userId, statKey) {
             if (stored) {
               const parsed = JSON.parse(stored);
               if (parsed?.sessions?.length > 0) {
-                // Migrer vers Supabase
                 await supabase.from('user_profiles').upsert({
                   id: userId,
                   [statKey]: parsed,
                   updated_at: new Date().toISOString(),
                 });
                 setValue(parsed);
-                // Nettoyer localStorage
+                valueRef.current = parsed;
                 localStorage.removeItem(localKey);
               }
             }
@@ -63,17 +64,25 @@ export function useSupabaseStats(userId, statKey) {
   }, [userId, statKey]);
 
   const setStoredValue = useCallback(async (newValue) => {
-    setValue(prev => {
-      const val = typeof newValue === 'function' ? newValue(prev) : newValue;
-      if (userId && supabase) {
-        supabase.from('user_profiles').upsert({
+    // Calculer la nouvelle valeur à partir de l'ancienne (via ref)
+    const nextVal = typeof newValue === 'function' ? newValue(valueRef.current) : newValue;
+
+    // Mettre à jour l'état local et la ref immédiatement
+    setValue(nextVal);
+    valueRef.current = nextVal;
+
+    // Persister dans Supabase séparément (pas dans le setState callback)
+    if (userId && supabase) {
+      try {
+        await supabase.from('user_profiles').upsert({
           id: userId,
-          [statKey]: val,
+          [statKey]: nextVal,
           updated_at: new Date().toISOString(),
         });
+      } catch (err) {
+        console.error('[useSupabaseStats] Erreur upsert:', err.message);
       }
-      return val;
-    });
+    }
   }, [userId, statKey]);
 
   return [value, setStoredValue, isLoaded];
