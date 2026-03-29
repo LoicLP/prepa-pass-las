@@ -1,5 +1,14 @@
+import { FICHES_DATA } from '@/data/fiches';
+
 export default function sitemap() {
   const baseUrl = 'https://prepa-pass-las.fr';
+
+  const fichesPages = FICHES_DATA.map((fiche) => ({
+    url: `${baseUrl}/fiches/${fiche.id}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  }));
 
   return [
     { url: baseUrl, lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
@@ -13,5 +22,6 @@ export default function sitemap() {
     { url: `${baseUrl}/contact`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.5 },
     { url: `${baseUrl}/cgv`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${baseUrl}/cgu`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
+    ...fichesPages,
   ];
 }
