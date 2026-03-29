@@ -70,13 +70,17 @@ export function AuthProvider({ children }) {
 
   const signInWithGoogle = async () => {
     if (!supabase) throw new Error('Supabase non configuré');
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined,
+        skipBrowserRedirect: true,
       },
     });
     if (error) throw error;
+    if (data?.url) {
+      window.location.href = data.url;
+    }
   };
 
   const logOut = async () => {
