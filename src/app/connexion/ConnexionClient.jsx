@@ -53,8 +53,15 @@ export default function ConnexionPage() {
       return;
     }
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      const redirectTo = `${window.location.origin}/reset-password`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
       if (error) throw error;
+      // Envoyer l'email brandé de notification
+      fetch('/api/reset-password-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      }).catch(() => {});
       setResetSent(true);
       setError('');
     } catch (err) {
