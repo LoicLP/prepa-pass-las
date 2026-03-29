@@ -7,7 +7,7 @@ export const metadata = {
   alternates: { canonical: '/blog' },
 };
 
-const siteUrl = 'https://prepa-pass-las-kappa.vercel.app';
+const siteUrl = 'https://prepa-pass-las.fr';
 
 const jsonLd = {
   '@context': 'https://schema.org',

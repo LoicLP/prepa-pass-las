@@ -7,7 +7,7 @@ export const metadata = {
   alternates: { canonical: '/fiches' },
 };
 
-const siteUrl = 'https://prepa-pass-las-kappa.vercel.app';
+const siteUrl = 'https://prepa-pass-las.fr';
 
 const subjectLabels = {
   anatomie: 'Anatomie',

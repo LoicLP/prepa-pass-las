@@ -14,6 +14,7 @@ const UE_ICON_STYLES = {
 export const metadata = {
   title: 'Programme PASS/LAS - Pr\u00e9pa PASS/LAS',
   description: 'D\u00e9couvrez le programme d\u00e9taill\u00e9 des 6 UE du tronc commun PASS/LAS : anatomie, chimie, biologie cellulaire, biostatistiques, biophysique et SSH.',
+  alternates: { canonical: '/programme' },
 };
 
 export default function ProgrammePage() {

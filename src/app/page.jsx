@@ -3,6 +3,12 @@ import { PROGRAMME_DATA } from '@/data/programme';
 import QuestionDuJour from '@/components/home/QuestionDuJour';
 import FaqSection from '@/components/home/FaqSection';
 
+export const metadata = {
+  title: 'Prépa PASS/LAS - Réussissez votre première année de médecine',
+  description: 'La plateforme de révision n°1 pour réussir le concours PASS/LAS. QCM illimités, fiches de cours, mode examen et suivi de progression.',
+  alternates: { canonical: '/' },
+};
+
 function StarIcon() {
   return (
     <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
