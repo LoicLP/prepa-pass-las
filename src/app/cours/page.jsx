@@ -1,11 +1,61 @@
 import CoursPage from './CoursClient';
 
 export const metadata = {
-  title: 'Cours d\u00e9taill\u00e9s PASS/LAS',
-  description: 'Acc\u00e9dez \u00e0 des cours complets par mati\u00e8re pour le programme PASS et LAS. Contenus structur\u00e9s et p\u00e9dagogiques.',
+  title: 'Cours détaillés PASS/LAS',
+  description: 'Accédez à des cours complets par matière pour le programme PASS et LAS. Contenus structurés et pédagogiques.',
   alternates: { canonical: '/cours' },
 };
 
+const siteUrl = 'https://prepa-pass-las-kappa.vercel.app';
+
+const courses = [
+  { id: 'anatomie', name: 'Anatomie', description: 'Cours complet d\'anatomie humaine : ostéologie, myologie, angiologie, neuroanatomie et splanchnologie.' },
+  { id: 'chimie', name: 'Chimie & Biochimie', description: 'Atomistique, thermodynamique, chimie organique, biochimie structurale, enzymologie et métabolisme.' },
+  { id: 'biocell', name: 'Biologie cellulaire', description: 'Membrane plasmique, organites, cycle cellulaire, signalisation et biologie moléculaire.' },
+  { id: 'biostats', name: 'Biostatistiques', description: 'Statistiques descriptives, tests d\'hypothèses, intervalles de confiance et épidémiologie.' },
+  { id: 'biophysique', name: 'Biophysique', description: 'Mécanique des fluides, optique, électricité, radioactivité et imagerie médicale.' },
+  { id: 'ssh', name: 'Sciences Humaines et Sociales', description: 'Psychologie, sociologie, éthique médicale et santé publique.' },
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Cours PASS/LAS',
+  description: 'Cours complets par matière pour le programme PASS et LAS',
+  url: `${siteUrl}/cours`,
+  itemListElement: courses.map((course, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    item: {
+      '@type': 'Course',
+      '@id': `${siteUrl}/cours#${course.id}`,
+      name: `${course.name} - PASS/LAS`,
+      description: course.description,
+      url: `${siteUrl}/cours`,
+      provider: {
+        '@type': 'Organization',
+        name: 'Prépa PASS/LAS',
+        url: siteUrl,
+      },
+      educationalLevel: 'Bac+1',
+      inLanguage: 'fr-FR',
+      keywords: `PASS, LAS, médecine, ${course.name}`,
+      audience: {
+        '@type': 'EducationalAudience',
+        educationalRole: 'student',
+      },
+    },
+  })),
+};
+
 export default function Page() {
-  return <CoursPage />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <CoursPage />
+    </>
+  );
 }
