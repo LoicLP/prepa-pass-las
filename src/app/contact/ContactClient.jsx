@@ -14,6 +14,7 @@ const CATEGORIES = [
 export default function ContactPage() {
   const { user } = useAuth();
   const [category, setCategory] = useState('bug');
+  const [guestEmail, setGuestEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
@@ -25,7 +26,7 @@ export default function ContactPage() {
     setSending(true);
     setError('');
     const cat = CATEGORIES.find(c => c.id === category);
-    const userEmail = user?.email || '';
+    const userEmail = user?.email || guestEmail;
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
@@ -113,13 +114,26 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              {/* Email connecté */}
-              {user?.email && (
+              {/* Email */}
+              {user?.email ? (
                 <div className="mb-5 p-3 bg-violet-50 border border-violet-100 rounded-xl flex items-center gap-2">
                   <svg className="w-4 h-4 text-violet-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                   </svg>
                   <span className="text-sm text-violet-700">R&eacute;ponse envoy&eacute;e &agrave; : <span className="font-bold">{user.email}</span></span>
+                </div>
+              ) : (
+                <div className="mb-5">
+                  <label htmlFor="guestEmail" className="block text-sm font-bold text-gray-900 mb-2">Votre adresse email</label>
+                  <input
+                    id="guestEmail"
+                    type="email"
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    placeholder="votre@email.com"
+                    required
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  />
                 </div>
               )}
 
