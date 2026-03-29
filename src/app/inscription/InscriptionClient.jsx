@@ -44,6 +44,12 @@ export default function InscriptionPage() {
     try {
       const displayName = `${firstName.trim()} ${lastName.trim()}`;
       await signUp(displayName, email, password);
+      // Envoyer l'email de bienvenue (sans bloquer la redirection si ça échoue)
+      fetch('/api/welcome-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: displayName, email }),
+      }).catch(() => {});
       router.push('/dashboard');
     } catch (err) {
       setError(getAuthErrorMessage(err));
