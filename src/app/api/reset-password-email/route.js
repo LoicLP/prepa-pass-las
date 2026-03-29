@@ -41,6 +41,11 @@ export async function POST(request) {
       : process.env.SMTP_PASSWORD;
 
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !smtpPassword) {
+      console.error('[reset-password-email] Variables SMTP manquantes:', {
+        host: !!process.env.SMTP_HOST,
+        user: !!process.env.SMTP_USER,
+        pass: !!smtpPassword,
+      });
       return Response.json({ success: false }, { status: 500 });
     }
 
@@ -138,7 +143,7 @@ export async function POST(request) {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('Erreur email reset:', error.message);
-    return Response.json({ success: false }, { status: 500 });
+    console.error('[reset-password-email] Erreur:', error.message, error.code, error.response);
+    return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 }
