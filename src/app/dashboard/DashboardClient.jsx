@@ -73,7 +73,7 @@ export default function DashboardPage() {
   const [qcmStats] = useSupabaseStats(user?.id, 'qcm_stats');
   const [examStats] = useSupabaseStats(user?.id, 'examen_stats');
 
-  const { isPremiumPlus } = usePremium();
+  const { isPremiumPlus, tier } = usePremium();
 
   // ---- Tag sessions with type ----
   const allSessions = useMemo(() => [
@@ -391,6 +391,33 @@ export default function DashboardPage() {
 
           {/* Main content area */}
           <div className="flex-1 min-w-0 space-y-6">
+
+            {/* ===== BANNIERE PREMIUM (gratuit uniquement) ===== */}
+            {tier === 'gratuit' && (
+              <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-violet-600 to-primary-600 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-primary-500/20">
+                {/* Decorative blur */}
+                <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute bottom-0 left-1/3 w-24 h-24 bg-violet-400/20 rounded-full blur-xl pointer-events-none" />
+                <div className="relative flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0 1 16.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 0 1-2.52.587 6.023 6.023 0 0 1-2.52-.587" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm leading-tight">Passez à Premium+ pour débloquer tout le dashboard</p>
+                    <p className="text-indigo-200 text-xs mt-0.5">Progression détaillée, objectifs, classement et bien plus.</p>
+                  </div>
+                </div>
+                <Link
+                  href="/tarifs"
+                  className="relative shrink-0 px-5 py-2.5 bg-white text-primary-700 text-sm font-bold rounded-xl hover:bg-indigo-50 transition-colors shadow-sm"
+                >
+                  Voir les offres →
+                </Link>
+              </div>
+            )}
+
             {/* ===== VUE D'ENSEMBLE ===== */}
             {activeSection === 'overview' && (
               <>
