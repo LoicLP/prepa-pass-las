@@ -68,19 +68,12 @@ export function AuthProvider({ children }) {
     if (error) throw error;
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = () => {
     if (!supabase) throw new Error('Supabase non configuré');
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined,
-        skipBrowserRedirect: true,
-      },
-    });
-    if (error) throw error;
-    if (data?.url) {
-      window.location.href = data.url;
-    }
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : '';
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const oauthUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
+    window.location.href = oauthUrl;
   };
 
   const logOut = async () => {
