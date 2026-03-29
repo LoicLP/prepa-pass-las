@@ -154,19 +154,19 @@ function FloatingSubjectCards() {
 /* ================================================================
    FICHE CARD
    ================================================================ */
-function FicheCard({ fiche, index, onOpen, premiumUser, user, onLoginRequired, onUpgradeRequired }) {
+function FicheCard({ fiche, index, premiumUser, user, onLoginRequired, onUpgradeRequired }) {
   const subject = SUBJECTS.find(s => s.id === fiche.subject);
   const colors = getColors(subject);
   const iconPath = SUBJECT_ICONS[fiche.subject] || '';
 
   return (
     <article
-      className="group bg-white rounded-2xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg hover:shadow-gray-200/60 hover:border-gray-300 transition-all duration-300"
+      className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg hover:shadow-gray-200/60 hover:border-gray-300 transition-all duration-300"
       style={{ animationDelay: `${Math.min(index * 0.04, 0.4)}s` }}
-      onClick={() => onOpen(fiche)}
     >
       <div className={`h-1 ${colors.bar}`} />
       <div className="p-5">
+        <Link href={`/fiches/${fiche.id}`} className="block">
         <div className="flex items-start gap-3 mb-3">
           <div className={`w-9 h-9 rounded-xl ${colors.light} ${colors.border} border flex items-center justify-center shrink-0`}>
             <svg className={`w-[18px] h-[18px] ${colors.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -178,18 +178,18 @@ function FicheCard({ fiche, index, onOpen, premiumUser, user, onLoginRequired, o
             <h3 className="text-[15px] font-bold text-gray-900 leading-snug mt-0.5 group-hover:text-indigo-700 transition-colors">{fiche.title}</h3>
           </div>
         </div>
-        <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4">{fiche.summary}</p>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-indigo-600 text-xs font-bold group-hover:gap-2.5 transition-all">
-            Lire la fiche
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-            </svg>
-          </div>
+        <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-3">{fiche.summary}</p>
+        <div className="flex items-center gap-1.5 text-indigo-600 text-xs font-bold group-hover:gap-2.5 transition-all mb-4">
+          Lire la fiche
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+          </svg>
+        </div>
+        </Link>
+        <div className="flex items-center justify-end">
           {premiumUser ? (
             <Link
               href={`/cours?id=${fiche.id}`}
-              onClick={(e) => e.stopPropagation()}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -199,7 +199,7 @@ function FicheCard({ fiche, index, onOpen, premiumUser, user, onLoginRequired, o
             </Link>
           ) : (
             <button
-              onClick={(e) => { e.stopPropagation(); !user ? onLoginRequired() : onUpgradeRequired(); }}
+              onClick={() => { !user ? onLoginRequired() : onUpgradeRequired(); }}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all bg-gray-50 text-gray-400 border border-gray-200 hover:bg-gray-100"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -662,7 +662,6 @@ export default function FichesPage() {
                         key={f.id}
                         fiche={f}
                         index={i}
-                        onOpen={setSelectedFiche}
                         premiumUser={isEssentiel} user={user} onLoginRequired={() => setShowLoginModal(true)} onUpgradeRequired={() => setShowUpgradeModal(true)}
                       />
                     ))}
@@ -678,7 +677,6 @@ export default function FichesPage() {
                   key={f.id}
                   fiche={f}
                   index={i}
-                  onOpen={setSelectedFiche}
                   premiumUser={isEssentiel} user={user} onLoginRequired={() => setShowLoginModal(true)} onUpgradeRequired={() => setShowUpgradeModal(true)}
                 />
               ))}
