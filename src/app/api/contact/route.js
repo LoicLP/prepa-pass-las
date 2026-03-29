@@ -50,7 +50,7 @@ export async function POST(request) {
 
     // Origin check (basic CSRF protection)
     const origin = request.headers.get('origin');
-    const allowedOrigins = ['https://prepa-pass-las.fr', 'https://www.prepa-pass-las.fr', 'http://localhost:3000'];
+    const allowedOrigins = ['https://prepa-pass-las.fr', 'https://www.prepa-pass-las.fr', 'https://prepa-pass-las-kappa.vercel.app', 'http://localhost:3000'];
     if (origin && !allowedOrigins.includes(origin)) {
       return Response.json({ error: 'Requête non autorisée.' }, { status: 403 });
     }
