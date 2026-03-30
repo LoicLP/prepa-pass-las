@@ -1269,6 +1269,20 @@ function generateFakeUsers() {
 }
 
 /* ============================================================
+   SCORE LISSÉ (moyenne bayésienne)
+   Pondère le score par le nombre de sessions pour éviter qu'un
+   utilisateur avec 1 seul QCM parfait se retrouve en tête.
+   Formule : (n * avg + C * globalAvg) / (n + C)
+   C = 20 sessions de confiance, globalAvg = 52 %
+   ============================================================ */
+const BAYES_C = 20;       // sessions de confiance
+const BAYES_AVG = 52;     // moyenne globale estimée
+
+function smoothedScore(avg, sessions) {
+  return (sessions * avg + BAYES_C * BAYES_AVG) / (sessions + BAYES_C);
+}
+
+/* ============================================================
    CLASSEMENT SECTION
    ============================================================ */
 function ClassementSection({ allSessions }) {
@@ -1278,7 +1292,8 @@ function ClassementSection({ allSessions }) {
 
   const fakeUsers = generateFakeUsers();
 
-  const allRanked = [...fakeUsers, { name: 'Vous', avg: userAvg, sessions: userSessionCount, isUser: true }].sort((a, b) => b.avg - a.avg);
+  const allRanked = [...fakeUsers, { name: 'Vous', avg: userAvg, sessions: userSessionCount, isUser: true }]
+    .sort((a, b) => smoothedScore(b.avg, b.sessions) - smoothedScore(a.avg, a.sessions));
   const userRank = allRanked.findIndex(u => u.isUser) + 1;
   const totalParticipants = allRanked.length;
   const percentile = Math.round(((totalParticipants - userRank) / totalParticipants) * 100);
