@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
 import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { SUBJECTS } from '@/data/subjects';
 import { SUBJECT_COLORS, getSubjectName } from '@/data/constants';
 import { formatDate, formatDuration, scoreClass, scoreBarClass } from '@/utils/format';
@@ -80,6 +81,22 @@ export default function DashboardPage() {
     ...qcmStats.sessions.map(s => ({ ...s, _type: 'QCM' })),
     ...examStats.sessions.map(s => ({ ...s, _type: 'Examen' })),
   ], [qcmStats.sessions, examStats.sessions]);
+
+  // ---- Sync aggregate stats in user_profiles for the leaderboard ----
+  useEffect(() => {
+    if (!user?.id || !supabase) return;
+    const avg = allSessions.length > 0
+      ? Math.round(allSessions.reduce((s, x) => s + (x.percentage || 0), 0) / allSessions.length)
+      : 0;
+    const displayName = user.user_metadata?.full_name || user.displayName || null;
+    supabase.from('user_profiles').upsert({
+      id: user.id,
+      ...(displayName ? { display_name: displayName } : {}),
+      avg_score: avg,
+      session_count: allSessions.length,
+      updated_at: new Date().toISOString(),
+    }).catch(() => {});
+  }, [allSessions, user?.id, user?.user_metadata?.full_name, user?.displayName]);
 
   // ---- Centralized data computation ----
   const data = useMemo(() => {
@@ -846,7 +863,7 @@ export default function DashboardPage() {
               !isPremiumPlus ? (
                 <PremiumLock title="Classement et comparaison" description="Comparez vos performances avec les autres etudiants grace a Premium+." />
               ) : (
-                <ClassementSection allSessions={allSessions} />
+                <ClassementSection allSessions={allSessions} userId={user?.id} />
               )
             )}
           </div>
@@ -1286,14 +1303,39 @@ function smoothedScore(avg, sessions) {
 /* ============================================================
    CLASSEMENT SECTION
    ============================================================ */
-function ClassementSection({ allSessions }) {
+function ClassementSection({ allSessions, userId }) {
   const userAvg = allSessions.length > 0 ? Math.round(allSessions.reduce((sum, s) => sum + (s.percentage || 0), 0) / allSessions.length) : 0;
   const userSessionCount = allSessions.length;
   const [expandedGaps, setExpandedGaps] = useState(new Set());
+  const [realUsers, setRealUsers] = useState([]);
+
+  // Charger les vrais utilisateurs depuis Supabase
+  useEffect(() => {
+    fetch('/api/leaderboard')
+      .then(r => r.json())
+      .then(d => setRealUsers(d.users || []))
+      .catch(() => {});
+  }, []);
 
   const fakeUsers = generateFakeUsers();
 
-  const allRanked = [...fakeUsers, { name: 'Vous', avg: userAvg, sessions: userSessionCount, isUser: true }]
+  // Formater les vrais utilisateurs (prénom + initiale) en excluant l'utilisateur courant
+  const realFormatted = realUsers
+    .filter(u => u.id !== userId)
+    .map(u => {
+      const parts = (u.display_name || 'Anonyme').trim().split(' ');
+      const firstName = parts[0];
+      const initial = parts[1] ? parts[1][0].toUpperCase() + '.' : '';
+      return {
+        name: initial ? `${firstName} ${initial}` : firstName,
+        avg: Math.round(u.avg_score || 0),
+        sessions: u.session_count || 0,
+        isReal: true,
+      };
+    });
+
+  // Fusionner faux + vrais utilisateurs (les vrais remplacent les fictifs si même nom — très rare)
+  const allRanked = [...fakeUsers, ...realFormatted, { name: 'Vous', avg: userAvg, sessions: userSessionCount, isUser: true }]
     .sort((a, b) => smoothedScore(b.avg, b.sessions) - smoothedScore(a.avg, a.sessions));
   const userRank = allRanked.findIndex(u => u.isUser) + 1;
   const totalParticipants = allRanked.length;
