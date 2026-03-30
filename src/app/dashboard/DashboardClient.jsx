@@ -1298,7 +1298,7 @@ function generateFakeUsers() {
    Formule : (n * avg + C * globalAvg) / (n + C)
    C = 20 sessions de confiance, globalAvg = 52 %
    ============================================================ */
-const BAYES_C = 20;       // sessions de confiance
+const BAYES_C = 8;        // sessions de confiance (plus faible = moins pénalisant)
 const BAYES_AVG = 52;     // moyenne globale estimée
 
 function smoothedScore(avg, sessions) {
@@ -1343,9 +1343,10 @@ function ClassementSection({ allSessions, userId, accessToken }) {
       };
     });
 
-  // Fusionner faux + vrais utilisateurs (les vrais remplacent les fictifs si même nom — très rare)
+  // Fusionner faux + vrais utilisateurs, calculer le score lissé une seule fois
   const allRanked = [...fakeUsers, ...realFormatted, { name: 'Vous', avg: userAvg, sessions: userSessionCount, isUser: true }]
-    .sort((a, b) => smoothedScore(b.avg, b.sessions) - smoothedScore(a.avg, a.sessions));
+    .map(u => ({ ...u, score: Math.round(smoothedScore(u.avg, u.sessions)) }))
+    .sort((a, b) => b.score - a.score);
   const userRank = allRanked.findIndex(u => u.isUser) + 1;
   const totalParticipants = allRanked.length;
   const percentile = Math.round(((totalParticipants - userRank) / totalParticipants) * 100);
@@ -1418,7 +1419,7 @@ function ClassementSection({ allSessions, userId, accessToken }) {
               <tr className="bg-gray-50/80 border-b border-gray-100">
                 <th className="text-center py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider w-16">Rang</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Étudiant</th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Score moy.</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Score</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sessions</th>
               </tr>
             </thead>
@@ -1454,7 +1455,7 @@ function ClassementSection({ allSessions, userId, accessToken }) {
                   <tr key={row.idx} className={`border-b hover:bg-gray-50/50 ${u.isUser ? 'bg-primary-50 border-primary-200 font-bold' : 'border-gray-50'}`}>
                     <td className="py-3 px-4 text-center text-lg">{medal}</td>
                     <td className={`py-3 px-4 text-sm ${u.isUser ? 'text-primary-700 font-bold' : 'text-gray-700'}`}>{u.name}</td>
-                    <td className="py-3 px-4"><span className={`text-sm font-bold ${scoreClass(u.avg)}`}>{u.avg}%</span></td>
+                    <td className="py-3 px-4"><span className={`text-sm font-bold ${scoreClass(u.score)}`}>{u.score}%</span></td>
                     <td className="py-3 px-4 text-sm text-gray-500">{u.sessions}</td>
                   </tr>
                 );
