@@ -1279,6 +1279,7 @@ const BAYES_C = 20;       // sessions de confiance
 const BAYES_AVG = 52;     // moyenne globale estimée
 
 function smoothedScore(avg, sessions) {
+  if (sessions === 0) return 0;
   return (sessions * avg + BAYES_C * BAYES_AVG) / (sessions + BAYES_C);
 }
 
