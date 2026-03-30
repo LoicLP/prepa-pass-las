@@ -1298,7 +1298,7 @@ function generateFakeUsers() {
    Formule : (n * avg + C * globalAvg) / (n + C)
    C = 20 sessions de confiance, globalAvg = 52 %
    ============================================================ */
-const BAYES_C = 8;        // sessions de confiance (plus faible = moins pénalisant)
+const BAYES_C = 20;       // sessions de confiance
 const BAYES_AVG = 52;     // moyenne globale estimée
 
 function smoothedScore(avg, sessions) {
