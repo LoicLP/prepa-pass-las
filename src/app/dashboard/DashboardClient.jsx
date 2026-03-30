@@ -57,7 +57,7 @@ const MENU_ITEMS = [
 
 /* ========== MAIN PAGE ========== */
 export default function DashboardPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, accessToken } = useAuth();
   const router = useRouter();
   const [activeSection, setActiveSection] = useState('overview');
   const [historyFilter, setHistoryFilter] = useState('all');
@@ -88,9 +88,13 @@ export default function DashboardPage() {
       ? Math.round(allSessions.reduce((s, x) => s + (x.percentage || 0), 0) / allSessions.length)
       : 0;
     const displayName = user.user_metadata?.full_name || user.displayName || null;
+    if (!accessToken) return;
     fetch('/api/sync-profile', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
         userId: user.id,
         displayName,
@@ -98,7 +102,7 @@ export default function DashboardPage() {
         sessionCount: allSessions.length,
       }),
     }).catch(() => {});
-  }, [allSessions, user?.id, user?.user_metadata?.full_name, user?.displayName]);
+  }, [allSessions, user?.id, accessToken, user?.user_metadata?.full_name, user?.displayName]);
 
   // ---- Centralized data computation ----
   const data = useMemo(() => {
@@ -865,7 +869,7 @@ export default function DashboardPage() {
               !isPremiumPlus ? (
                 <PremiumLock title="Classement et comparaison" description="Comparez vos performances avec les autres etudiants grace a Premium+." />
               ) : (
-                <ClassementSection allSessions={allSessions} userId={user?.id} />
+                <ClassementSection allSessions={allSessions} userId={user?.id} accessToken={accessToken} />
               )
             )}
           </div>
@@ -1305,19 +1309,22 @@ function smoothedScore(avg, sessions) {
 /* ============================================================
    CLASSEMENT SECTION
    ============================================================ */
-function ClassementSection({ allSessions, userId }) {
+function ClassementSection({ allSessions, userId, accessToken }) {
   const userAvg = allSessions.length > 0 ? Math.round(allSessions.reduce((sum, s) => sum + (s.percentage || 0), 0) / allSessions.length) : 0;
   const userSessionCount = allSessions.length;
   const [expandedGaps, setExpandedGaps] = useState(new Set());
   const [realUsers, setRealUsers] = useState([]);
 
-  // Charger les vrais utilisateurs depuis Supabase
+  // Charger les vrais utilisateurs depuis Supabase (authentifié)
   useEffect(() => {
-    fetch('/api/leaderboard')
+    if (!accessToken) return;
+    fetch('/api/leaderboard', {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    })
       .then(r => r.json())
       .then(d => setRealUsers(d.users || []))
       .catch(() => {});
-  }, []);
+  }, [accessToken]);
 
   const fakeUsers = generateFakeUsers();
 

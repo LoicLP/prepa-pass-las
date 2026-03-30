@@ -21,6 +21,7 @@ function normalizeUser(supabaseUser) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [accessToken, setAccessToken] = useState(null);
 
   useEffect(() => {
     // Si Supabase n'est pas configuré (clés manquantes), on skip
@@ -32,6 +33,7 @@ export function AuthProvider({ children }) {
     // Récupérer la session initiale
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(normalizeUser(session?.user ?? null));
+      setAccessToken(session?.access_token ?? null);
       setLoading(false);
     });
 
@@ -39,6 +41,7 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(normalizeUser(session?.user ?? null));
+        setAccessToken(session?.access_token ?? null);
         setLoading(false);
       }
     );
@@ -82,7 +85,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signInWithGoogle, logOut }}>
+    <AuthContext.Provider value={{ user, loading, accessToken, signUp, signIn, signInWithGoogle, logOut }}>
       {children}
     </AuthContext.Provider>
   );
