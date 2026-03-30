@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
 import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
 import { SUBJECTS } from '@/data/subjects';
 import { SUBJECT_COLORS, getSubjectName } from '@/data/constants';
 import { formatDate, formatDuration, scoreClass, scoreBarClass } from '@/utils/format';
@@ -84,17 +83,20 @@ export default function DashboardPage() {
 
   // ---- Sync aggregate stats in user_profiles for the leaderboard ----
   useEffect(() => {
-    if (!user?.id || !supabase) return;
+    if (!user?.id) return;
     const avg = allSessions.length > 0
       ? Math.round(allSessions.reduce((s, x) => s + (x.percentage || 0), 0) / allSessions.length)
       : 0;
     const displayName = user.user_metadata?.full_name || user.displayName || null;
-    supabase.from('user_profiles').upsert({
-      id: user.id,
-      ...(displayName ? { display_name: displayName } : {}),
-      avg_score: avg,
-      session_count: allSessions.length,
-      updated_at: new Date().toISOString(),
+    fetch('/api/sync-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.id,
+        displayName,
+        avgScore: avg,
+        sessionCount: allSessions.length,
+      }),
     }).catch(() => {});
   }, [allSessions, user?.id, user?.user_metadata?.full_name, user?.displayName]);
 
