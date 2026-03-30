@@ -1404,6 +1404,16 @@ function ClassementSection({ allSessions, userId, accessToken }) {
 
   return (
     <div className="space-y-6">
+      {/* Explication du classement */}
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
+        <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+        </svg>
+        <div className="text-sm text-amber-800 leading-relaxed">
+          <p className="font-semibold mb-1">Comment fonctionne le classement ?</p>
+          <p>Le score affiché est <span className="font-semibold">pondéré par ton nombre de sessions</span> — un résultat isolé ne suffit pas à grimper en tête. Plus tu t'entraînes régulièrement, plus ton score reflète fidèlement ton niveau réel. Le classement se met à jour à chaque connexion.</p>
+        </div>
+      </div>
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-rose-500"></span>Classement</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
