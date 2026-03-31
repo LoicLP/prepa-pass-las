@@ -224,6 +224,26 @@ RÈGLES :
 Génère exactement ${count} questions réparties selon la distribution ci-dessus.`;
   }
 
+  // Prompt sujet libre (ficheTopic fourni, pas de matière spécifique, pas de contenu de fiche)
+  if (ficheTopic && !subject && !ficheContent) {
+    return `SUJET UNIQUE ET OBLIGATOIRE : « ${ficheTopic} »
+Toutes les questions doivent porter EXCLUSIVEMENT sur « ${ficheTopic} ». N'aborde AUCUN autre thème.
+
+Tu es un professeur universitaire qui prépare un EXAMEN BLANC de PASS/LAS (première année de santé, France).
+Niveau : intermédiaire à difficile pour un étudiant PASS/LAS 1re année — jamais niveau internat ou spécialité.
+
+Génère exactement ${count} questions QCM sur « ${ficheTopic} » au niveau PASS/LAS :
+- Chaque question porte sur un aspect différent de « ${ficheTopic} » (anatomie, physiologie, biochimie, mécanismes, chiffres clés, applications cliniques de base…)
+- Distracteurs subtils et plausibles pour un étudiant de 1re année
+- Explication pédagogique avec rappel de cours pour chaque question
+- Terminologie médicale/scientifique française officielle
+- 60% questions intermédiaires, 40% difficiles (toujours niveau PASS, pas internat)
+
+${JSON_FORMAT_INSTRUCTIONS}
+
+Rappel : toutes les ${count} questions portent UNIQUEMENT sur « ${ficheTopic} ».`;
+  }
+
   // Default prompt (subject-level, no fiche content)
   const context = SUBJECT_CONTEXT[subject] || null;
   const topicLine = ficheTopic
