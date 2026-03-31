@@ -339,15 +339,15 @@ export default function ExamenPage() {
 
     // Try AI generation first
     const subjectId = source.subject || source.subjectId || null;
-    const subjectName = subjectId ? (source.subjectName || getSubjectName(subjectId)) : (source.title || source.subjectName);
-    const ficheTopic = source.title || null;
+    const subjectName = subjectId
+      ? (source.subjectName || getSubjectName(subjectId))
+      : (source.title || source.subjectName || 'Toutes les matières PASS/LAS');
+    const ficheTopic = source.type === 'mixed' ? null : (source.title || null);
 
-    if (subjectId || ficheTopic) {
-      const aiQuestions = await generateAIQuestions(subjectId, subjectName, qCount, 'examen', ficheTopic);
-      if (aiQuestions && aiQuestions.length > 0) {
-        startWithQuestions(aiQuestions);
-        return;
-      }
+    const aiResult = await generateAIQuestions(subjectId, subjectName, qCount, 'examen', ficheTopic);
+    if (aiResult?.questions?.length > 0) {
+      startWithQuestions(aiResult.questions);
+      return;
     }
 
     // Fallback to static questions
