@@ -346,7 +346,7 @@ export default function ExamenPage() {
 
     const aiResult = await generateAIQuestions(subjectId, subjectName, qCount, 'examen', ficheTopic);
     if (aiResult?.questions?.length > 0) {
-      startWithQuestions(aiResult.questions);
+      startWithQuestions(aiResult.questions.slice(0, qCount));
       return;
     }
 
