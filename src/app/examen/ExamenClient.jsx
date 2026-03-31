@@ -992,7 +992,7 @@ export default function ExamenPage() {
     } else if (selectedTopic?.type === 'custom') {
       badgeText = selectedTopic.subjectName || 'Sujet libre';
     } else if (selectedTopic?.type === 'mixed') {
-      badgeText = 'Examen complet';
+      badgeText = q.subject || 'Examen complet';
     }
 
     return (
