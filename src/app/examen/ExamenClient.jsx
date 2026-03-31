@@ -904,24 +904,13 @@ export default function ExamenPage() {
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all placeholder:text-gray-400"
             />
           </div>
-          {/* Subject cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-            {SUBJECTS.map(s => {
-              const colors = getColors(s.color);
-              return (
-                <button key={s.id} onClick={() => { launchExam({ type: 'custom', subject: s.id, subjectName: s.name, title: customTopic.trim() || s.name }); setCustomTopic(''); }} className="bg-white rounded-xl p-4 text-left border border-gray-200 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-primary-300 cursor-pointer">
-                  <div className={`w-10 h-10 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center mb-3`}>
-                    <SubjectIcon subjectId={s.id} className={`w-5 h-5 ${colors.icon}`} />
-                  </div>
-                  <h4 className="text-sm font-bold text-gray-900 mb-0.5">{s.name}</h4>
-                  <p className="text-xs text-gray-500">{QUESTIONS.filter(q => q.subject === s.id).length} questions</p>
-                </button>
-              );
-            })}
-          </div>
-          {/* All subjects */}
-          <button onClick={() => { launchExam({ type: 'custom', subject: null, subjectName: 'Toutes mati\u00e8res', title: customTopic.trim() || 'Toutes les mati\u00e8res' }); setCustomTopic(''); }} className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-            Toutes les mati&egrave;res (20 questions &middot; 30 min)
+          {/* Launch button */}
+          <button
+            onClick={() => { launchExam({ type: 'custom', subject: null, subjectName: customTopic.trim() || 'Toutes les matières PASS/LAS', title: customTopic.trim() || null }); setCustomTopic(''); }}
+            disabled={!customTopic.trim()}
+            className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Lancer l&apos;examen (20 questions &middot; 30 min)
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
           </button>
         </div>
