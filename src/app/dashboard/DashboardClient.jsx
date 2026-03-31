@@ -741,29 +741,11 @@ export default function DashboardPage() {
                       <span className="w-2 h-2 rounded-full bg-violet-400"></span>
                       Régularité
                     </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-violet-50 rounded-xl p-4 text-center">
+                    <div className="flex justify-center">
+                      <div className="bg-violet-50 rounded-xl p-4 text-center w-full">
                         <p className="text-3xl font-black text-violet-700">{data.currentStreak}</p>
                         <p className="text-xs font-medium text-violet-500 mt-1">Jours consécutifs</p>
                         <p className="text-xs text-gray-400 mt-1">Record : {data.bestStreak} jours</p>
-                      </div>
-                      <div className="bg-indigo-50 rounded-xl p-4 text-center">
-                        {(() => {
-                          const thisW = Math.round(data.thisWeekTime / 60000);
-                          const lastW = Math.round(data.lastWeekTime / 60000);
-                          const diff = lastW > 0 ? Math.round(((thisW - lastW) / lastW) * 100) : (thisW > 0 ? 100 : 0);
-                          return (
-                            <>
-                              <p className="text-3xl font-black text-indigo-700">
-                                {thisW >= 60 ? `${Math.floor(thisW / 60)}h${thisW % 60 > 0 ? String(thisW % 60).padStart(2, '0') : ''}` : `${thisW}m`}
-                              </p>
-                              <p className="text-xs font-medium text-indigo-500 mt-1">Cette semaine</p>
-                              <p className={`text-xs mt-1 font-semibold ${diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                {diff > 0 ? `↑ +${diff}%` : diff < 0 ? `↓ ${diff}%` : '→ Identique'} vs sem. passée
-                              </p>
-                            </>
-                          );
-                        })()}
                       </div>
                     </div>
                   </div>
