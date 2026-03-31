@@ -40,7 +40,62 @@ RÈGLES STRICTES :
 - Pas de markdown, pas de commentaires, JUSTE le tableau JSON
 `;
 
-export function buildQCMPrompt(subject, subjectName, count, ficheTopic = null) {
+function stripHtml(html) {
+  if (!html) return '';
+  // Remove HTML tags and decode basic entities
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<\/h[1-6]>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+export function buildQCMPrompt(subject, subjectName, count, ficheTopic = null, ficheContent = null) {
+  // When fiche content is available, build a focused prompt from the actual course notes
+  if (ficheTopic && ficheContent) {
+    const cleanContent = stripHtml(ficheContent).slice(0, 8000); // limit tokens
+    return `Tu es un professeur universitaire expert qui enseigne en PASS/LAS (première année de santé) dans une faculté de médecine française.
+
+${PASS_LAS_CONTEXT}
+
+Génère ${count} questions à choix multiples (QCM) d'ENTRAÎNEMENT de niveau PASS/LAS.
+
+SUJET DU QCM : « ${ficheTopic} »
+Les questions doivent porter EXCLUSIVEMENT sur le sujet « ${ficheTopic} » au niveau PASS/LAS. Ne déborde PAS sur d'autres chapitres de la matière.
+
+NOTES DE COURS (base principale) :
+---
+${cleanContent}
+---
+
+Utilise ces notes de cours comme point de départ et base principale. Tu peux enrichir avec des notions complémentaires sur « ${ficheTopic} » au niveau PASS/LAS (points de cours classiques, chiffres clés, mécanismes importants du programme PASS) si les notes ne sont pas suffisantes pour générer ${count} questions variées. Ne sors jamais du sujet « ${ficheTopic} ».
+
+Niveau de difficulté : Questions d'entraînement de niveau PASS/LAS (facile à intermédiaire pour ce cursus).
+- Tester à la fois les connaissances factuelles et la compréhension des mécanismes
+- Couvrir différents aspects du sujet « ${ficheTopic} »
+
+Consignes pédagogiques :
+- Questions claires, précises, 100% sur le sujet « ${ficheTopic} »
+- Distracteurs (mauvaises réponses) plausibles : erreurs classiques que font les étudiants de PASS/LAS sur ce sujet
+- Varier les aspects : définitions, mécanismes, chiffres clés, applications cliniques de base
+- Utiliser la terminologie médicale/scientifique française officielle du programme PASS/LAS
+- Les explications doivent être pédagogiques et aider l'étudiant à comprendre le mécanisme
+- Ne PAS poser de questions de niveau internat, ECN/EDN ou spécialité médicale
+
+${JSON_FORMAT_INSTRUCTIONS}
+
+Génère exactement ${count} questions sur le sujet « ${ficheTopic} » au niveau PASS/LAS.`;
+  }
+
+  // Default prompt (subject-level, no fiche content)
   const context = SUBJECT_CONTEXT[subject] || null;
   const topicLine = ficheTopic
     ? `\nSujet spécifique : ${ficheTopic}\nTOUTES les questions doivent porter EXCLUSIVEMENT sur ce sujet précis, au niveau PASS/LAS. Ne génère PAS de questions sur d'autres thèmes.\n`
@@ -73,7 +128,89 @@ ${JSON_FORMAT_INSTRUCTIONS}
 Génère exactement ${count} questions.`;
 }
 
-export function buildExamenPrompt(subject, subjectName, count, ficheTopic = null) {
+export function buildExamenPrompt(subject, subjectName, count, ficheTopic = null, ficheContent = null) {
+  // When fiche content is available, build a focused prompt from the actual course notes
+  if (ficheTopic && ficheContent) {
+    const cleanContent = stripHtml(ficheContent).slice(0, 8000); // limit tokens
+    return `Tu es un professeur universitaire expert qui prépare un EXAMEN BLANC de PASS/LAS dans une faculté de médecine française.
+
+${PASS_LAS_CONTEXT}
+
+Génère ${count} questions à choix multiples (QCM) de niveau EXAMEN PASS/LAS.
+
+SUJET DU QCM : « ${ficheTopic} »
+Les questions doivent porter EXCLUSIVEMENT sur le sujet « ${ficheTopic} » au niveau PASS/LAS. Ne déborde PAS sur d'autres chapitres de la matière.
+
+NOTES DE COURS (base principale) :
+---
+${cleanContent}
+---
+
+Utilise ces notes de cours comme point de départ et base principale. Tu peux enrichir avec des notions complémentaires sur « ${ficheTopic} » au niveau PASS/LAS (points de cours classiques, chiffres clés, mécanismes importants du programme PASS) si les notes ne sont pas suffisantes pour générer ${count} questions variées. Ne sors jamais du sujet « ${ficheTopic} ».
+
+Niveau de difficulté : Questions d'EXAMEN de niveau PASS/LAS (intermédiaire à difficile pour ce cursus).
+Ces questions doivent simuler un vrai partiel ou examen terminal de PASS/LAS :
+- Certaines questions à raisonnement qui testent la compréhension des mécanismes
+- Distracteurs subtils reproduisant les erreurs classiques des étudiants de PASS/LAS sur « ${ficheTopic} »
+- Approfondir différents aspects du sujet
+- Quelques questions pièges classiques sur les confusions fréquentes du sujet
+
+Consignes :
+- Questions rigoureuses et précises, 100% sur le sujet « ${ficheTopic} »
+- Les distracteurs doivent être subtils et crédibles pour un étudiant de première année
+- Varier les niveaux de difficulté (60% intermédiaire, 40% difficile, toujours dans le cadre PASS/LAS)
+- Utiliser la terminologie exacte du programme officiel PASS/LAS français
+- Les explications doivent être complètes, pédagogiques, avec les rappels de cours utiles
+- Ne PAS poser de questions de niveau internat, ECN/EDN ou spécialité médicale
+
+${JSON_FORMAT_INSTRUCTIONS}
+
+Génère exactement ${count} questions sur le sujet « ${ficheTopic} » au niveau PASS/LAS.`;
+  }
+
+  // Prompt dédié EXAMEN COMPLET TOUTES MATIÈRES (mode mixed)
+  if (!subject && !ficheTopic) {
+    const questionsPerSubject = Math.round(count / 6);
+    const remainder = count - questionsPerSubject * 6;
+    return `Tu es un professeur universitaire expert qui prépare un EXAMEN BLANC COMPLET de PASS/LAS dans une faculté de médecine française.
+
+${PASS_LAS_CONTEXT}
+
+Génère ${count} questions à choix multiples (QCM) de niveau EXAMEN PASS/LAS couvrant TOUTES les matières du programme PASS.
+
+RÉPARTITION OBLIGATOIRE DES ${count} QUESTIONS :
+- Anatomie : ${questionsPerSubject + (remainder > 0 ? 1 : 0)} questions — ${SUBJECT_CONTEXT.anatomie}
+- Chimie générale & organique : ${questionsPerSubject + (remainder > 1 ? 1 : 0)} questions — ${SUBJECT_CONTEXT.chimie}
+- Biologie cellulaire & moléculaire : ${questionsPerSubject + (remainder > 2 ? 1 : 0)} questions — ${SUBJECT_CONTEXT.biocell}
+- Biostatistiques & épidémiologie : ${questionsPerSubject + (remainder > 3 ? 1 : 0)} questions — ${SUBJECT_CONTEXT.biostats}
+- Biophysique : ${questionsPerSubject + (remainder > 4 ? 1 : 0)} questions — ${SUBJECT_CONTEXT.biophysique}
+- Sciences humaines & sociales en santé : ${questionsPerSubject} questions — ${SUBJECT_CONTEXT.ssh}
+
+CONTRAINTES ABSOLUES :
+- Respecte EXACTEMENT la répartition ci-dessus (total = ${count} questions)
+- Chaque question doit indiquer sa matière dans l'énoncé ou le contexte (ex: "[Anatomie]", "[Chimie]", "[Biocell]", etc.)
+- Toutes les questions sont de niveau PASS/LAS première année, PAS de niveau internat ou spécialité
+- Les questions doivent correspondre au programme officiel des facultés de médecine françaises en PASS
+
+Niveau de difficulté : Examen terminal de PASS/LAS (intermédiaire à difficile) :
+- Questions simulant de vrais partiels de PASS des universités françaises
+- Raisonnement mécanistique (pas uniquement par cœur)
+- Distracteurs subtils reproduisant les erreurs classiques des étudiants PASS de 1re année
+- 60% questions intermédiaires, 40% questions difficiles (toujours niveau PASS, jamais internat)
+- Questions pièges classiques : confusions fréquentes, exceptions, inversions propres à chaque matière
+
+Consignes rédactionnelles :
+- Terminologie exacte du programme officiel PASS/LAS français
+- Distracteurs crédibles pour un étudiant de première année de santé
+- Explications complètes et pédagogiques avec rappels de cours utiles
+- Style identique aux épreuves universitaires PASS françaises
+
+${JSON_FORMAT_INSTRUCTIONS}
+
+Génère exactement ${count} questions réparties sur les 6 matières du programme PASS.`;
+  }
+
+  // Default prompt (subject-level, no fiche content)
   const context = SUBJECT_CONTEXT[subject] || null;
   const topicLine = ficheTopic
     ? `\nSujet spécifique : ${ficheTopic}\nTOUTES les questions doivent porter EXCLUSIVEMENT sur ce sujet précis, au niveau PASS/LAS. Ne génère PAS de questions sur d'autres thèmes.\n`
