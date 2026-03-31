@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePremium } from '@/contexts/PremiumContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 function FaqItem({ question, answer }) {
   const [open, setOpen] = useState(false);
@@ -60,8 +61,56 @@ function getSaving(base, discount, period) {
 }
 
 export default function TarifsPage() {
-  const { tier, setSubscription, isLoaded } = usePremium();
+  const { tier, isLoaded } = usePremium();
+  const { user, accessToken } = useAuth();
   const [billing, setBilling] = useState('yearly');
+  const [loadingPlan, setLoadingPlan] = useState(null);
+
+  const handleSubscribe = async (plan) => {
+    if (!user) {
+      window.location.href = '/connexion?redirect=/tarifs';
+      return;
+    }
+    setLoadingPlan(plan);
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ plan, period: billing }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Erreur lors de la création du paiement');
+      }
+    } catch {
+      alert('Erreur réseau, veuillez réessayer.');
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  const handlePortal = async () => {
+    setLoadingPlan('portal');
+    try {
+      const res = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      alert('Erreur réseau, veuillez réessayer.');
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
   const currentPeriod = BILLING_PERIODS.find(p => p.id === billing);
   const discount = currentPeriod.discount;
 
@@ -131,16 +180,23 @@ export default function TarifsPage() {
                 <span className="text-4xl font-black text-gray-900">Gratuit</span>
               </div>
               {isLoaded && tier === 'gratuit' ? (
-                <button className="block w-full py-3 text-center bg-accent-500 text-white font-bold rounded-xl mb-2 cursor-default">
+                <button className="block w-full py-3 text-center bg-gray-200 text-gray-700 font-bold rounded-xl mb-2 cursor-default">
                   Plan actuel &#10003;
                 </button>
-              ) : (
-                <button
-                  onClick={() => setSubscription('gratuit')}
+              ) : isLoaded && user ? (
+                <Link
+                  href="/dashboard"
                   className="block w-full py-3 text-center bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors mb-2"
                 >
-                  R&eacute;initialiser (Simulation)
-                </button>
+                  Tableau de bord →
+                </Link>
+              ) : (
+                <Link
+                  href="/inscription"
+                  className="block w-full py-3 text-center bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors mb-2"
+                >
+                  Commencer gratuitement
+                </Link>
               )}
               <div className="mb-3" />
               <div className="border-t border-gray-100 pt-5">
@@ -215,18 +271,20 @@ export default function TarifsPage() {
                     Essentiel activ&eacute; &#10003;
                   </button>
                   <button
-                    onClick={() => setSubscription('gratuit')}
-                    className="block w-full py-2 text-center text-xs text-gray-500 hover:text-red-400 transition-colors mb-3"
+                    onClick={handlePortal}
+                    disabled={loadingPlan === 'portal'}
+                    className="block w-full py-2 text-center text-xs text-gray-500 hover:text-primary-600 transition-colors mb-3"
                   >
-                    D&eacute;sactiver (simulation)
+                    {loadingPlan === 'portal' ? 'Chargement...' : 'Gérer mon abonnement →'}
                   </button>
                 </>
               ) : (
                 <button
-                  onClick={() => setSubscription('essentiel')}
-                  className="block w-full py-3 text-center bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25 mb-5"
+                  onClick={() => handleSubscribe('essentiel')}
+                  disabled={loadingPlan === 'essentiel'}
+                  className="block w-full py-3 text-center bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25 mb-5 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Activer Essentiel (Simulation)
+                  {loadingPlan === 'essentiel' ? 'Chargement...' : 'Commencer avec Essentiel'}
                 </button>
               )}
               <div className="border-t border-primary-100 pt-5">
@@ -298,18 +356,20 @@ export default function TarifsPage() {
                     Premium+ activ&eacute; &#10003;
                   </button>
                   <button
-                    onClick={() => setSubscription('gratuit')}
-                    className="block w-full py-2 text-center text-xs text-gray-500 hover:text-red-400 transition-colors mb-5"
+                    onClick={handlePortal}
+                    disabled={loadingPlan === 'portal'}
+                    className="block w-full py-2 text-center text-xs text-gray-400 hover:text-white transition-colors mb-5"
                   >
-                    D&eacute;sactiver (simulation)
+                    {loadingPlan === 'portal' ? 'Chargement...' : 'Gérer mon abonnement →'}
                   </button>
                 </>
               ) : (
                 <button
-                  onClick={() => setSubscription('premium+')}
-                  className="block w-full py-3 text-center bg-white text-gray-900 font-bold rounded-xl hover:bg-gray-100 transition-colors mb-5"
+                  onClick={() => handleSubscribe('premium+')}
+                  disabled={loadingPlan === 'premium+'}
+                  className="block w-full py-3 text-center bg-white text-gray-900 font-bold rounded-xl hover:bg-gray-100 transition-colors mb-5 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Activer Premium+ (Simulation)
+                  {loadingPlan === 'premium+' ? 'Chargement...' : 'Commencer avec Premium+'}
                 </button>
               )}
               <div className="border-t border-gray-700 pt-5">
