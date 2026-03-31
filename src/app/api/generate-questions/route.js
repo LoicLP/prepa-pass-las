@@ -109,7 +109,7 @@ export async function POST(request) {
   const questionCount = Math.max(1, Math.min(50, parseInt(count) || 10));
   const resolvedSubjectName = subjectName || subject || ficheTopic;
 
-  console.log('[generate-questions] ficheTopic:', ficheTopic, '| ficheContent length:', ficheContent?.length ?? 'null');
+  console.log('[generate-questions] mode:', mode, '| subject:', subject, '| ficheTopic:', ficheTopic, '| subjectName:', subjectName, '| ficheContent:', ficheContent?.length ?? 'null');
 
   // Build prompt
   let prompt;

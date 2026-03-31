@@ -95,6 +95,26 @@ ${JSON_FORMAT_INSTRUCTIONS}
 Génère exactement ${count} questions sur le sujet « ${ficheTopic} » au niveau PASS/LAS.`;
   }
 
+  // Prompt sujet libre QCM (ficheTopic fourni, pas de matière, pas de contenu)
+  if (ficheTopic && !subject && !ficheContent) {
+    return `SUJET UNIQUE ET OBLIGATOIRE : « ${ficheTopic} »
+Toutes les questions doivent porter EXCLUSIVEMENT sur « ${ficheTopic} ». N'aborde AUCUN autre thème.
+
+Tu es un professeur universitaire qui prépare des QCM d'ENTRAÎNEMENT de PASS/LAS (première année de santé, France).
+Niveau : facile à intermédiaire pour un étudiant PASS/LAS 1re année — jamais niveau internat ou spécialité.
+
+Génère exactement ${count} questions QCM sur « ${ficheTopic} » au niveau PASS/LAS :
+- Chaque question porte sur un aspect différent de « ${ficheTopic} » (définitions, mécanismes, chiffres clés, applications de base…)
+- Distracteurs plausibles reproduisant les erreurs classiques des étudiants de 1re année
+- Explication pédagogique avec rappel de cours pour chaque question
+- Terminologie médicale/scientifique française officielle
+- Niveau d'entraînement PASS (pas internat, pas spécialité)
+
+${JSON_FORMAT_INSTRUCTIONS}
+
+Rappel : toutes les ${count} questions portent UNIQUEMENT sur « ${ficheTopic} ».`;
+  }
+
   // Default prompt (subject-level, no fiche content)
   const context = SUBJECT_CONTEXT[subject] || null;
   const topicLine = ficheTopic
