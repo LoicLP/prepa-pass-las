@@ -170,44 +170,58 @@ Génère exactement ${count} questions sur le sujet « ${ficheTopic} » au nivea
 
   // Prompt dédié EXAMEN COMPLET TOUTES MATIÈRES (mode mixed)
   if (!subject && !ficheTopic) {
-    const questionsPerSubject = Math.floor(count / 6);
-    const remainder = count - questionsPerSubject * 6;
+    const q = Math.floor(count / 6);
+    const r = count - q * 6;
+    const dist = [
+      { name: 'Anatomie',          key: 'anatomie',    n: q + (r > 0 ? 1 : 0) },
+      { name: 'Chimie',            key: 'chimie',      n: q + (r > 1 ? 1 : 0) },
+      { name: 'Biologie cellulaire', key: 'biocell',   n: q + (r > 2 ? 1 : 0) },
+      { name: 'Biostatistiques',   key: 'biostats',    n: q + (r > 3 ? 1 : 0) },
+      { name: 'Biophysique',       key: 'biophysique', n: q + (r > 4 ? 1 : 0) },
+      { name: 'SSH',               key: 'ssh',         n: q },
+    ];
+    const repartition = dist.map(d => `- ${d.name} : ${d.n} questions`).join('\n');
+
     return `Tu es un professeur universitaire expert qui prépare un EXAMEN BLANC COMPLET de PASS/LAS dans une faculté de médecine française.
 
 ${PASS_LAS_CONTEXT}
 
-Génère ${count} questions à choix multiples (QCM) de niveau EXAMEN PASS/LAS couvrant TOUTES les matières du programme PASS.
+Génère exactement ${count} questions QCM de niveau EXAMEN PASS/LAS (intermédiaire à difficile, jamais internat).
 
-RÉPARTITION OBLIGATOIRE DES ${count} QUESTIONS :
-- Anatomie : ${questionsPerSubject + (remainder > 0 ? 1 : 0)} questions — ${SUBJECT_CONTEXT.anatomie}
-- Chimie générale & organique : ${questionsPerSubject + (remainder > 1 ? 1 : 0)} questions — ${SUBJECT_CONTEXT.chimie}
-- Biologie cellulaire & moléculaire : ${questionsPerSubject + (remainder > 2 ? 1 : 0)} questions — ${SUBJECT_CONTEXT.biocell}
-- Biostatistiques & épidémiologie : ${questionsPerSubject + (remainder > 3 ? 1 : 0)} questions — ${SUBJECT_CONTEXT.biostats}
-- Biophysique : ${questionsPerSubject + (remainder > 4 ? 1 : 0)} questions — ${SUBJECT_CONTEXT.biophysique}
-- Sciences humaines & sociales en santé : ${questionsPerSubject} questions — ${SUBJECT_CONTEXT.ssh}
+RÉPARTITION OBLIGATOIRE (total = ${count}) :
+${repartition}
 
-CONTRAINTES ABSOLUES :
-- Respecte EXACTEMENT la répartition ci-dessus (total = ${count} questions)
-- Chaque question doit indiquer sa matière dans l'énoncé ou le contexte (ex: "[Anatomie]", "[Chimie]", "[Biocell]", etc.)
-- Toutes les questions sont de niveau PASS/LAS première année, PAS de niveau internat ou spécialité
-- Les questions doivent correspondre au programme officiel des facultés de médecine françaises en PASS
+Pour chaque matière, couvre des thèmes variés du programme PASS officiel :
+- Anatomie : ostéologie, myologie, neuroanatomie, angiologie, splanchnologie
+- Chimie : atomistique, thermodynamique, cinétique, acide-base, chimie organique, biochimie
+- Biologie cellulaire : ultrastructure, cycle cellulaire, génétique moléculaire, signalisation
+- Biostatistiques : statistiques descriptives, tests d'hypothèses, épidémiologie, lecture d'article
+- Biophysique : optique, mécanique des fluides, électrophysiologie, imagerie médicale, radioactivité
+- SSH : éthique, droit de la santé, relation médecin-patient, santé publique
 
-Niveau de difficulté : Examen terminal de PASS/LAS (intermédiaire à difficile) :
-- Questions simulant de vrais partiels de PASS des universités françaises
-- Raisonnement mécanistique (pas uniquement par cœur)
-- Distracteurs subtils reproduisant les erreurs classiques des étudiants PASS de 1re année
-- 60% questions intermédiaires, 40% questions difficiles (toujours niveau PASS, jamais internat)
-- Questions pièges classiques : confusions fréquentes, exceptions, inversions propres à chaque matière
+FORMAT JSON OBLIGATOIRE — chaque question doit avoir un champ "subject" supplémentaire :
+{
+  "question": "Énoncé de la question",
+  "subject": "Anatomie",
+  "options": [
+    { "text": "Proposition A", "correct": false },
+    { "text": "Proposition B", "correct": true },
+    { "text": "Proposition C", "correct": false },
+    { "text": "Proposition D", "correct": false }
+  ],
+  "explanation": "Explication pédagogique (2-3 phrases)"
+}
 
-Consignes rédactionnelles :
-- Terminologie exacte du programme officiel PASS/LAS français
-- Distracteurs crédibles pour un étudiant de première année de santé
-- Explications complètes et pédagogiques avec rappels de cours utiles
-- Style identique aux épreuves universitaires PASS françaises
+RÈGLES :
+- Exactement 4 options, exactement 1 correcte
+- Le champ "subject" doit être l'un de : Anatomie, Chimie, Biologie cellulaire, Biostatistiques, Biophysique, SSH
+- Niveau PASS/LAS 1re année exclusivement (pas internat, pas spécialité)
+- Terminologie française officielle
+- Distracteurs plausibles reproduisant les erreurs classiques des étudiants PASS
+- Explications pédagogiques avec rappel de cours
+- Répondre UNIQUEMENT avec le tableau JSON, sans texte avant ou après
 
-${JSON_FORMAT_INSTRUCTIONS}
-
-Génère exactement ${count} questions réparties sur les 6 matières du programme PASS.`;
+Génère exactement ${count} questions réparties selon la distribution ci-dessus.`;
   }
 
   // Default prompt (subject-level, no fiche content)

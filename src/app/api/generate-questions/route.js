@@ -170,7 +170,7 @@ export async function POST(request) {
       })
       .map((q, index) => ({
         id: index + 1,
-        subject: subject || 'custom',
+        subject: subject || q.subject || 'custom',
         question: q.question,
         options: shuffleArray(q.options.map(o => ({
           text: o.text,
