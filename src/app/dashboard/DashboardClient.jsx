@@ -1465,7 +1465,7 @@ function ClassementSection({ allSessions, userId, accessToken }) {
                   <tr key={row.idx} className={`border-b hover:bg-gray-50/50 ${u.isUser ? 'bg-primary-50 border-primary-200 font-bold' : 'border-gray-50'}`}>
                     <td className="py-3 px-4 text-center text-lg">{medal}</td>
                     <td className={`py-3 px-4 text-sm ${u.isUser ? 'text-primary-700 font-bold' : 'text-gray-700'}`}>{u.name}</td>
-                    <td className="py-3 px-4"><span className={`text-sm font-bold ${scoreClass(u.score)}`}>{u.score}%</span></td>
+                    <td className="py-3 px-4"><span className={`text-sm font-bold ${scoreClass(u.avg)}`}>{u.avg}%</span></td>
                     <td className="py-3 px-4 text-sm text-gray-500">{u.sessions}</td>
                   </tr>
                 );
