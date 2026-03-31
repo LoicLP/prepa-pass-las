@@ -170,7 +170,7 @@ Génère exactement ${count} questions sur le sujet « ${ficheTopic} » au nivea
 
   // Prompt dédié EXAMEN COMPLET TOUTES MATIÈRES (mode mixed)
   if (!subject && !ficheTopic) {
-    const questionsPerSubject = Math.round(count / 6);
+    const questionsPerSubject = Math.floor(count / 6);
     const remainder = count - questionsPerSubject * 6;
     return `Tu es un professeur universitaire expert qui prépare un EXAMEN BLANC COMPLET de PASS/LAS dans une faculté de médecine française.
 
