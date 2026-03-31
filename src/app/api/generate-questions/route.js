@@ -5,10 +5,10 @@ import { buildQCMPrompt, buildExamenPrompt } from '@/utils/prompts';
 const VALID_SUBJECTS = ['anatomie', 'chimie', 'biocell', 'biostats', 'biophysique', 'ssh'];
 const VALID_MODES = ['qcm', 'examen'];
 
-// Rate limiting par IP (20 requêtes par 15 min)
+// Rate limiting par IP (100 requêtes par 15 min)
 const rateLimitMap = new Map();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000;
-const RATE_LIMIT_MAX = 20;
+const RATE_LIMIT_MAX = 100;
 
 function isRateLimited(ip) {
   const now = Date.now();
@@ -82,7 +82,7 @@ export async function POST(request) {
     );
   }
 
-  const { subject, subjectName, count, mode = 'qcm', ficheTopic = null } = body;
+  const { subject, subjectName, count, mode = 'qcm', ficheTopic = null, ficheContent = null } = body;
 
   // Validate params
   if (subject && !VALID_SUBJECTS.includes(subject)) {
@@ -92,7 +92,7 @@ export async function POST(request) {
     );
   }
 
-  if (!subject && !ficheTopic) {
+  if (!subject && !ficheTopic && !subjectName) {
     return Response.json(
       { error: 'Veuillez indiquer une matière ou un sujet précis' },
       { status: 400 }
@@ -109,12 +109,14 @@ export async function POST(request) {
   const questionCount = Math.max(1, Math.min(50, parseInt(count) || 10));
   const resolvedSubjectName = subjectName || subject || ficheTopic;
 
+  console.log('[generate-questions] ficheTopic:', ficheTopic, '| ficheContent length:', ficheContent?.length ?? 'null');
+
   // Build prompt
   let prompt;
   if (mode === 'examen') {
-    prompt = buildExamenPrompt(subject, resolvedSubjectName, questionCount, ficheTopic);
+    prompt = buildExamenPrompt(subject, resolvedSubjectName, questionCount, ficheTopic, ficheContent);
   } else {
-    prompt = buildQCMPrompt(subject, resolvedSubjectName, questionCount, ficheTopic);
+    prompt = buildQCMPrompt(subject, resolvedSubjectName, questionCount, ficheTopic, ficheContent);
   }
 
   // Call Gemini
@@ -184,7 +186,7 @@ export async function POST(request) {
       );
     }
 
-    return Response.json({ questions: validQuestions });
+    return Response.json({ questions: validQuestions, aiGenerated: true, topic: ficheTopic || subjectName });
   } catch (err) {
     console.error('[Gemini API Error]', err);
     return Response.json(
