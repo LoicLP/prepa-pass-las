@@ -715,6 +715,7 @@ export default function ExamenPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-lg font-bold text-gray-900">Examen complet</h3>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wide">Concours</span>
+                    {!isPremiumPlus && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wide">Premium+</span>}
                   </div>
                   <p className="text-sm text-gray-500 leading-relaxed mb-3">&Eacute;preuve de 40 questions m&eacute;lang&eacute;es sur l&apos;ensemble des mati&egrave;res du tronc commun. Conditions proches du concours.</p>
                   <div className="flex items-center justify-between">
