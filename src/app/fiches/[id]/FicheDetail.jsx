@@ -227,7 +227,7 @@ export default function FicheDetail({ fiche, subject, related }) {
                 {/* Cours détaillé */}
                 {isPremiumPlus ? (
                   <Link
-                    href="/cours"
+                    href={`/cours?id=${fiche.id}`}
                     className={`flex items-center gap-3 p-3 ${colors.bg} ${colors.border} border rounded-xl hover:opacity-80 transition-opacity`}
                   >
                     <svg className={`w-4 h-4 ${colors.icon} shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
