@@ -74,17 +74,23 @@ export function AuthProvider({ children }) {
   const signInWithGoogle = async () => {
     if (!supabase) throw new Error('Supabase non configuré');
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '';
-    const { error } = await supabase.auth.signInWithOAuth({
+
+    // skipBrowserRedirect: true → on récupère l'URL sans redirection automatique
+    // puis on navigue manuellement pour éviter l'interception iOS AutoFill
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
+        skipBrowserRedirect: true,
         queryParams: {
-          access_type: 'offline',
-          prompt: 'select_account', // force l'affichage du sélecteur de compte Google
+          prompt: 'select_account',
         },
       },
     });
     if (error) throw error;
+    if (data?.url) {
+      window.location.href = data.url;
+    }
   };
 
   const logOut = async () => {
