@@ -27,7 +27,7 @@ const COLOR_MAP = {
 
 export default function FicheDetail({ fiche, subject, related }) {
   const { user } = useAuth();
-  const { isPremiumPlus } = usePremium();
+  const { isPremiumPlus, isEssentiel } = usePremium();
   const colors = COLOR_MAP[subject?.color] || COLOR_MAP.primary;
   const iconPath = SUBJECT_ICONS[fiche.subject] || SUBJECT_ICONS.anatomie;
 
@@ -225,7 +225,7 @@ export default function FicheDetail({ fiche, subject, related }) {
               <h2 className="text-sm font-bold text-gray-900 mb-3">Aller plus loin</h2>
               <div className="space-y-2">
                 {/* Cours détaillé */}
-                {isPremiumPlus ? (
+                {isEssentiel ? (
                   <Link
                     href={`/cours?id=${fiche.id}`}
                     className={`flex items-center gap-3 p-3 ${colors.bg} ${colors.border} border rounded-xl hover:opacity-80 transition-opacity`}
@@ -244,11 +244,11 @@ export default function FicheDetail({ fiche, subject, related }) {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                     </svg>
                     <span className="text-sm font-semibold text-gray-400 flex-1">Cours détaillé</span>
-                    <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Premium+</span>
+                    <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Essentiel</span>
                   </Link>
                 )}
                 {/* Télécharger PDF */}
-                {isPremiumPlus ? (
+                {isEssentiel ? (
                   <button
                     onClick={handleDownloadPDF}
                     className={`w-full flex items-center gap-3 p-3 ${colors.bg} ${colors.border} border rounded-xl hover:opacity-80 transition-opacity`}
@@ -267,7 +267,7 @@ export default function FicheDetail({ fiche, subject, related }) {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
                     <span className="text-sm font-semibold text-gray-400 flex-1">Télécharger en PDF</span>
-                    <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Premium+</span>
+                    <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Essentiel</span>
                   </Link>
                 )}
               </div>
