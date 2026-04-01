@@ -9,16 +9,16 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      // PKCE : le code_verifier est dans le même client que lib/supabase.js
+      // PKCE : échange le code avec le même client Supabase (partage le code_verifier en localStorage)
       const code = new URLSearchParams(window.location.search).get('code');
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) {
-          console.error('[Auth callback] error:', error.message);
-          router.push('/connexion?error=auth_failed');
+          console.error('[Auth callback] PKCE error:', error.message);
+          router.replace('/connexion?error=auth_failed');
           return;
         }
-        router.push('/dashboard');
+        router.replace('/dashboard');
         return;
       }
 
@@ -26,20 +26,25 @@ export default function AuthCallback() {
       const hash = new URLSearchParams(window.location.hash.replace('#', ''));
       const accessToken = hash.get('access_token');
       if (accessToken) {
-        await supabase.auth.setSession({
+        const { error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: hash.get('refresh_token') || '',
         });
-        router.push('/dashboard');
+        if (error) {
+          console.error('[Auth callback] Implicit error:', error.message);
+          router.replace('/connexion?error=auth_failed');
+          return;
+        }
+        router.replace('/dashboard');
         return;
       }
 
-      // Déjà connecté
+      // Déjà connecté ?
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        router.push('/dashboard');
+        router.replace('/dashboard');
       } else {
-        router.push('/connexion');
+        router.replace('/connexion');
       }
     };
 
