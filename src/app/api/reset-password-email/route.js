@@ -29,6 +29,10 @@ export async function POST(request) {
     const allowedOrigins = [
       'https://prepa-pass-las.fr',
       'https://www.prepa-pass-las.fr',
+      'https://prepa-las.fr',
+      'https://www.prepa-las.fr',
+      'https://prepa-pass.fr',
+      'https://www.prepa-pass.fr',
       'https://prepa-pass-las-kappa.vercel.app',
       'http://localhost:3000',
     ];
@@ -54,7 +58,7 @@ export async function POST(request) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const redirectTo = `${origin || 'https://prepa-pass-las-kappa.vercel.app'}/reset-password`;
+    const redirectTo = `${origin || 'https://prepa-pass-las.fr'}/reset-password`;
 
     const { data, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',

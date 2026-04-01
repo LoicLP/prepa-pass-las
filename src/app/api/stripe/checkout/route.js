@@ -91,7 +91,7 @@ export async function POST(request) {
       } catch { /* best effort */ }
     }
 
-    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://prepa-pass-las-kappa.vercel.app').trim();
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://prepa-pass-las.fr').trim();
 
     // Créer la session Checkout
     const session = await stripeRequest('/checkout/sessions', {

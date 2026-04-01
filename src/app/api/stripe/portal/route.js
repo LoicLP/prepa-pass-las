@@ -46,7 +46,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Aucun abonnement Stripe trouvé' }, { status: 404 });
   }
 
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://prepa-pass-las-kappa.vercel.app').trim();
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://prepa-pass-las.fr').trim();
 
   try {
     const session = await stripeRequest('/billing_portal/sessions', {

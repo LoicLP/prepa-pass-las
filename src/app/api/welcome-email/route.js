@@ -25,6 +25,10 @@ export async function POST(request) {
     const allowedOrigins = [
       'https://prepa-pass-las.fr',
       'https://www.prepa-pass-las.fr',
+      'https://prepa-las.fr',
+      'https://www.prepa-las.fr',
+      'https://prepa-pass.fr',
+      'https://www.prepa-pass.fr',
       'https://prepa-pass-las-kappa.vercel.app',
       'http://localhost:3000',
     ];
