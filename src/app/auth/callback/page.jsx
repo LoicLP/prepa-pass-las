@@ -2,29 +2,45 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 export default function AuthCallback() {
   const router = useRouter();
 
   useEffect(() => {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
-
     const handleCallback = async () => {
+      // PKCE : le code_verifier est dans le même client que lib/supabase.js
       const code = new URLSearchParams(window.location.search).get('code');
       if (code) {
-        // PKCE : échange du code côté client (code_verifier est dans localStorage)
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) {
-          console.error('[Auth callback] exchangeCodeForSession error:', error.message);
+          console.error('[Auth callback] error:', error.message);
           router.push('/connexion?error=auth_failed');
           return;
         }
+        router.push('/dashboard');
+        return;
       }
-      router.push('/dashboard');
+
+      // Implicit flow : token dans le hash (#access_token=...)
+      const hash = new URLSearchParams(window.location.hash.replace('#', ''));
+      const accessToken = hash.get('access_token');
+      if (accessToken) {
+        await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: hash.get('refresh_token') || '',
+        });
+        router.push('/dashboard');
+        return;
+      }
+
+      // Déjà connecté
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        router.push('/dashboard');
+      } else {
+        router.push('/connexion');
+      }
     };
 
     handleCallback();
