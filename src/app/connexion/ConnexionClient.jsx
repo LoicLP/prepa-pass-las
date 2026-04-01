@@ -36,7 +36,9 @@ export default function ConnexionPage() {
     setError('');
     try {
       await signInWithGoogle();
-      router.push('/dashboard');
+      // Pas de router.push ici : signInWithGoogle() redirige vers Google via
+      // window.location.href, puis /auth/callback redirige vers /dashboard.
+      // Appeler router.push après pouvait annuler la navigation OAuth sur mobile.
     } catch (err) {
       setError(getAuthErrorMessage(err));
     }

@@ -62,7 +62,7 @@ export default function InscriptionPage() {
     setError('');
     try {
       await signInWithGoogle();
-      router.push('/dashboard');
+      // Pas de router.push : signInWithGoogle() gère la navigation via window.location.href
     } catch (err) {
       setError(getAuthErrorMessage(err));
     }
