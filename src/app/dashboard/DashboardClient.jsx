@@ -1061,128 +1061,128 @@ function ScoreLineChart({ points }) {
 // drift > 0 : tendance à la hausse sur les semaines | drift < 0 : tendance à la baisse
 // weekAmplitude : amplitude du cycle hebdomadaire (±N points), défaut 5
 const BASE_USERS = [
-  // Top performers (~20) — avg 65-82, sessions 80-250
-  { name: 'Emma L.',     baseAvg: 82, baseSessions: 230, growth: 0.18 },
-  { name: 'Lucas M.',    baseAvg: 80, baseSessions: 210, growth: 0.16, drift: -0.8 },  // ↘ glisse doucement
-  { name: 'Jade F.',     baseAvg: 79, baseSessions: 195, growth: 0.17, drift: 0.6 },   // ↗ progresse
-  { name: 'Hugo D.',     baseAvg: 77, baseSessions: 185, growth: 0.15 },
-  { name: 'Chloé B.',    baseAvg: 76, baseSessions: 178, growth: 0.14, weekAmplitude: 10 }, // volatile
-  { name: 'Arthur C.',   baseAvg: 75, baseSessions: 165, growth: 0.15, drift: -1.2 },  // ↘ chute notable
-  { name: 'Léa R.',      baseAvg: 74, baseSessions: 158, growth: 0.13, drift: 1.0 },   // ↗ forte progression
-  { name: 'Inès T.',     baseAvg: 73, baseSessions: 148, growth: 0.14 },
-  { name: 'Raphaël K.',  baseAvg: 72, baseSessions: 140, growth: 0.12, weekAmplitude: 9 }, // volatile
-  { name: 'Alice G.',    baseAvg: 71, baseSessions: 132, growth: 0.13, drift: 0.5 },   // ↗ légère hausse
-  { name: 'Gabriel N.',  baseAvg: 70, baseSessions: 125, growth: 0.11 },
-  { name: 'Lina P.',     baseAvg: 70, baseSessions: 120, growth: 0.12, drift: -0.6 },  // ↘ légère baisse
-  { name: 'Théo A.',     baseAvg: 69, baseSessions: 115, growth: 0.11, drift: 1.2 },   // ↗ montée rapide
-  { name: 'Margot V.',   baseAvg: 68, baseSessions: 110, growth: 0.10 },
-  { name: 'Noah S.',     baseAvg: 68, baseSessions: 105, growth: 0.11, weekAmplitude: 11 }, // très volatile
-  { name: 'Zoé H.',      baseAvg: 67, baseSessions: 98,  growth: 0.10, drift: 0.4 },
-  { name: 'Adam B.',     baseAvg: 67, baseSessions: 95,  growth: 0.09 },
-  { name: 'Juliette M.', baseAvg: 66, baseSessions: 92,  growth: 0.10, drift: -0.9 }, // ↘ baisse
-  { name: 'Louis R.',    baseAvg: 66, baseSessions: 88,  growth: 0.09, drift: 0.7 },   // ↗
-  { name: 'Rose D.',     baseAvg: 65, baseSessions: 85,  growth: 0.08 },
-  // Mid-range bons (~35) — avg 52-64, sessions 40-100
-  { name: 'Nathan P.',   baseAvg: 64, baseSessions: 95,  growth: 0.08, drift: 1.3 },   // ↗ forte montée
-  { name: 'Camille V.',  baseAvg: 63, baseSessions: 90,  growth: 0.08 },
-  { name: 'Jules A.',    baseAvg: 63, baseSessions: 88,  growth: 0.07, drift: -1.0 },  // ↘
-  { name: 'Sarah H.',    baseAvg: 62, baseSessions: 85,  growth: 0.08, weekAmplitude: 8 },
-  { name: 'Mathis L.',   baseAvg: 62, baseSessions: 82,  growth: 0.07, drift: 0.8 },
-  { name: 'Eva P.',      baseAvg: 61, baseSessions: 78,  growth: 0.07 },
-  { name: 'Léo T.',      baseAvg: 61, baseSessions: 76,  growth: 0.06, drift: -0.7 },
-  { name: 'Anaïs M.',    baseAvg: 60, baseSessions: 74,  growth: 0.07, drift: 1.1 },   // ↗
-  { name: 'Tom B.',      baseAvg: 60, baseSessions: 72,  growth: 0.06 },
-  { name: 'Clara D.',    baseAvg: 59, baseSessions: 70,  growth: 0.06, weekAmplitude: 9 },
-  { name: 'Maxime R.',   baseAvg: 59, baseSessions: 68,  growth: 0.05, drift: -0.5 },
-  { name: 'Manon S.',    baseAvg: 58, baseSessions: 66,  growth: 0.06 },
-  { name: 'Enzo C.',     baseAvg: 58, baseSessions: 64,  growth: 0.05, drift: 0.9 },   // ↗
-  { name: 'Charlotte F.',baseAvg: 57, baseSessions: 62,  growth: 0.06 },
-  { name: 'Axel N.',     baseAvg: 57, baseSessions: 60,  growth: 0.05, drift: -1.1 },  // ↘
-  { name: 'Ambre G.',    baseAvg: 56, baseSessions: 58,  growth: 0.05, weekAmplitude: 10 },
-  { name: 'Victor J.',   baseAvg: 56, baseSessions: 56,  growth: 0.04 },
-  { name: 'Océane K.',   baseAvg: 55, baseSessions: 55,  growth: 0.05, drift: 0.6 },
-  { name: 'Paul E.',     baseAvg: 55, baseSessions: 53,  growth: 0.04 },
-  { name: 'Mila B.',     baseAvg: 55, baseSessions: 52,  growth: 0.05, drift: -0.4 },
-  { name: 'Antoine L.',  baseAvg: 54, baseSessions: 50,  growth: 0.04, drift: 1.0 },   // ↗
-  { name: 'Clémence R.', baseAvg: 54, baseSessions: 48,  growth: 0.04 },
-  { name: 'Alexandre D.',baseAvg: 53, baseSessions: 47,  growth: 0.04, weekAmplitude: 8 },
-  { name: 'Lucie S.',    baseAvg: 53, baseSessions: 46,  growth: 0.04 },
-  { name: 'Romain H.',   baseAvg: 53, baseSessions: 45,  growth: 0.03, drift: -0.8 },
-  { name: 'Pauline T.',  baseAvg: 52, baseSessions: 44,  growth: 0.04 },
-  { name: 'Émile V.',    baseAvg: 52, baseSessions: 43,  growth: 0.03, drift: 0.7 },
-  { name: 'Yasmine A.',  baseAvg: 52, baseSessions: 42,  growth: 0.04 },
-  { name: 'Bastien M.',  baseAvg: 52, baseSessions: 41,  growth: 0.03, drift: 1.2 },   // ↗ forte montée
-  { name: 'Noémie C.',   baseAvg: 52, baseSessions: 40,  growth: 0.03 },
-  { name: 'Valentin P.', baseAvg: 52, baseSessions: 40,  growth: 0.03, weekAmplitude: 7 },
-  { name: 'Marine F.',   baseAvg: 52, baseSessions: 40,  growth: 0.03 },
-  { name: 'Simon G.',    baseAvg: 52, baseSessions: 40,  growth: 0.03, drift: -0.6 },
-  { name: 'Elisa B.',    baseAvg: 52, baseSessions: 40,  growth: 0.03 },
-  { name: 'Tristan K.',  baseAvg: 52, baseSessions: 40,  growth: 0.03 },
-  // Mid-range moyens (~30) — avg 38-51, sessions 20-50
-  { name: 'Maëlys D.',   baseAvg: 51, baseSessions: 48,  growth: 0.03, drift: 0.8 },   // ↗
-  { name: 'Corentin R.', baseAvg: 50, baseSessions: 45,  growth: 0.03 },
-  { name: 'Justine L.',  baseAvg: 50, baseSessions: 43,  growth: 0.02, drift: -0.9 },  // ↘
-  { name: 'Dylan M.',    baseAvg: 49, baseSessions: 42,  growth: 0.03, weekAmplitude: 9 },
-  { name: 'Agathe S.',   baseAvg: 49, baseSessions: 40,  growth: 0.02 },
-  { name: 'Kylian T.',   baseAvg: 48, baseSessions: 38,  growth: 0.02, drift: 1.0 },   // ↗
-  { name: 'Léonie V.',   baseAvg: 48, baseSessions: 37,  growth: 0.02 },
-  { name: 'Mattéo F.',   baseAvg: 47, baseSessions: 36,  growth: 0.02, drift: -0.5 },
-  { name: 'Alicia N.',   baseAvg: 47, baseSessions: 35,  growth: 0.02 },
-  { name: 'Robin H.',    baseAvg: 46, baseSessions: 34,  growth: 0.02, weekAmplitude: 8 },
-  { name: 'Célia P.',    baseAvg: 46, baseSessions: 33,  growth: 0.02 },
-  { name: 'Nolan G.',    baseAvg: 45, baseSessions: 32,  growth: 0.02, drift: 0.6 },
-  { name: 'Laura J.',    baseAvg: 45, baseSessions: 31,  growth: 0.01 },
-  { name: 'Sacha B.',    baseAvg: 44, baseSessions: 30,  growth: 0.02, drift: -1.0 },  // ↘
-  { name: 'Capucine E.', baseAvg: 44, baseSessions: 29,  growth: 0.01 },
-  { name: 'Thibault A.', baseAvg: 43, baseSessions: 28,  growth: 0.02, drift: 0.8 },
-  { name: 'Lola K.',     baseAvg: 43, baseSessions: 27,  growth: 0.01 },
-  { name: 'Quentin D.',  baseAvg: 42, baseSessions: 26,  growth: 0.01, weekAmplitude: 7 },
-  { name: 'Romane C.',   baseAvg: 42, baseSessions: 25,  growth: 0.01 },
-  { name: 'Baptiste L.', baseAvg: 41, baseSessions: 25,  growth: 0.01, drift: -0.7 },
-  { name: 'Margaux V.',  baseAvg: 41, baseSessions: 24,  growth: 0.01 },
-  { name: 'Alexis R.',   baseAvg: 40, baseSessions: 23,  growth: 0.01, drift: 0.5 },
-  { name: 'Héloïse M.',  baseAvg: 40, baseSessions: 23,  growth: 0.01 },
-  { name: 'Florian T.',  baseAvg: 39, baseSessions: 22,  growth: 0.01 },
-  { name: 'Salomé H.',   baseAvg: 39, baseSessions: 22,  growth: 0.01, weekAmplitude: 8 },
-  { name: 'Aurélien F.', baseAvg: 38, baseSessions: 21,  growth: 0.01, drift: 0.9 },   // ↗ de bas en haut
-  { name: 'Nina S.',     baseAvg: 38, baseSessions: 21,  growth: 0.01 },
-  // Débutants/casuals (~20) — avg 22-37, sessions 8-25
-  { name: 'Timothée P.', baseAvg: 37, baseSessions: 22,  growth: 0.01, drift: 1.1 },   // ↗ surprise
-  { name: 'Élise G.',    baseAvg: 36, baseSessions: 20,  growth: 0.01 },
-  { name: 'Dorian B.',   baseAvg: 35, baseSessions: 19,  growth: 0.01, drift: -0.4 },
-  { name: 'Maëlle J.',   baseAvg: 34, baseSessions: 18,  growth: 0.01 },
-  { name: 'Kévin N.',    baseAvg: 34, baseSessions: 17,  growth: 0.005, weekAmplitude: 9 },
-  { name: 'Lilou D.',    baseAvg: 33, baseSessions: 16,  growth: 0.01, drift: 0.6 },
-  { name: 'Rémi A.',     baseAvg: 32, baseSessions: 15,  growth: 0.005 },
-  { name: 'Apolline C.', baseAvg: 32, baseSessions: 15,  growth: 0.005, drift: -0.5 },
-  { name: 'Erwan K.',    baseAvg: 31, baseSessions: 14,  growth: 0.005 },
-  { name: 'Constance L.',baseAvg: 30, baseSessions: 13,  growth: 0.005, drift: 0.7 },
-  { name: 'Gabin R.',    baseAvg: 29, baseSessions: 12,  growth: 0.005 },
-  { name: 'Adèle V.',    baseAvg: 28, baseSessions: 12,  growth: 0.005, weekAmplitude: 8 },
-  { name: 'Mathieu T.',  baseAvg: 27, baseSessions: 11,  growth: 0.003 },
-  { name: 'Victoire F.', baseAvg: 27, baseSessions: 10,  growth: 0.005, drift: -0.6 },
-  { name: 'Clément S.',  baseAvg: 26, baseSessions: 10,  growth: 0.003 },
-  { name: 'Alix M.',     baseAvg: 25, baseSessions: 9,   growth: 0.003, drift: 0.8 },
-  { name: 'Loïs H.',     baseAvg: 25, baseSessions: 9,   growth: 0.003 },
-  { name: 'Diane P.',    baseAvg: 24, baseSessions: 8,   growth: 0.003 },
-  { name: 'Eliott B.',   baseAvg: 23, baseSessions: 8,   growth: 0.003, weekAmplitude: 10 },
-  { name: 'Faustine G.', baseAvg: 22, baseSessions: 8,   growth: 0.003 },
-  // Inactifs (~15) — avg 10-28, sessions 1-10, pas de croissance
-  { name: 'Timéo H.',    baseAvg: 28, baseSessions: 8,   growth: 0 },
-  { name: 'Léna F.',     baseAvg: 26, baseSessions: 7,   growth: 0 },
-  { name: 'Malo R.',     baseAvg: 24, baseSessions: 6,   growth: 0 },
-  { name: 'Iris D.',     baseAvg: 23, baseSessions: 5,   growth: 0 },
-  { name: 'Ethan J.',    baseAvg: 22, baseSessions: 5,   growth: 0 },
-  { name: 'Lison V.',    baseAvg: 21, baseSessions: 4,   growth: 0 },
-  { name: 'Oscar T.',    baseAvg: 19, baseSessions: 4,   growth: 0 },
-  { name: 'Célestine B.',baseAvg: 18, baseSessions: 3,   growth: 0 },
-  { name: 'Ismaël K.',   baseAvg: 17, baseSessions: 3,   growth: 0 },
-  { name: 'Colombe A.',  baseAvg: 16, baseSessions: 3,   growth: 0 },
-  { name: 'Ruben M.',    baseAvg: 14, baseSessions: 2,   growth: 0 },
-  { name: 'Éléonore S.', baseAvg: 13, baseSessions: 2,   growth: 0 },
-  { name: 'Naël C.',     baseAvg: 12, baseSessions: 2,   growth: 0 },
-  { name: 'Blanche L.',  baseAvg: 11, baseSessions: 1,   growth: 0 },
-  { name: 'Solal P.',    baseAvg: 10, baseSessions: 1,   growth: 0 },
+  // Top performers (~20) — avg 58-75, sessions 80-250
+  { name: 'Emma L.',     baseAvg: 75, baseSessions: 230, growth: 0.18 },
+  { name: 'Lucas M.',    baseAvg: 73, baseSessions: 210, growth: 0.16, drift: -0.8 },  // ↘ glisse doucement
+  { name: 'Jade F.',     baseAvg: 72, baseSessions: 195, growth: 0.17, drift: 0.6 },   // ↗ progresse
+  { name: 'Hugo D.',     baseAvg: 71, baseSessions: 185, growth: 0.15 },
+  { name: 'Chloé B.',    baseAvg: 70, baseSessions: 178, growth: 0.14, weekAmplitude: 10 }, // volatile
+  { name: 'Arthur C.',   baseAvg: 69, baseSessions: 165, growth: 0.15, drift: -1.2 },  // ↘ chute notable
+  { name: 'Léa R.',      baseAvg: 68, baseSessions: 158, growth: 0.13, drift: 1.0 },   // ↗ forte progression
+  { name: 'Inès T.',     baseAvg: 67, baseSessions: 148, growth: 0.14 },
+  { name: 'Raphaël K.',  baseAvg: 66, baseSessions: 140, growth: 0.12, weekAmplitude: 9 }, // volatile
+  { name: 'Alice G.',    baseAvg: 65, baseSessions: 132, growth: 0.13, drift: 0.5 },   // ↗ légère hausse
+  { name: 'Gabriel N.',  baseAvg: 64, baseSessions: 125, growth: 0.11 },
+  { name: 'Lina P.',     baseAvg: 63, baseSessions: 120, growth: 0.12, drift: -0.6 },  // ↘ légère baisse
+  { name: 'Théo A.',     baseAvg: 63, baseSessions: 115, growth: 0.11, drift: 1.2 },   // ↗ montée rapide
+  { name: 'Margot V.',   baseAvg: 62, baseSessions: 110, growth: 0.10 },
+  { name: 'Noah S.',     baseAvg: 61, baseSessions: 105, growth: 0.11, weekAmplitude: 11 }, // très volatile
+  { name: 'Zoé H.',      baseAvg: 61, baseSessions: 98,  growth: 0.10, drift: 0.4 },
+  { name: 'Adam B.',     baseAvg: 60, baseSessions: 95,  growth: 0.09 },
+  { name: 'Juliette M.', baseAvg: 59, baseSessions: 92,  growth: 0.10, drift: -0.9 }, // ↘ baisse
+  { name: 'Louis R.',    baseAvg: 59, baseSessions: 88,  growth: 0.09, drift: 0.7 },   // ↗
+  { name: 'Rose D.',     baseAvg: 58, baseSessions: 85,  growth: 0.08 },
+  // Mid-range bons (~35) — avg 43-57, sessions 40-100
+  { name: 'Nathan P.',   baseAvg: 56, baseSessions: 95,  growth: 0.08, drift: 1.3 },   // ↗ forte montée
+  { name: 'Camille V.',  baseAvg: 55, baseSessions: 90,  growth: 0.08 },
+  { name: 'Jules A.',    baseAvg: 55, baseSessions: 88,  growth: 0.07, drift: -1.0 },  // ↘
+  { name: 'Sarah H.',    baseAvg: 54, baseSessions: 85,  growth: 0.08, weekAmplitude: 8 },
+  { name: 'Mathis L.',   baseAvg: 54, baseSessions: 82,  growth: 0.07, drift: 0.8 },
+  { name: 'Eva P.',      baseAvg: 53, baseSessions: 78,  growth: 0.07 },
+  { name: 'Léo T.',      baseAvg: 52, baseSessions: 76,  growth: 0.06, drift: -0.7 },
+  { name: 'Anaïs M.',    baseAvg: 52, baseSessions: 74,  growth: 0.07, drift: 1.1 },   // ↗
+  { name: 'Tom B.',      baseAvg: 51, baseSessions: 72,  growth: 0.06 },
+  { name: 'Clara D.',    baseAvg: 51, baseSessions: 70,  growth: 0.06, weekAmplitude: 9 },
+  { name: 'Maxime R.',   baseAvg: 50, baseSessions: 68,  growth: 0.05, drift: -0.5 },
+  { name: 'Manon S.',    baseAvg: 50, baseSessions: 66,  growth: 0.06 },
+  { name: 'Enzo C.',     baseAvg: 49, baseSessions: 64,  growth: 0.05, drift: 0.9 },   // ↗
+  { name: 'Charlotte F.',baseAvg: 49, baseSessions: 62,  growth: 0.06 },
+  { name: 'Axel N.',     baseAvg: 48, baseSessions: 60,  growth: 0.05, drift: -1.1 },  // ↘
+  { name: 'Ambre G.',    baseAvg: 48, baseSessions: 58,  growth: 0.05, weekAmplitude: 10 },
+  { name: 'Victor J.',   baseAvg: 47, baseSessions: 56,  growth: 0.04 },
+  { name: 'Océane K.',   baseAvg: 47, baseSessions: 55,  growth: 0.05, drift: 0.6 },
+  { name: 'Paul E.',     baseAvg: 46, baseSessions: 53,  growth: 0.04 },
+  { name: 'Mila B.',     baseAvg: 46, baseSessions: 52,  growth: 0.05, drift: -0.4 },
+  { name: 'Antoine L.',  baseAvg: 45, baseSessions: 50,  growth: 0.04, drift: 1.0 },   // ↗
+  { name: 'Clémence R.', baseAvg: 45, baseSessions: 48,  growth: 0.04 },
+  { name: 'Alexandre D.',baseAvg: 44, baseSessions: 47,  growth: 0.04, weekAmplitude: 8 },
+  { name: 'Lucie S.',    baseAvg: 44, baseSessions: 46,  growth: 0.04 },
+  { name: 'Romain H.',   baseAvg: 44, baseSessions: 45,  growth: 0.03, drift: -0.8 },
+  { name: 'Pauline T.',  baseAvg: 43, baseSessions: 44,  growth: 0.04 },
+  { name: 'Émile V.',    baseAvg: 43, baseSessions: 43,  growth: 0.03, drift: 0.7 },
+  { name: 'Yasmine A.',  baseAvg: 43, baseSessions: 42,  growth: 0.04 },
+  { name: 'Bastien M.',  baseAvg: 43, baseSessions: 41,  growth: 0.03, drift: 1.2 },   // ↗ forte montée
+  { name: 'Noémie C.',   baseAvg: 43, baseSessions: 40,  growth: 0.03 },
+  { name: 'Valentin P.', baseAvg: 43, baseSessions: 40,  growth: 0.03, weekAmplitude: 7 },
+  { name: 'Marine F.',   baseAvg: 43, baseSessions: 40,  growth: 0.03 },
+  { name: 'Simon G.',    baseAvg: 43, baseSessions: 40,  growth: 0.03, drift: -0.6 },
+  { name: 'Elisa B.',    baseAvg: 43, baseSessions: 40,  growth: 0.03 },
+  { name: 'Tristan K.',  baseAvg: 43, baseSessions: 40,  growth: 0.03 },
+  // Mid-range moyens (~30) — avg 27-42, sessions 20-50
+  { name: 'Maëlys D.',   baseAvg: 41, baseSessions: 48,  growth: 0.03, drift: 0.8 },   // ↗
+  { name: 'Corentin R.', baseAvg: 40, baseSessions: 45,  growth: 0.03 },
+  { name: 'Justine L.',  baseAvg: 39, baseSessions: 43,  growth: 0.02, drift: -0.9 },  // ↘
+  { name: 'Dylan M.',    baseAvg: 38, baseSessions: 42,  growth: 0.03, weekAmplitude: 9 },
+  { name: 'Agathe S.',   baseAvg: 38, baseSessions: 40,  growth: 0.02 },
+  { name: 'Kylian T.',   baseAvg: 37, baseSessions: 38,  growth: 0.02, drift: 1.0 },   // ↗
+  { name: 'Léonie V.',   baseAvg: 37, baseSessions: 37,  growth: 0.02 },
+  { name: 'Mattéo F.',   baseAvg: 36, baseSessions: 36,  growth: 0.02, drift: -0.5 },
+  { name: 'Alicia N.',   baseAvg: 36, baseSessions: 35,  growth: 0.02 },
+  { name: 'Robin H.',    baseAvg: 35, baseSessions: 34,  growth: 0.02, weekAmplitude: 8 },
+  { name: 'Célia P.',    baseAvg: 35, baseSessions: 33,  growth: 0.02 },
+  { name: 'Nolan G.',    baseAvg: 34, baseSessions: 32,  growth: 0.02, drift: 0.6 },
+  { name: 'Laura J.',    baseAvg: 34, baseSessions: 31,  growth: 0.01 },
+  { name: 'Sacha B.',    baseAvg: 33, baseSessions: 30,  growth: 0.02, drift: -1.0 },  // ↘
+  { name: 'Capucine E.', baseAvg: 33, baseSessions: 29,  growth: 0.01 },
+  { name: 'Thibault A.', baseAvg: 32, baseSessions: 28,  growth: 0.02, drift: 0.8 },
+  { name: 'Lola K.',     baseAvg: 32, baseSessions: 27,  growth: 0.01 },
+  { name: 'Quentin D.',  baseAvg: 31, baseSessions: 26,  growth: 0.01, weekAmplitude: 7 },
+  { name: 'Romane C.',   baseAvg: 31, baseSessions: 25,  growth: 0.01 },
+  { name: 'Baptiste L.', baseAvg: 30, baseSessions: 25,  growth: 0.01, drift: -0.7 },
+  { name: 'Margaux V.',  baseAvg: 30, baseSessions: 24,  growth: 0.01 },
+  { name: 'Alexis R.',   baseAvg: 29, baseSessions: 23,  growth: 0.01, drift: 0.5 },
+  { name: 'Héloïse M.',  baseAvg: 29, baseSessions: 23,  growth: 0.01 },
+  { name: 'Florian T.',  baseAvg: 28, baseSessions: 22,  growth: 0.01 },
+  { name: 'Salomé H.',   baseAvg: 28, baseSessions: 22,  growth: 0.01, weekAmplitude: 8 },
+  { name: 'Aurélien F.', baseAvg: 27, baseSessions: 21,  growth: 0.01, drift: 0.9 },   // ↗ de bas en haut
+  { name: 'Nina S.',     baseAvg: 27, baseSessions: 21,  growth: 0.01 },
+  // Débutants/casuals (~20) — avg 10-22, sessions 8-25
+  { name: 'Timothée P.', baseAvg: 22, baseSessions: 22,  growth: 0.01, drift: 1.1 },   // ↗ surprise
+  { name: 'Élise G.',    baseAvg: 21, baseSessions: 20,  growth: 0.01 },
+  { name: 'Dorian B.',   baseAvg: 20, baseSessions: 19,  growth: 0.01, drift: -0.4 },
+  { name: 'Maëlle J.',   baseAvg: 19, baseSessions: 18,  growth: 0.01 },
+  { name: 'Kévin N.',    baseAvg: 19, baseSessions: 17,  growth: 0.005, weekAmplitude: 9 },
+  { name: 'Lilou D.',    baseAvg: 18, baseSessions: 16,  growth: 0.01, drift: 0.6 },
+  { name: 'Rémi A.',     baseAvg: 17, baseSessions: 15,  growth: 0.005 },
+  { name: 'Apolline C.', baseAvg: 17, baseSessions: 15,  growth: 0.005, drift: -0.5 },
+  { name: 'Erwan K.',    baseAvg: 16, baseSessions: 14,  growth: 0.005 },
+  { name: 'Constance L.',baseAvg: 15, baseSessions: 13,  growth: 0.005, drift: 0.7 },
+  { name: 'Gabin R.',    baseAvg: 15, baseSessions: 12,  growth: 0.005 },
+  { name: 'Adèle V.',    baseAvg: 14, baseSessions: 12,  growth: 0.005, weekAmplitude: 8 },
+  { name: 'Mathieu T.',  baseAvg: 13, baseSessions: 11,  growth: 0.003 },
+  { name: 'Victoire F.', baseAvg: 13, baseSessions: 10,  growth: 0.005, drift: -0.6 },
+  { name: 'Clément S.',  baseAvg: 12, baseSessions: 10,  growth: 0.003 },
+  { name: 'Alix M.',     baseAvg: 11, baseSessions: 9,   growth: 0.003, drift: 0.8 },
+  { name: 'Loïs H.',     baseAvg: 11, baseSessions: 9,   growth: 0.003 },
+  { name: 'Diane P.',    baseAvg: 10, baseSessions: 8,   growth: 0.003 },
+  { name: 'Eliott B.',   baseAvg: 10, baseSessions: 8,   growth: 0.003, weekAmplitude: 10 },
+  { name: 'Faustine G.', baseAvg: 10, baseSessions: 8,   growth: 0.003 },
+  // Inactifs (~15) — avg 4-15, sessions 1-10, pas de croissance
+  { name: 'Timéo H.',    baseAvg: 15, baseSessions: 8,   growth: 0 },
+  { name: 'Léna F.',     baseAvg: 13, baseSessions: 7,   growth: 0 },
+  { name: 'Malo R.',     baseAvg: 12, baseSessions: 6,   growth: 0 },
+  { name: 'Iris D.',     baseAvg: 11, baseSessions: 5,   growth: 0 },
+  { name: 'Ethan J.',    baseAvg: 10, baseSessions: 5,   growth: 0 },
+  { name: 'Lison V.',    baseAvg: 9,  baseSessions: 4,   growth: 0 },
+  { name: 'Oscar T.',    baseAvg: 8,  baseSessions: 4,   growth: 0 },
+  { name: 'Célestine B.',baseAvg: 7,  baseSessions: 3,   growth: 0 },
+  { name: 'Ismaël K.',   baseAvg: 7,  baseSessions: 3,   growth: 0 },
+  { name: 'Colombe A.',  baseAvg: 6,  baseSessions: 3,   growth: 0 },
+  { name: 'Ruben M.',    baseAvg: 6,  baseSessions: 2,   growth: 0 },
+  { name: 'Éléonore S.', baseAvg: 5,  baseSessions: 2,   growth: 0 },
+  { name: 'Naël C.',     baseAvg: 5,  baseSessions: 2,   growth: 0 },
+  { name: 'Blanche L.',  baseAvg: 4,  baseSessions: 1,   growth: 0 },
+  { name: 'Solal P.',    baseAvg: 4,  baseSessions: 1,   growth: 0 },
 ];
 
 // Pool de prénoms pour la génération des 440 utilisateurs supplémentaires
@@ -1245,9 +1245,9 @@ function generateFakeUsers() {
     const firstName = EXTRA_FIRST_NAMES[Math.floor(fnSeed % EXTRA_FIRST_NAMES.length)];
     const initial  = EXTRA_INITIALS[Math.floor(lnSeed % EXTRA_INITIALS.length)];
 
-    // Score de base : distribution concentrée entre 25 et 70
+    // Score de base : distribution concentrée entre 10 et 50
     const baseSeed = Math.abs(Math.sin(idx * 1301) * 10000);
-    const baseAvg = 25 + Math.floor((baseSeed % 10000) / 10000 * 45);
+    const baseAvg = 10 + Math.floor((baseSeed % 10000) / 10000 * 40);
 
     // Cycle hebdomadaire ±5
     const phase = (idx * 2.3 + weekOfYear * 1.7) % (2 * Math.PI);
