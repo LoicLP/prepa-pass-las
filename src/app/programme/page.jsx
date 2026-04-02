@@ -12,8 +12,8 @@ const UE_ICON_STYLES = {
 };
 
 export const metadata = {
-  title: 'Programme PASS/LAS - Pr\u00e9pa PASS/LAS',
-  description: 'D\u00e9couvrez le programme d\u00e9taill\u00e9 des 6 UE du tronc commun PASS/LAS : anatomie, chimie, biologie cellulaire, biostatistiques, biophysique et SSH.',
+  title: 'Programme PASS/LAS - Les 6 UE du Tronc Commun',
+  description: 'D\u00e9couvrez le programme officiel des 6 Unit\u00e9s d\u2019Enseignement du tronc commun PASS/LAS\u00a0: anatomie, chimie & biochimie, biologie cellulaire, biostatistiques, biophysique et SSH. Coefficients et volumes horaires inclus.',
   alternates: { canonical: '/programme' },
 };
 

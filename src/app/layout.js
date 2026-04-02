@@ -24,11 +24,13 @@ export const metadata = {
     siteName: 'Prépa PASS/LAS',
     title: 'Prépa PASS/LAS - Réussissez votre première année de médecine',
     description: 'La plateforme de révision n°1 pour réussir le concours PASS/LAS. QCM illimités, fiches de cours, mode examen et suivi de progression.',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Prépa PASS/LAS' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Prépa PASS/LAS - Réussissez votre première année de médecine',
     description: 'La plateforme de révision n°1 pour réussir le concours PASS/LAS. QCM illimités, fiches de cours, mode examen.',
+    images: ['/opengraph-image'],
   },
   robots: {
     index: true,
@@ -58,6 +60,7 @@ export default function RootLayout({ children }) {
                 contactType: 'customer service',
                 availableLanguage: 'French',
               },
+              description: 'La plateforme de révision n°1 pour réussir le concours PASS/LAS. QCM illimités, fiches de cours, mode examen et suivi de progression.',
               sameAs: [],
             }),
           }}

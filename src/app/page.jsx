@@ -4,7 +4,9 @@ import QuestionDuJour from '@/components/home/QuestionDuJour';
 import FaqSection from '@/components/home/FaqSection';
 
 export const metadata = {
-  title: 'Prépa PASS/LAS - Réussissez votre première année de médecine',
+  title: {
+    absolute: 'Prépa PASS/LAS - Réussissez votre première année de médecine',
+  },
   description: 'La plateforme de révision n°1 pour réussir le concours PASS/LAS. QCM illimités, fiches de cours, mode examen et suivi de progression.',
   alternates: { canonical: '/' },
 };

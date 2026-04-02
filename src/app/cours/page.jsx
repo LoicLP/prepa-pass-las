@@ -1,8 +1,8 @@
 import CoursPage from './CoursClient';
 
 export const metadata = {
-  title: 'Cours détaillés PASS/LAS',
-  description: 'Accédez à des cours complets par matière pour le programme PASS et LAS. Contenus structurés et pédagogiques.',
+  title: 'Cours détaillés PASS/LAS - Anatomie, Chimie, Biologie',
+  description: 'Cours complets et structurés par matière pour réussir le concours PASS et LAS : anatomie, chimie, biologie cellulaire, biostatistiques, biophysique et SSH.',
   alternates: { canonical: '/cours' },
 };
 

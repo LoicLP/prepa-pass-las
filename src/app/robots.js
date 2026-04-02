@@ -4,7 +4,7 @@ export default function robots() {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/dashboard', '/api/'],
+        disallow: ['/dashboard', '/api/', '/auth/', '/payment/', '/reset-password'],
       },
     ],
     sitemap: 'https://prepa-pass-las.fr/sitemap.xml',

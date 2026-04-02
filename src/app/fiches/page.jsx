@@ -2,8 +2,8 @@ import FichesPage from './FichesClient';
 import { FICHES_DATA } from '@/data/fiches';
 
 export const metadata = {
-  title: 'Fiches de révision PASS/LAS',
-  description: 'Fiches synthétiques par matière pour réviser efficacement le programme PASS et LAS. Téléchargeables en PDF.',
+  title: 'Fiches de révision PASS/LAS - Toutes les matières',
+  description: 'Fiches synthétiques par matière pour réviser le programme PASS et LAS : anatomie, chimie, biologie cellulaire, biostatistiques, biophysique et SSH. Téléchargeables en PDF.',
   alternates: { canonical: '/fiches' },
 };
 

@@ -1,8 +1,8 @@
 import ConnexionPage from './ConnexionClient';
 
 export const metadata = {
-  title: 'Connexion - Pr\u00e9pa PASS/LAS',
-  description: 'Connectez-vous \u00e0 votre espace de r\u00e9vision Pr\u00e9pa PASS/LAS.',
+  title: 'Se connecter',
+  description: 'Connectez-vous \u00e0 votre espace Pr\u00e9pa PASS/LAS pour acc\u00e9der \u00e0 vos QCM, fiches de r\u00e9vision et suivre votre progression.',
   robots: { index: false, follow: true },
   alternates: { canonical: '/connexion' },
 };
