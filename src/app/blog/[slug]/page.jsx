@@ -241,7 +241,7 @@ export default async function BlogArticlePage({ params }) {
       <div className="bg-gradient-to-r from-primary-600 to-violet-600 text-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <div className="font-black text-lg">Entraînez-vous avec des QCM générés par IA</div>
+            <div className="font-black text-lg">Entraînez-vous avec des QCM corrigés et expliqués</div>
             <div className="text-primary-100 text-sm">Accès gratuit · Aucune carte bancaire requise</div>
           </div>
           <Link
@@ -307,7 +307,7 @@ export default async function BlogArticlePage({ params }) {
             Préparez votre PASS/LAS<br className="hidden sm:block" /> avec méthode et efficacité
           </h2>
           <p className="text-slate-400 mb-8 max-w-lg mx-auto leading-relaxed">
-            QCM illimités générés par IA, fiches de révision structurées, mode examen blanc et suivi de progression personnalisé.
+            QCM illimités corrigés et expliqués, fiches de révision structurées, mode examen blanc et suivi de progression personnalisé.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
