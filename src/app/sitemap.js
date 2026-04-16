@@ -1,4 +1,5 @@
 import { FICHES_DATA } from '@/data/fiches';
+import { BLOG_ARTICLES } from '@/data/blog';
 
 export default function sitemap() {
   const baseUrl = 'https://prepa-pass-las.fr';
@@ -8,6 +9,13 @@ export default function sitemap() {
     lastModified: new Date(),
     changeFrequency: 'monthly',
     priority: 0.7,
+  }));
+
+  const blogRoutes = BLOG_ARTICLES.map((article) => ({
+    url: `${baseUrl}/blog/${article.slug}`,
+    lastModified: new Date(article.date),
+    changeFrequency: 'monthly',
+    priority: 0.8,
   }));
 
   return [
@@ -23,5 +31,6 @@ export default function sitemap() {
     { url: `${baseUrl}/cgv`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${baseUrl}/cgu`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     ...fichesPages,
+    ...blogRoutes,
   ];
 }

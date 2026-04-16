@@ -1,45 +1,24 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import Link from 'next/link';
 import { BLOG_ARTICLES } from '@/data/blog';
-import { sanitizeHtml } from '@/utils/sanitize';
 
 const categoryColors = {
   'Orientation': 'bg-blue-100 text-blue-700',
-  'M\u00e9thodologie': 'bg-purple-100 text-purple-700',
+  'Méthodologie': 'bg-purple-100 text-purple-700',
   'Conseils': 'bg-green-100 text-green-700',
-  'Bien-\u00eatre': 'bg-pink-100 text-pink-700',
-  'Actualit\u00e9s': 'bg-amber-100 text-amber-700',
+  'Bien-être': 'bg-pink-100 text-pink-700',
+  'Actualités': 'bg-amber-100 text-amber-700',
 };
 
 export default function BlogPage() {
   const [currentFilter, setCurrentFilter] = useState('all');
-  const [openArticleId, setOpenArticleId] = useState(null);
 
   const categories = [...new Set(BLOG_ARTICLES.map(a => a.category))];
   const filteredArticles = currentFilter === 'all'
     ? BLOG_ARTICLES
     : BLOG_ARTICLES.filter(a => a.category === currentFilter);
-
-  const openArticle = useCallback((id) => {
-    setOpenArticleId(id);
-    document.body.style.overflow = 'hidden';
-  }, []);
-
-  const closeArticle = useCallback(() => {
-    setOpenArticleId(null);
-    document.body.style.overflow = '';
-  }, []);
-
-  useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === 'Escape') closeArticle();
-    };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [closeArticle]);
-
-  const activeArticle = openArticleId ? BLOG_ARTICLES.find(a => a.id === openArticleId) : null;
 
   return (
     <>
@@ -94,7 +73,7 @@ export default function BlogPage() {
                     <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                   </div>
                   <div>
-                    <div className="text-xl font-black text-gray-900">5 min</div>
+                    <div className="text-xl font-black text-gray-900">~7 min</div>
                     <div className="text-xs font-medium text-gray-500">Lecture moyenne</div>
                   </div>
                 </div>
@@ -217,59 +196,40 @@ export default function BlogPage() {
               const date = new Date(a.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
               const colorClass = categoryColors[a.category] || 'bg-gray-100 text-gray-700';
               return (
-                <article
+                <Link
                   key={a.id}
-                  className="blog-card bg-white rounded-2xl border border-gray-200 overflow-hidden cursor-pointer"
-                  onClick={() => openArticle(a.id)}
+                  href={`/blog/${a.slug}`}
+                  className="blog-card lift bg-white rounded-2xl border border-gray-200 overflow-hidden group"
                 >
-                  <div className="h-2 bg-primary-500"></div>
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`px-3 py-1 ${colorClass} text-xs font-bold rounded-full`}>{a.category}</span>
-                      <span className="text-xs text-gray-400">{date}</span>
+                  <article>
+                    <div className="h-2 bg-primary-500"></div>
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`px-3 py-1 ${colorClass} text-xs font-bold rounded-full`}>{a.category}</span>
+                        <span className="text-xs text-gray-400">{date}</span>
+                      </div>
+                      <h2 className="text-lg font-bold text-gray-900 mb-2 leading-tight group-hover:text-primary-600 transition-colors">{a.title}</h2>
+                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">{a.summary}</p>
+                      {a.readingTime && (
+                        <div className="mt-3 flex items-center gap-1 text-xs text-gray-400">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                          </svg>
+                          {a.readingTime} min de lecture
+                        </div>
+                      )}
+                      <div className="mt-4 flex items-center gap-1 text-primary-600 text-sm font-semibold">
+                        Lire l&apos;article
+                        <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                      </div>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 leading-tight">{a.title}</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">{a.summary}</p>
-                    <div className="mt-4 flex items-center gap-1 text-primary-600 text-sm font-semibold">
-                      Lire l&apos;article
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                    </div>
-                  </div>
-                </article>
+                  </article>
+                </Link>
               );
             })}
           </div>
         </div>
       </section>
-
-      {/* Article Modal */}
-      {activeArticle && (
-        <div className="fixed inset-0 z-50">
-          <div className="modal-backdrop absolute inset-0" onClick={closeArticle}></div>
-          <div className="relative z-10 max-w-3xl mx-auto mt-20 mb-10 mx-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-h-[80vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                <span className={`px-3 py-1 ${categoryColors[activeArticle.category] || 'bg-gray-100 text-gray-700'} text-xs font-bold rounded-full`}>
-                  {activeArticle.category}
-                </span>
-                <button onClick={closeArticle} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-              <div className="px-6 md:px-8 py-6">
-                <h2 className="text-2xl font-black text-gray-900 mb-2">{activeArticle.title}</h2>
-                <p className="text-sm text-gray-400 mb-6">
-                  {new Date(activeArticle.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </p>
-                <div
-                  className="prose prose-gray max-w-none text-gray-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeArticle.content) }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
