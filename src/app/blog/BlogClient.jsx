@@ -80,7 +80,53 @@ export default function BlogPage() {
               </div>
             </div>
 
-            {/* Right: Floating blog category cards */}
+            {/* Category cards — grille 2×2 sur mobile, flottantes sur desktop */}
+
+            {/* Mobile / tablet : grille 2×2 */}
+            <div className="grid grid-cols-2 gap-3 lg:hidden mt-2">
+              {/* Orientation */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100/60 shadow-sm p-4 flex items-center gap-3">
+                <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-blue-700">Orientation</div>
+                  <div className="text-[10px] text-gray-400">PASS ou LAS ?</div>
+                </div>
+              </div>
+              {/* Méthodologie */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-purple-100/60 shadow-sm p-4 flex items-center gap-3">
+                <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-purple-700">M&eacute;thodologie</div>
+                  <div className="text-[10px] text-gray-400">5 erreurs &agrave; &eacute;viter</div>
+                </div>
+              </div>
+              {/* Conseils */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-green-100/60 shadow-sm p-4 flex items-center gap-3">
+                <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-green-700">Conseils</div>
+                  <div className="text-[10px] text-gray-400">Organiser ses r&eacute;visions</div>
+                </div>
+              </div>
+              {/* Bien-être */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-pink-100/60 shadow-sm p-4 flex items-center gap-3">
+                <div className="w-9 h-9 bg-pink-100 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" /></svg>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-pink-700">Bien-&ecirc;tre</div>
+                  <div className="text-[10px] text-gray-400">G&eacute;rer le stress</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop : cartes flottantes absolues */}
             <div className="hidden lg:block relative h-[320px]">
               {/* Card 1 - Orientation (blue) */}
               <div className="blog-float absolute top-0 left-4 w-[220px] bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-500/10 border border-blue-100/50 p-5">
