@@ -160,6 +160,16 @@ export default function DashboardPage() {
     const strengthIds = new Set(strengths.map(s => s.id));
     const weaknesses = sortedByAvg.filter(s => !strengthIds.has(s.id)).slice(-2).reverse();
 
+    // Recommendations (weakest subjects with sessions, up to 4)
+    const recommendations = [...withSessions]
+      .sort((a, b) => a.avg - b.avg)
+      .slice(0, 4)
+      .map(s => ({
+        ...s,
+        scoreColor: s.avg < 50 ? 'rose' : s.avg < 65 ? 'amber' : 'sky',
+        reason: s.avg < 50 ? 'À retravailler en priorité' : s.avg < 65 ? 'Score à consolider' : 'Bonne maîtrise — maintenir',
+      }));
+
     // Recent 5
     const recent5 = [...allSessions].filter(s => s.date).sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
 
@@ -201,6 +211,7 @@ export default function DashboardPage() {
       overallAvg, targetScore,
       hasAnySessions: totalSessions > 0,
       hasMultipleSubjects: withSessions.length >= 2,
+      recommendations,
     };
   }, [allSessions, qcmStats.sessions, examStats.sessions]);
 
@@ -303,18 +314,26 @@ export default function DashboardPage() {
   return (
     <>
       {/* ===== HERO ===== */}
-      <section className="gradient-hero noise-overlay dot-grid pt-28 pb-10 md:pt-36 md:pb-14 relative overflow-hidden">
+      <section className="gradient-hero noise-overlay dot-grid pt-28 pb-12 md:pt-36 md:pb-16 relative overflow-hidden">
         <div className="blob-1"></div>
         <div className="blob-2"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-4">
+          <h1 className="font-jakarta text-5xl sm:text-6xl font-black text-gray-900 leading-[1.05] mb-4 tracking-tight">
             {user.displayName ? (
-              <>Bonjour <span className="bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600 bg-clip-text text-transparent">{user.displayName.split(' ')[0]}</span> !</>
+              <>Bonjour{' '}
+                <span className="bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600 bg-clip-text text-transparent">
+                  {user.displayName.split(' ')[0]}
+                </span> !
+              </>
             ) : (
-              <>Mon <span className="bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600 bg-clip-text text-transparent">tableau de bord</span></>
+              <>Mon{' '}
+                <span className="bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600 bg-clip-text text-transparent">
+                  tableau de bord
+                </span>
+              </>
             )}
           </h1>
-          <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-lg text-gray-500 leading-relaxed max-w-xl mx-auto font-medium">
             {data.currentStreak > 0 && <span className="mr-1">🔥</span>}
             {heroSubtitle}
           </p>
@@ -324,36 +343,87 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {/* ===== ACTIONS RAPIDES ===== */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-          <Link href="/qcm" className="group flex items-center gap-4 p-5 bg-gradient-to-br from-primary-50/40 to-white rounded-2xl border border-primary-100/50 shadow-sm hover:border-primary-300 hover:shadow-lg hover:shadow-primary-600/10 hover:-translate-y-[2px] transition-all">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+          <Link href="/qcm" className="group flex items-center gap-4 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-primary-200 hover:shadow-lg hover:shadow-primary-600/8 hover:-translate-y-[2px] transition-all">
             <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-primary-200 transition-colors">
               <svg className="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900 group-hover:text-primary-700 transition-colors">Lancer un QCM</p>
-              <p className="text-xs text-gray-500 mt-0.5">Entrainez-vous librement</p>
+              <p className="text-base font-bold text-gray-900 group-hover:text-primary-700 transition-colors">Lancer un QCM</p>
+              <p className="text-sm text-gray-500 mt-0.5">Entraînez-vous librement, à votre rythme</p>
             </div>
-            <svg className="w-5 h-5 text-gray-300 group-hover:text-primary-500 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+            <svg className="w-5 h-5 text-gray-300 group-hover:text-primary-400 group-hover:translate-x-0.5 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
           </Link>
-          <Link href="/examen" className="group flex items-center gap-4 p-5 bg-gradient-to-br from-violet-50/40 to-white rounded-2xl border border-violet-100/50 shadow-sm hover:border-violet-300 hover:shadow-lg hover:shadow-violet-600/10 hover:-translate-y-[2px] transition-all">
+          <Link href="/examen" className="group flex items-center gap-4 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-violet-200 hover:shadow-lg hover:shadow-violet-600/8 hover:-translate-y-[2px] transition-all">
             <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-violet-200 transition-colors">
               <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" /></svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900 group-hover:text-violet-700 transition-colors">Passer un examen</p>
-              <p className="text-xs text-gray-500 mt-0.5">Conditions reelles</p>
+              <p className="text-base font-bold text-gray-900 group-hover:text-violet-700 transition-colors">Passer un examen blanc</p>
+              <p className="text-sm text-gray-500 mt-0.5">Conditions réelles — timer et correction</p>
             </div>
-            <svg className="w-5 h-5 text-gray-300 group-hover:text-violet-500 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+            <svg className="w-5 h-5 text-gray-300 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
           </Link>
         </div>
 
         {/* ===== METRIQUES CLES ===== */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Jours consecutifs" value={data.currentStreak > 0 ? `${data.currentStreak}j` : '0j'} badge={data.currentStreak > 0 ? '🔥' : null} tint="bg-amber-50/60 border-amber-100" icon={<svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" /></svg>} />
-          <StatCard label="Score moyen" value={data.hasAnySessions ? `${data.avgScore}%` : '--'} trend={data.trend} tint="bg-emerald-50/60 border-emerald-100" icon={<svg className="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>} />
-          <StatCard label="Cette semaine" value={`${data.thisWeekSessions}`} sublabel={data.thisWeekSessions === 1 ? 'session' : 'sessions'} tint="bg-primary-50/60 border-primary-100" icon={<svg className="w-6 h-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>} />
-          <StatCard label="Temps total" value={data.hasAnySessions ? formatDuration(data.totalTime) : '--'} tint="bg-violet-50/60 border-violet-100" icon={<svg className="w-6 h-6 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>} />
+          <StatCard
+            label="Jours consecutifs"
+            value={data.currentStreak > 0 ? `${data.currentStreak}j` : '0j'}
+            badge={data.currentStreak > 0 ? '🔥' : null}
+            tint="bg-amber-50/60 border-amber-100"
+            hint={data.currentStreak > 0 ? `Record : ${data.bestStreak} jours` : 'Commencez aujourd\'hui'}
+            icon={<svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" /></svg>}
+          />
+          <StatCard
+            label="Score moyen"
+            value={data.hasAnySessions ? `${data.avgScore}%` : '—'}
+            trend={data.trend}
+            tint="bg-emerald-50/60 border-emerald-100"
+            hint={data.hasAnySessions
+              ? (data.last5Avg !== null && data.prev5Avg !== null
+                ? `${data.last5Avg >= data.prev5Avg ? '+' : ''}${data.last5Avg - data.prev5Avg} pts vs sessions précédentes`
+                : 'Continuez pour voir la tendance')
+              : 'Après votre 1re session'}
+            icon={<svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>}
+          />
+          <StatCard
+            label="Cette semaine"
+            value={`${data.thisWeekSessions}`}
+            sublabel={data.thisWeekSessions === 1 ? 'session' : 'sessions'}
+            tint="bg-primary-50/60 border-primary-100"
+            hint="Objectif : 5 sessions / semaine"
+            icon={<svg className="w-5 h-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>}
+          />
+          <StatCard
+            label="Temps total"
+            value={data.hasAnySessions ? formatDuration(data.totalTime) : '—'}
+            tint="bg-violet-50/60 border-violet-100"
+            hint={data.hasAnySessions ? 'Temps d\'étude cumulé' : 'Temps d\'étude cumulé'}
+            icon={<svg className="w-5 h-5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>}
+          />
         </div>
+
+        {/* ===== RECOMMANDATIONS ===== */}
+        {data.hasAnySessions && data.recommendations.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Recommandé pour vous</h2>
+                <p className="text-sm text-gray-500">Basé sur vos derniers scores — matières à travailler</p>
+              </div>
+              <Link href="/qcm" className="text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                Tout travailler →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {data.recommendations.map((rec, i) => (
+                <RecommendationCard key={i} rec={rec} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ===== MOBILE: HORIZONTAL PILLS ===== */}
         <div className="md:hidden flex gap-2 overflow-x-auto pb-3 mb-4 -mx-1 px-1">
@@ -445,7 +515,13 @@ export default function DashboardPage() {
             {activeSection === 'overview' && (
               <>
                 {!data.hasAnySessions ? (
-                  <EmptyState title="Aucune session effectuee" description="Lancez un QCM ou un examen pour commencer a suivre votre progression." ctaHref="/qcm" ctaLabel="Commencer un QCM" />
+                  <EmptyState
+                    title="Prêt à commencer ?"
+                    description="Lancez un premier QCM pour calibrer votre niveau. Vos stats s'afficheront ici en temps réel."
+                    ctaHref="/qcm"
+                    ctaLabel="Commencer un QCM →"
+                    userName={user.displayName ? user.displayName.split(' ')[0] : null}
+                  />
                 ) : (
                   <>
                     {/* Maitrise par matiere */}
@@ -880,37 +956,87 @@ export default function DashboardPage() {
 /* ============================================================
    STAT CARD
    ============================================================ */
-function StatCard({ label, value, icon, badge, trend, sublabel, tint }) {
+function StatCard({ label, value, icon, badge, trend, sublabel, tint, hint }) {
   return (
-    <div className={`rounded-2xl border p-5 shadow-sm hover:-translate-y-[2px] transition-transform ${tint || 'bg-white border-gray-100'}`}>
-      <div className="flex items-center gap-3 mb-2">
+    <div className={`rounded-2xl border p-5 shadow-sm hover:-translate-y-[2px] transition-transform flex flex-col justify-between min-h-[112px] ${tint || 'bg-white border-gray-100'}`}>
+      <div className="flex items-center gap-2.5 mb-3">
         {icon}
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
-        {badge && <span className="text-base">{badge}</span>}
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-tight">{label}</span>
+        {badge && <span className="text-base ml-auto">{badge}</span>}
       </div>
-      <div className="flex items-center gap-2">
-        <p className="text-2xl font-black text-gray-900">{value}</p>
-        {sublabel && <span className="text-xs text-gray-400 mt-1">{sublabel}</span>}
-        {trend === 'up' && <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">↑</span>}
-        {trend === 'down' && <span className="text-xs font-bold text-red-500 bg-red-100 px-1.5 py-0.5 rounded-full">↓</span>}
-        {trend === 'stable' && <span className="text-xs font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full">→</span>}
+      <div>
+        <div className="flex items-baseline gap-2">
+          <p className="text-2xl font-black text-gray-900 tracking-tight">{value}</p>
+          {sublabel && <span className="text-xs text-gray-400">{sublabel}</span>}
+          {trend === 'up' && <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">↑</span>}
+          {trend === 'down' && <span className="text-xs font-bold text-red-500 bg-red-100 px-1.5 py-0.5 rounded-full">↓</span>}
+          {trend === 'stable' && <span className="text-xs font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full">→</span>}
+        </div>
+        {hint && <p className="text-[11px] text-gray-400 mt-1">{hint}</p>}
       </div>
     </div>
   );
 }
 
 /* ============================================================
+   RECOMMENDATION CARD
+   ============================================================ */
+function RecommendationCard({ rec }) {
+  const colorConfig = {
+    rose:  { bg: 'bg-rose-50',   border: 'border-rose-100',  badge: 'bg-rose-100 text-rose-700',   ring: 'bg-rose-100 text-rose-600',   score: 'text-rose-600'   },
+    amber: { bg: 'bg-amber-50',  border: 'border-amber-100', badge: 'bg-amber-100 text-amber-700', ring: 'bg-amber-100 text-amber-600', score: 'text-amber-600'  },
+    sky:   { bg: 'bg-sky-50',    border: 'border-sky-100',   badge: 'bg-sky-100 text-sky-700',     ring: 'bg-sky-100 text-sky-600',     score: 'text-sky-600'    },
+  };
+  const c = colorConfig[rec.scoreColor] || colorConfig.sky;
+  const colors = SUBJECT_COLORS[rec.color] || SUBJECT_COLORS.primary;
+
+  return (
+    <Link
+      href="/qcm"
+      className={`group ${c.bg} border ${c.border} rounded-2xl p-5 flex flex-col gap-3 hover:-translate-y-1 hover:shadow-md transition-all`}
+    >
+      <span className={`self-start text-xs font-bold px-2.5 py-1 rounded-full ${colors.badge}`}>
+        {rec.name}
+      </span>
+      <div className="flex-1">
+        <p className="text-xs text-gray-500 mt-1">{rec.count} session{rec.count > 1 ? 's' : ''} effectuée{rec.count > 1 ? 's' : ''}</p>
+      </div>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-gray-500 font-medium">{rec.reason}</p>
+        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black ${c.ring}`}>
+          {rec.avg}%
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+/* ============================================================
    EMPTY STATE
    ============================================================ */
-function EmptyState({ title, description, ctaHref, ctaLabel }) {
+function EmptyState({ title, description, ctaHref, ctaLabel, userName }) {
+  const displayTitle = userName ? `Prêt${userName ? ' ' + userName : ''} ?` : title;
+  const displayDesc = userName
+    ? 'Lancez un premier QCM pour calibrer votre niveau. Vos stats s\'afficheront ici en temps réel.'
+    : description;
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-      <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-        <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z" /></svg>
+      <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+        <svg className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+        </svg>
       </div>
-      <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
-      <p className="text-sm text-gray-500 mb-5">{description}</p>
-      {ctaHref && <Link href={ctaHref} className="inline-flex px-5 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25">{ctaLabel || 'Commencer maintenant'}</Link>}
+      <h3 className="text-xl font-bold text-gray-900 mb-2">{userName ? displayTitle : title}</h3>
+      <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">{userName ? displayDesc : description}</p>
+      {ctaHref && (
+        <Link
+          href={ctaHref}
+          className="inline-flex px-6 py-3 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25"
+        >
+          {ctaLabel || 'Commencer maintenant'}
+        </Link>
+      )}
     </div>
   );
 }

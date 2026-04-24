@@ -1,4 +1,4 @@
-import { Inter } from 'next/font/google';
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
 import Header from '@/components/layout/Header';
@@ -6,7 +6,8 @@ import Footer from '@/components/layout/Footer';
 import { PremiumProvider } from '@/contexts/PremiumContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', weight: ['600', '700', '800'] });
 
 export const metadata = {
   metadataBase: new URL('https://prepa-pass-las.fr'),
@@ -45,7 +46,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
-      <body className={`${inter.className} bg-slate-50 text-gray-900 antialiased`}>
+      <body className={`${inter.variable} ${jakarta.variable} font-sans bg-slate-50 text-gray-900 antialiased`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
