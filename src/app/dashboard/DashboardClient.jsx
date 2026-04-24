@@ -311,278 +311,62 @@ export default function DashboardPage() {
     return `${seg.color} ${start}% ${end}%`;
   }).join(', ');
 
+  const todaySubject = data.recommendations.length > 0 ? data.recommendations[0] : null;
+
   return (
-    <>
-      {/* ===== HERO ===== */}
-      <section className="gradient-hero noise-overlay dot-grid pt-28 pb-12 md:pt-36 md:pb-16 relative overflow-hidden">
-        <div className="blob-1"></div>
-        <div className="blob-2"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <h1 className="font-jakarta text-5xl sm:text-6xl font-black text-gray-900 leading-[1.05] mb-4 tracking-tight">
-            {user.displayName ? (
-              <>Bonjour{' '}
-                <span className="bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600 bg-clip-text text-transparent">
-                  {user.displayName.split(' ')[0]}
-                </span> !
-              </>
-            ) : (
-              <>Mon{' '}
-                <span className="bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600 bg-clip-text text-transparent">
-                  tableau de bord
-                </span>
-              </>
-            )}
-          </h1>
-          <p className="text-lg text-gray-500 leading-relaxed max-w-xl mx-auto font-medium">
-            {data.currentStreak > 0 && <span className="mr-1">🔥</span>}
-            {heroSubtitle}
-          </p>
-        </div>
-      </section>
+    <div style={{ paddingTop: 64, background: '#f6f5fb', minHeight: '100vh' }}>
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* ===== SIDEBAR ===== */}
+        <DashboardSideNav
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+          isPremiumPlus={isPremiumPlus}
+          tier={tier}
+        />
 
-        {/* ===== ACTIONS RAPIDES ===== */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-          <Link href="/qcm" className="group flex items-center gap-4 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-primary-200 hover:shadow-lg hover:shadow-primary-600/8 hover:-translate-y-[2px] transition-all">
-            <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-primary-200 transition-colors">
-              <svg className="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-base font-bold text-gray-900 group-hover:text-primary-700 transition-colors">Lancer un QCM</p>
-              <p className="text-sm text-gray-500 mt-0.5">Entraînez-vous librement, à votre rythme</p>
-            </div>
-            <svg className="w-5 h-5 text-gray-300 group-hover:text-primary-400 group-hover:translate-x-0.5 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-          </Link>
-          <Link href="/examen" className="group flex items-center gap-4 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-violet-200 hover:shadow-lg hover:shadow-violet-600/8 hover:-translate-y-[2px] transition-all">
-            <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-violet-200 transition-colors">
-              <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" /></svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-base font-bold text-gray-900 group-hover:text-violet-700 transition-colors">Passer un examen blanc</p>
-              <p className="text-sm text-gray-500 mt-0.5">Conditions réelles — timer et correction</p>
-            </div>
-            <svg className="w-5 h-5 text-gray-300 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-          </Link>
-        </div>
+        {/* ===== MAIN CONTENT ===== */}
+        <main style={{ flex: 1, padding: '32px 40px', minWidth: 0, maxWidth: '100%' }}>
 
-        {/* ===== METRIQUES CLES ===== */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard
-            label="Jours consecutifs"
-            value={data.currentStreak > 0 ? `${data.currentStreak}j` : '0j'}
-            badge={data.currentStreak > 0 ? '🔥' : null}
-            tint="bg-amber-50/60 border-amber-100"
-            hint={data.currentStreak > 0 ? `Record : ${data.bestStreak} jours` : 'Commencez aujourd\'hui'}
-            icon={<svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" /></svg>}
-          />
-          <StatCard
-            label="Score moyen"
-            value={data.hasAnySessions ? `${data.avgScore}%` : '—'}
-            trend={data.trend}
-            tint="bg-emerald-50/60 border-emerald-100"
-            hint={data.hasAnySessions
-              ? (data.last5Avg !== null && data.prev5Avg !== null
-                ? `${data.last5Avg >= data.prev5Avg ? '+' : ''}${data.last5Avg - data.prev5Avg} pts vs sessions précédentes`
-                : 'Continuez pour voir la tendance')
-              : 'Après votre 1re session'}
-            icon={<svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>}
-          />
-          <StatCard
-            label="Cette semaine"
-            value={`${data.thisWeekSessions}`}
-            sublabel={data.thisWeekSessions === 1 ? 'session' : 'sessions'}
-            tint="bg-primary-50/60 border-primary-100"
-            hint="Objectif : 5 sessions / semaine"
-            icon={<svg className="w-5 h-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>}
-          />
-          <StatCard
-            label="Temps total"
-            value={data.hasAnySessions ? formatDuration(data.totalTime) : '—'}
-            tint="bg-violet-50/60 border-violet-100"
-            hint={data.hasAnySessions ? 'Temps d\'étude cumulé' : 'Temps d\'étude cumulé'}
-            icon={<svg className="w-5 h-5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>}
-          />
-        </div>
-
-        {/* ===== RECOMMANDATIONS ===== */}
-        {data.hasAnySessions && data.recommendations.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Recommandé pour vous</h2>
-                <p className="text-sm text-gray-500">Basé sur vos derniers scores — matières à travailler</p>
-              </div>
-              <Link href="/qcm" className="text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors">
-                Tout travailler →
-              </Link>
+          {/* GREETING */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+            <div>
+              <p style={{ fontSize: 13, color: '#5f6280', marginBottom: 4 }}>
+                {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </p>
+              <h1 className="font-jakarta" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, margin: 0, color: '#0f1020' }}>
+                Bonjour {user.displayName ? user.displayName.split(' ')[0] : ''}
+              </h1>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {data.recommendations.map((rec, i) => (
-                <RecommendationCard key={i} rec={rec} />
-              ))}
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+              {(user.displayName?.[0] || user.email?.[0] || '?').toUpperCase()}
             </div>
           </div>
-        )}
 
-        {/* ===== MOBILE: HORIZONTAL PILLS ===== */}
-        <div className="md:hidden flex gap-2 overflow-x-auto pb-3 mb-4 -mx-1 px-1">
-          {MENU_ITEMS.map(item => {
-            const isActive = activeSection === item.id;
-            const showLock = item.premium && !isPremiumPlus;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shrink-0 ${
-                  isActive
-                    ? `${item.activeClasses} shadow-sm border border-current/10`
-                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-                {showLock && (
-                  <svg className="w-3.5 h-3.5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ===== SIDEBAR + CONTENT ===== */}
-        <div className="flex gap-6">
-          {/* Desktop sidebar */}
-          <aside className="hidden md:block w-56 shrink-0">
-            <nav className="sticky top-24 bg-white rounded-2xl border border-gray-100 shadow-sm p-2 space-y-1">
-              <div className="px-3 py-2 mb-1">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Navigation</p>
-              </div>
-              {MENU_ITEMS.map(item => {
-                const isActive = activeSection === item.id;
-                const showLock = item.premium && !isPremiumPlus;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
-                      isActive
-                        ? `${item.activeClasses} font-semibold border-l-[3px] pl-[9px]`
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
-                  >
-                    <span className={isActive ? item.iconActiveClass : 'text-gray-400'}>{item.icon}</span>
-                    <span className="flex-1">{item.label}</span>
-                    {showLock && (
-                      <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </aside>
-
-          {/* Main content area */}
-          <div className="flex-1 min-w-0 space-y-6">
-
-            {/* ===== BANNIERE PREMIUM (gratuit uniquement) ===== */}
-            {tier === 'gratuit' && (
-              <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-violet-600 to-primary-600 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-primary-500/20">
-                {/* Decorative blur */}
-                <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-                <div className="absolute bottom-0 left-1/3 w-24 h-24 bg-violet-400/20 rounded-full blur-xl pointer-events-none" />
-                <div className="relative flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0 1 16.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 0 1-2.52.587 6.023 6.023 0 0 1-2.52-.587" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-white font-bold text-sm leading-tight">Passez à Premium+ pour débloquer tout le dashboard</p>
-                    <p className="text-indigo-200 text-xs mt-0.5">Progression détaillée, objectifs, classement et bien plus.</p>
-                  </div>
+          {/* ===== VUE D'ENSEMBLE ===== */}
+          {activeSection === 'overview' && (
+            <>
+              {data.hasAnySessions
+                ? <HeroFocusFilled todaySubject={todaySubject} weekSessions={data.thisWeekSessions} currentStreak={data.currentStreak} />
+                : <HeroFocusEmpty />
+              }
+              <StatStripBar data={data} />
+              {data.hasAnySessions ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 240px', gap: 20 }}>
+                  <RecoListVertical recommendations={data.recommendations} />
+                  <QuickActionCards />
                 </div>
-                <Link
-                  href="/tarifs"
-                  className="relative shrink-0 px-5 py-2.5 bg-white text-primary-700 text-sm font-bold rounded-xl hover:bg-indigo-50 transition-colors shadow-sm"
-                >
-                  Voir les offres →
-                </Link>
-              </div>
-            )}
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 240px', gap: 20 }}>
+                  <HowItWorksCard />
+                  <QuickActionCards />
+                </div>
+              )}
+            </>
+          )}
 
-            {/* ===== VUE D'ENSEMBLE ===== */}
-            {activeSection === 'overview' && (
-              <>
-                {!data.hasAnySessions ? (
-                  <EmptyState
-                    title="Prêt à commencer ?"
-                    description="Lancez un premier QCM pour calibrer votre niveau. Vos stats s'afficheront ici en temps réel."
-                    ctaHref="/qcm"
-                    ctaLabel="Commencer un QCM →"
-                    userName={user.displayName ? user.displayName.split(' ')[0] : null}
-                  />
-                ) : (
-                  <>
-                    {/* Maitrise par matiere */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-primary-500"></span>Maitrise par matiere</h3>
-                      <div className="space-y-4">
-                        {SUBJECTS.map(s => ({ ...s, ...(data.subjectStats[s.id] || { avg: 0, count: 0 }) })).sort((a, b) => b.count - a.count).map(s => {
-                          const colors = SUBJECT_COLORS[s.color] || SUBJECT_COLORS.primary;
-                          const aboveAvg = s.avg > data.avgScore;
-                          return (
-                            <div key={s.id}>
-                              <div className="flex justify-between items-center mb-1.5">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-gray-700">{s.name}</span>
-                                  <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{s.count} session{s.count > 1 ? 's' : ''}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  {s.count > 0 && <span className={`text-[10px] font-semibold ${aboveAvg ? 'text-emerald-500' : 'text-red-400'}`}>{aboveAvg ? '▲' : '▼'}</span>}
-                                  <span className={`text-sm font-bold ${scoreClass(s.avg)}`}>{s.avg > 0 ? `${s.avg}%` : '\u2014'}</span>
-                                </div>
-                              </div>
-                              <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full ${colors.bar} transition-all`} style={{ width: `${s.avg}%` }} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Dernieres sessions */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-primary-400"></span>Dernieres sessions</h3>
-                      <div className="space-y-3">
-                        {data.recent5.map((s, i) => {
-                          const subjectColors = getSubjectBadgeColors(s.subject);
-                          const pct = s.percentage || Math.round((s.correct / s.total) * 100);
-                          return (
-                            <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-xl bg-gray-50/80 hover:bg-gray-100/80 transition-colors">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${TYPE_BADGE[s._type] || TYPE_BADGE.QCM}`}>{s._type}</span>
-                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${subjectColors.badge}`}>{s.subjectName || getSubjectName(s.subject)}</span>
-                                {s.topic && <span className="text-xs text-gray-500 truncate max-w-[200px]">{s.topic}</span>}
-                              </div>
-                              <div className="flex items-center gap-3 sm:ml-auto">
-                                <div className="flex items-center gap-2 flex-1 sm:flex-none">
-                                  <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${scoreBarClass(pct)}`} style={{ width: `${pct}%` }} /></div>
-                                  <span className={`text-sm font-bold ${scoreClass(pct)} min-w-[36px]`}>{pct}%</span>
-                                </div>
-                                <span className="text-xs text-gray-400">{formatDate(s.date)}</span>
-                                <span className="text-xs text-gray-400">{formatDuration(s.duration)}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
+          {/* Sections non-overview: padding block remplace l'ancien container */}
+          <div className={activeSection !== 'overview' ? 'space-y-6' : 'hidden'}>
 
             {/* ===== HISTORIQUE ===== */}
             {activeSection === 'historique' && (
@@ -930,8 +714,8 @@ export default function DashboardPage() {
                 <ClassementSection allSessions={allSessions} userId={user?.id} accessToken={accessToken} />
               )
             )}
+
           </div>
-        </div>
 
         {/* ===== BANNIERE CONTACT ===== */}
         <div className="mt-8">
@@ -948,8 +732,410 @@ export default function DashboardPage() {
             <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-600 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
           </Link>
         </div>
+        </main>
       </div>
-    </>
+    </div>
+  );
+}
+
+/* ============================================================
+   DASHBOARD SIDE NAV
+   ============================================================ */
+const UE_SIDEBAR = [
+  { code: 'UE1', name: 'Chimie / Biochimie', id: 'chimie' },
+  { code: 'UE2', name: 'Biologie cellulaire', id: 'biocell' },
+  { code: 'UE3', name: 'Biophysique', id: 'biophysique' },
+  { code: 'UE4', name: 'Biostatistiques', id: 'biostats' },
+  { code: 'UE5', name: 'Anatomie', id: 'anatomie' },
+  { code: 'UE6', name: 'SSH / Éthique', id: 'ssh' },
+];
+
+function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier }) {
+  const [coursesOpen, setCoursesOpen] = useState(false);
+
+  const navItems = [
+    {
+      id: 'overview', label: "Vue d'ensemble",
+      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg>,
+    },
+    {
+      id: 'courses', label: 'Fiches & Cours', expandable: true, badge: '6 UE',
+      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2V5zM19 18v3H6" /></svg>,
+    },
+    {
+      id: 'qcm', label: 'QCM', href: '/qcm',
+      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>,
+    },
+    {
+      id: 'examen', label: 'Mode Examen', href: '/examen',
+      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4h12l4 4v12H4z" /><path strokeLinecap="round" strokeLinejoin="round" d="M8 13h8M8 17h6" /></svg>,
+    },
+    {
+      id: 'historique', label: 'Historique',
+      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg>,
+    },
+    {
+      id: 'progression', label: 'Progression', locked: !isPremiumPlus,
+      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>,
+    },
+    {
+      id: 'objectifs', label: 'Objectifs', locked: !isPremiumPlus,
+      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" /></svg>,
+    },
+    {
+      id: 'classement', label: 'Classement', locked: !isPremiumPlus,
+      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172" /></svg>,
+    },
+  ];
+
+  return (
+    <nav
+      className="hidden md:flex flex-col shrink-0"
+      style={{ width: 220, background: '#fff', borderRight: '1px solid #eef0f7', padding: '24px 16px', minHeight: 'calc(100vh - 64px)', position: 'sticky', top: 64, alignSelf: 'flex-start', height: 'calc(100vh - 64px)', overflowY: 'auto' }}
+    >
+      <div style={{ fontSize: 10.5, letterSpacing: 1.4, fontWeight: 700, color: '#8a8ea8', padding: '0 10px 10px' }}>NAVIGATION</div>
+
+      {navItems.map(item => {
+        const isActive = activeSection === item.id;
+        const isCourses = item.id === 'courses';
+
+        if (item.href) {
+          return (
+            <Link key={item.id} href={item.href}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'transparent', color: '#2a2c44', fontSize: 14, fontWeight: 500, textDecoration: 'none', marginBottom: 2 }}
+              className="hover:bg-gray-50 transition-colors"
+            >
+              {item.icon}
+              <span className="flex-1">{item.label}</span>
+            </Link>
+          );
+        }
+
+        return (
+          <Fragment key={item.id}>
+            <button
+              onClick={() => isCourses ? setCoursesOpen(o => !o) : (!item.locked && setActiveSection(item.id))}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 12px', borderRadius: 10, marginBottom: 2,
+                background: isActive ? '#4f46e5' : 'transparent',
+                color: isActive ? '#fff' : '#2a2c44',
+                fontSize: 14, fontWeight: isActive ? 600 : 500,
+                border: 'none', cursor: item.locked ? 'default' : 'pointer',
+                textAlign: 'left',
+              }}
+              className={isActive ? '' : 'hover:bg-gray-50 transition-colors'}
+            >
+              {item.icon}
+              <span className="flex-1">{item.label}</span>
+              {item.badge && (
+                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 5, background: isActive ? 'rgba(255,255,255,0.2)' : '#ece9ff', color: isActive ? '#fff' : '#4f46e5' }}>
+                  {item.badge}
+                </span>
+              )}
+              {isCourses && (
+                <svg className="w-3 h-3 shrink-0 transition-transform" style={{ transform: coursesOpen ? 'rotate(90deg)' : 'rotate(0deg)', color: isActive ? '#fff' : '#8a8ea8' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
+                </svg>
+              )}
+              {item.locked && (
+                <svg className="w-3.5 h-3.5 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+              )}
+            </button>
+
+            {isCourses && coursesOpen && (
+              <div style={{ marginLeft: 24, borderLeft: '1px solid #eef0f7', paddingLeft: 4, marginBottom: 6 }}>
+                {UE_SIDEBAR.map(ue => (
+                  <Link key={ue.code} href={`/fiches`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, fontSize: 12.5, color: '#2a2c44', textDecoration: 'none' }}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <span style={{ fontFamily: 'monospace', fontSize: 10.5, fontWeight: 700, color: '#4f46e5', minWidth: 24 }}>{ue.code}</span>
+                    <span>{ue.name}</span>
+                  </Link>
+                ))}
+                <Link href="/fiches" style={{ display: 'block', padding: '6px 10px', fontSize: 12, fontWeight: 600, color: '#4f46e5', textDecoration: 'none' }}>
+                  Toutes les fiches →
+                </Link>
+              </div>
+            )}
+          </Fragment>
+        );
+      })}
+
+      {/* Premium upsell card */}
+      {tier === 'gratuit' && (
+        <div style={{ marginTop: 'auto', paddingTop: 24 }}>
+          <div style={{ padding: 14, borderRadius: 12, background: 'linear-gradient(135deg, #4f46e5 0%, #8257f9 100%)', color: '#fff' }}>
+            <div style={{ fontSize: 11, letterSpacing: 1.2, fontWeight: 700, opacity: 0.8, marginBottom: 4 }}>PLAN GRATUIT</div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, lineHeight: 1.3 }}>Débloquez Progression, Objectifs & Classement</div>
+            <Link href="/tarifs" style={{ display: 'block', background: '#fff', color: '#4f46e5', borderRadius: 8, padding: 8, fontWeight: 700, fontSize: 12, textAlign: 'center', textDecoration: 'none' }}>
+              Passer Premium →
+            </Link>
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+}
+
+/* ============================================================
+   HERO FOCUS CARDS
+   ============================================================ */
+function HeroFocusEmpty() {
+  return (
+    <div style={{ borderRadius: 20, padding: 36, marginBottom: 28, background: 'linear-gradient(135deg, #312c6e 0%, #4f46e5 60%, #8257f9 100%)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: 40, right: 100, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr auto', gap: 32, alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: 11, letterSpacing: 1.6, fontWeight: 700, opacity: 0.75, marginBottom: 10 }}>PREMIÈRE SESSION</div>
+          <div className="font-jakarta" style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.1, letterSpacing: -1, marginBottom: 10 }}>
+            On commence par un QCM de calibrage ?
+          </div>
+          <div style={{ fontSize: 14.5, opacity: 0.85, lineHeight: 1.5, maxWidth: 520, marginBottom: 24 }}>
+            20 questions, 15 minutes. On identifie vos points forts et les UE à travailler en priorité — puis on vous propose un plan de révision sur mesure.
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Link href="/qcm" style={{ background: '#fff', color: '#4f46e5', borderRadius: 10, padding: '12px 22px', fontWeight: 700, fontSize: 14, textDecoration: 'none', display: 'inline-block' }}>
+              Démarrer le calibrage →
+            </Link>
+            <button style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 10, padding: '12px 18px', fontWeight: 500, fontSize: 14, cursor: 'pointer' }}>
+              Plus tard
+            </button>
+          </div>
+        </div>
+        <div style={{ width: 160, height: 160, borderRadius: 20, background: 'rgba(255,255,255,0.1)', display: 'grid', placeItems: 'center', backdropFilter: 'blur(4px)', flexShrink: 0 }}>
+          <div className="font-jakarta" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 48, fontWeight: 800, lineHeight: 1 }}>20</div>
+            <div style={{ fontSize: 11, letterSpacing: 1.4, opacity: 0.8, marginTop: 6 }}>QUESTIONS</div>
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.3)', margin: '10px 24px' }} />
+            <div style={{ fontSize: 13, opacity: 0.9 }}>≈ 15 min</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroFocusFilled({ todaySubject, weekSessions, currentStreak }) {
+  const weekTarget = 10;
+  const weekPct = Math.min(1, weekSessions / weekTarget);
+  const circumference = 2 * Math.PI * 32;
+
+  return (
+    <div style={{ borderRadius: 20, padding: 32, marginBottom: 28, background: 'linear-gradient(135deg, #312c6e 0%, #4f46e5 100%)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: -50, right: -50, width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 280px', gap: 32, alignItems: 'center' }}>
+        <div>
+          {currentStreak > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <span>🔥</span>
+              <span style={{ fontSize: 11, letterSpacing: 1.4, fontWeight: 700, opacity: 0.9 }}>JOUR {currentStreak} · STREAK</span>
+            </div>
+          )}
+          <div className="font-jakarta" style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.15, letterSpacing: -0.8, marginBottom: 10 }}>
+            {todaySubject
+              ? `Aujourd'hui : 30 min sur ${todaySubject.name}`
+              : 'Continuez sur votre lancée !'}
+          </div>
+          <div style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.5, maxWidth: 480, marginBottom: 22 }}>
+            {todaySubject
+              ? `Basé sur vos scores, c'est la matière qui vous bloque le plus. Objectif : passer de ${todaySubject.avg}% à ${Math.min(100, todaySubject.avg + 13)}% cette semaine.`
+              : 'Votre progression est sur la bonne voie. Continuez à pratiquer régulièrement.'}
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <Link href="/qcm" style={{ background: '#fff', color: '#4f46e5', borderRadius: 10, padding: '11px 20px', fontWeight: 700, fontSize: 14, textDecoration: 'none', display: 'inline-block' }}>
+              {todaySubject ? `Réviser — ${todaySubject.name} →` : 'Lancer un QCM →'}
+            </Link>
+            <Link href="/qcm" style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 10, padding: '11px 16px', fontWeight: 500, fontSize: 14, textDecoration: 'none', display: 'inline-block' }}>
+              Changer de sujet
+            </Link>
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, letterSpacing: 1.2, fontWeight: 700, opacity: 0.8, marginBottom: 12 }}>OBJECTIF DE LA SEMAINE</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="8" />
+              <circle cx="40" cy="40" r="32" fill="none" stroke="#fff" strokeWidth="8"
+                strokeDasharray={circumference}
+                strokeDashoffset={circumference * (1 - weekPct)}
+                strokeLinecap="round" transform="rotate(-90 40 40)" />
+              <text x="40" y="46" textAnchor="middle" fontSize="18" fontWeight="800" fill="#fff">{weekSessions}/{weekTarget}</text>
+            </svg>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>Sessions effectuées</div>
+              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>
+                {weekTarget - weekSessions > 0
+                  ? `Plus que ${weekTarget - weekSessions} pour atteindre l'objectif`
+                  : 'Objectif atteint 🎉'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   STAT STRIP (horizontal bar)
+   ============================================================ */
+function StatStripBar({ data }) {
+  const stats = [
+    {
+      icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" /></svg>,
+      iconColor: '#e8a948', iconBg: '#fdf4e2',
+      label: 'Streak', value: data.currentStreak > 0 ? `${data.currentStreak}j` : '0j',
+      delta: data.currentStreak > 0 ? `Record ${data.bestStreak}j` : null,
+    },
+    {
+      icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>,
+      iconColor: '#3eb489', iconBg: '#e0f3eb',
+      label: 'Score moyen', value: data.hasAnySessions ? `${data.avgScore}%` : '—',
+      delta: data.hasAnySessions && data.last5Avg !== null && data.prev5Avg !== null
+        ? `${data.last5Avg >= data.prev5Avg ? '+' : ''}${data.last5Avg - data.prev5Avg}%`
+        : null,
+    },
+    {
+      icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>,
+      iconColor: '#4f8ff7', iconBg: '#e4edff',
+      label: 'Cette semaine', value: `${data.thisWeekSessions}`,
+      delta: data.thisWeekSessions > 0 ? `sessions` : null,
+    },
+    {
+      icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>,
+      iconColor: '#4f46e5', iconBg: '#ece9ff',
+      label: 'Temps total', value: data.hasAnySessions ? formatDuration(data.totalTime) : '—',
+      delta: null,
+    },
+  ];
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #eef0f7', marginBottom: 28, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      {stats.map((s, i) => (
+        <div key={i} style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, borderRight: i < 3 ? '1px solid #eef0f7' : 'none' }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: s.iconBg, color: s.iconColor, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+            {s.icon}
+          </div>
+          <div>
+            <div style={{ fontSize: 11, letterSpacing: 0.8, fontWeight: 600, color: '#5f6280', textTransform: 'uppercase' }}>{s.label}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span className="font-jakarta" style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.5, color: '#0f1020' }}>{s.value}</span>
+              {s.delta && <span style={{ fontSize: 11, fontWeight: 700, color: '#3eb489' }}>{s.delta}</span>}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ============================================================
+   RECO LIST VERTICAL
+   ============================================================ */
+function RecoListVertical({ recommendations }) {
+  const colorMap = {
+    rose:  { bg: '#fbe5ea', fg: '#e45770' },
+    amber: { bg: '#fdf4e2', fg: '#e8a948' },
+    sky:   { bg: '#e4edff', fg: '#4f8ff7' },
+  };
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #eef0f7', padding: 6, gridColumn: 'span 2' }}>
+      <div style={{ padding: '14px 18px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div className="font-jakarta" style={{ fontSize: 16, fontWeight: 700, color: '#0f1020' }}>À revoir cette semaine</div>
+          <div style={{ fontSize: 12.5, color: '#5f6280' }}>Sélectionné pour vous · mis à jour à chaque session</div>
+        </div>
+        <Link href="/qcm" style={{ background: 'transparent', border: 'none', color: '#4f46e5', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>
+          Tout travailler →
+        </Link>
+      </div>
+      {recommendations.map((rec, i) => {
+        const c = colorMap[rec.scoreColor] || colorMap.sky;
+        const colors = SUBJECT_COLORS[rec.color] || SUBJECT_COLORS.primary;
+        return (
+          <Link href="/qcm" key={i}
+            style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', gap: 14, alignItems: 'center', padding: '12px 14px', borderRadius: 10, textDecoration: 'none', color: 'inherit' }}
+            className="hover:bg-gray-50 transition-colors"
+          >
+            <div style={{ width: 42, height: 42, borderRadius: 10, background: c.bg, color: c.fg, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>
+              {rec.avg}%
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#0f1020' }}>{rec.name}</div>
+              <div style={{ fontSize: 12, color: '#5f6280', marginTop: 2 }}>
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold mr-1 ${colors.badge}`}>{rec.count} session{rec.count > 1 ? 's' : ''}</span>
+                {rec.reason}
+              </div>
+            </div>
+            <div style={{ fontSize: 11.5, color: '#5f6280' }}>~20 min</div>
+            <div style={{ background: '#f4f2ff', color: '#4f46e5', borderRadius: 8, padding: '8px 14px', fontWeight: 600, fontSize: 12.5, flexShrink: 0 }}>
+              Réviser
+            </div>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ============================================================
+   QUICK ACTION CARDS (sidebar column)
+   ============================================================ */
+function QuickActionCards() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Link href="/qcm"
+        style={{ background: '#fff', borderRadius: 14, padding: 18, border: '1px solid #eef0f7', textDecoration: 'none', color: 'inherit', display: 'block' }}
+        className="hover:-translate-y-0.5 hover:shadow-md transition-all"
+      >
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', marginBottom: 12 }}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        </div>
+        <div className="font-jakarta" style={{ fontSize: 15, fontWeight: 700, marginBottom: 2, color: '#0f1020' }}>Lancer un QCM</div>
+        <div style={{ fontSize: 12.5, color: '#5f6280' }}>Entraînement libre sur une UE</div>
+      </Link>
+      <Link href="/examen"
+        style={{ background: '#fff', borderRadius: 14, padding: 18, border: '1px solid #eef0f7', textDecoration: 'none', color: 'inherit', display: 'block' }}
+        className="hover:-translate-y-0.5 hover:shadow-md transition-all"
+      >
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fbe5ea', color: '#e45770', display: 'grid', placeItems: 'center', marginBottom: 12 }}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4h12l4 4v12H4z" /><path strokeLinecap="round" strokeLinejoin="round" d="M8 13h8M8 17h6" /></svg>
+        </div>
+        <div className="font-jakarta" style={{ fontSize: 15, fontWeight: 700, marginBottom: 2, color: '#0f1020' }}>Examen blanc</div>
+        <div style={{ fontSize: 12.5, color: '#5f6280' }}>Conditions réelles · avec timer</div>
+      </Link>
+    </div>
+  );
+}
+
+/* ============================================================
+   HOW IT WORKS (empty state card)
+   ============================================================ */
+function HowItWorksCard() {
+  const steps = [
+    { n: 1, t: 'Passez le QCM de calibrage', d: '20 questions réparties sur les 6 matières' },
+    { n: 2, t: 'Recevez votre plan personnalisé', d: 'On identifie vos points faibles et vos priorités' },
+    { n: 3, t: 'Révisez chaque jour', d: '30 min suffisent pour maintenir votre streak et progresser' },
+  ];
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #eef0f7', padding: '28px 24px' }}>
+      <div className="font-jakarta" style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: '#0f1020' }}>Comment ça marche</div>
+      {steps.map((s, i) => (
+        <div key={s.n} style={{ display: 'flex', gap: 14, padding: '14px 0', borderTop: i === 0 ? 'none' : '1px solid #eef0f7' }}>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{s.n}</div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14, color: '#0f1020' }}>{s.t}</div>
+            <div style={{ fontSize: 12.5, color: '#5f6280', marginTop: 2 }}>{s.d}</div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
