@@ -314,8 +314,8 @@ export default function DashboardPage() {
   const todaySubject = data.recommendations.length > 0 ? data.recommendations[0] : null;
 
   return (
-    <div style={{ background: '#f6f5fb', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ background: '#f6f5fb', height: '100vh', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', height: '100vh' }}>
 
         {/* ===== SIDEBAR ===== */}
         <DashboardSideNav
@@ -326,7 +326,7 @@ export default function DashboardPage() {
         />
 
         {/* ===== MAIN CONTENT ===== */}
-        <main style={{ flex: 1, padding: '32px 40px', minWidth: 0, maxWidth: '100%' }}>
+        <main style={{ flex: 1, padding: '32px 40px', minWidth: 0, maxWidth: '100%', overflowY: 'auto', height: '100vh' }}>
 
           {/* GREETING */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
