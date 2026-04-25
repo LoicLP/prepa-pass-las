@@ -1133,26 +1133,42 @@ function RecoListVertical({ recommendations }) {
    ============================================================ */
 function QuickActionCards() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <Link href="/qcm"
-        style={{ background: '#fff', borderRadius: 14, padding: 18, border: '1px solid #eef0f7', textDecoration: 'none', color: 'inherit', display: 'block' }}
+        style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid #eef0f7', textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: 12 }}
         className="hover:-translate-y-0.5 hover:shadow-md transition-all"
       >
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', marginBottom: 12 }}>
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
         </div>
-        <div className="font-jakarta" style={{ fontSize: 15, fontWeight: 700, marginBottom: 2, color: '#0f1020' }}>Lancer un QCM</div>
-        <div style={{ fontSize: 12.5, color: '#5f6280' }}>Entraînement libre sur une UE</div>
+        <div>
+          <div className="font-jakarta" style={{ fontSize: 13.5, fontWeight: 700, color: '#0f1020' }}>Lancer un QCM</div>
+          <div style={{ fontSize: 11.5, color: '#5f6280' }}>Entraînement libre</div>
+        </div>
       </Link>
       <Link href="/examen"
-        style={{ background: '#fff', borderRadius: 14, padding: 18, border: '1px solid #eef0f7', textDecoration: 'none', color: 'inherit', display: 'block' }}
+        style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid #eef0f7', textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: 12 }}
         className="hover:-translate-y-0.5 hover:shadow-md transition-all"
       >
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fbe5ea', color: '#e45770', display: 'grid', placeItems: 'center', marginBottom: 12 }}>
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4h12l4 4v12H4z" /><path strokeLinecap="round" strokeLinejoin="round" d="M8 13h8M8 17h6" /></svg>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fbe5ea', color: '#e45770', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg>
         </div>
-        <div className="font-jakarta" style={{ fontSize: 15, fontWeight: 700, marginBottom: 2, color: '#0f1020' }}>Examen blanc</div>
-        <div style={{ fontSize: 12.5, color: '#5f6280' }}>Conditions réelles · avec timer</div>
+        <div>
+          <div className="font-jakarta" style={{ fontSize: 13.5, fontWeight: 700, color: '#0f1020' }}>Examen blanc</div>
+          <div style={{ fontSize: 11.5, color: '#5f6280' }}>Conditions réelles</div>
+        </div>
+      </Link>
+      <Link href="/contact"
+        style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid #eef0f7', textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: 12 }}
+        className="hover:-translate-y-0.5 hover:shadow-md transition-all"
+      >
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fdf4e2', color: '#e8a948', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
+        </div>
+        <div>
+          <div className="font-jakarta" style={{ fontSize: 13.5, fontWeight: 700, color: '#0f1020' }}>Nous contacter</div>
+          <div style={{ fontSize: 11.5, color: '#5f6280' }}>Bug, question, suggestion</div>
+        </div>
       </Link>
     </div>
   );
@@ -1163,22 +1179,24 @@ function QuickActionCards() {
    ============================================================ */
 function HowItWorksCard() {
   const steps = [
-    { n: 1, t: 'Passez le QCM de calibrage', d: '20 questions réparties sur les 6 matières' },
-    { n: 2, t: 'Recevez votre plan personnalisé', d: 'On identifie vos points faibles et vos priorités' },
-    { n: 3, t: 'Révisez chaque jour', d: '30 min suffisent pour maintenir votre streak et progresser' },
+    { n: 1, t: 'QCM de calibrage', d: '20 questions · 6 matières' },
+    { n: 2, t: 'Plan personnalisé', d: 'Points faibles identifiés' },
+    { n: 3, t: 'Révisez chaque jour', d: '30 min pour progresser' },
   ];
   return (
-    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #eef0f7', padding: '28px 24px' }}>
-      <div className="font-jakarta" style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: '#0f1020' }}>Comment ça marche</div>
-      {steps.map((s, i) => (
-        <div key={s.n} style={{ display: 'flex', gap: 14, padding: '14px 0', borderTop: i === 0 ? 'none' : '1px solid #eef0f7' }}>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{s.n}</div>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 14, color: '#0f1020' }}>{s.t}</div>
-            <div style={{ fontSize: 12.5, color: '#5f6280', marginTop: 2 }}>{s.d}</div>
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: '14px 16px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="font-jakarta" style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: '#0f1020' }}>Comment ça marche</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {steps.map((s, i) => (
+          <div key={s.n} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i === 0 ? 'none' : '1px solid #f3f4f8' }}>
+            <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{s.n}</div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13, color: '#0f1020' }}>{s.t}</div>
+              <div style={{ fontSize: 11.5, color: '#5f6280' }}>{s.d}</div>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
