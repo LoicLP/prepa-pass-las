@@ -326,10 +326,10 @@ export default function DashboardPage() {
         />
 
         {/* ===== MAIN CONTENT ===== */}
-        <main style={{ flex: 1, padding: '32px 40px', minWidth: 0, maxWidth: '100%', overflowY: 'auto', height: '100vh' }}>
+        <main style={{ flex: 1, padding: '20px 36px', minWidth: 0, maxWidth: '100%', overflowY: 'auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
 
           {/* GREETING */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0 }}>
             <div>
               <p style={{ fontSize: 13, color: '#5f6280', marginBottom: 4 }}>
                 {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -345,28 +345,28 @@ export default function DashboardPage() {
 
           {/* ===== VUE D'ENSEMBLE ===== */}
           {activeSection === 'overview' && (
-            <>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, gap: 14, overflow: 'hidden' }}>
               {data.hasAnySessions
                 ? <HeroFocusFilled todaySubject={todaySubject} weekSessions={data.thisWeekSessions} currentStreak={data.currentStreak} />
                 : <HeroFocusEmpty />
               }
               <StatStripBar data={data} />
               {data.hasAnySessions ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 240px', gap: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 220px', gap: 14, flex: 1, minHeight: 0, overflow: 'hidden' }}>
                   <RecoListVertical recommendations={data.recommendations} />
                   <QuickActionCards />
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 240px', gap: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 14, flex: 1, minHeight: 0, overflow: 'hidden' }}>
                   <HowItWorksCard />
                   <QuickActionCards />
                 </div>
               )}
-            </>
+            </div>
           )}
 
-          {/* Sections non-overview: padding block remplace l'ancien container */}
-          <div className={activeSection !== 'overview' ? 'space-y-6' : 'hidden'}>
+          {/* Sections non-overview */}
+          <div className={activeSection !== 'overview' ? 'space-y-6' : 'hidden'} style={{ flex: 1, minHeight: 0 }}>
 
             {/* ===== HISTORIQUE ===== */}
             {activeSection === 'historique' && (
@@ -718,20 +718,22 @@ export default function DashboardPage() {
           </div>
 
         {/* ===== BANNIERE CONTACT ===== */}
-        <div className="mt-8">
-          <Link href="/contact" className="flex items-center justify-between p-5 bg-gradient-to-r from-amber-50/80 to-orange-50/50 rounded-2xl border border-amber-100/60 shadow-sm hover:border-amber-200 hover:shadow-md transition-all group">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 12.75c1.148 0 2.278.08 3.383.237 1.037.146 1.866.966 1.866 2.013 0 3.728-2.35 6.75-5.25 6.75S6.75 18.728 6.75 15c0-1.046.83-1.867 1.866-2.013A24.204 24.204 0 0 1 12 12.75Zm0 0c2.883 0 5.647.508 8.207 1.44a23.91 23.91 0 0 1-1.152-6.135c-.22-2.057-1.907-3.555-3.967-3.555H8.912c-2.06 0-3.747 1.498-3.967 3.555A23.867 23.867 0 0 1 3.793 14.19c2.56-.932 5.324-1.44 8.207-1.44ZM12 6a2.25 2.25 0 1 0 0-4.5A2.25 2.25 0 0 0 12 6Z" /></svg>
+        {activeSection !== 'overview' && (
+          <div className="mt-8">
+            <Link href="/contact" className="flex items-center justify-between p-5 bg-gradient-to-r from-amber-50/80 to-orange-50/50 rounded-2xl border border-amber-100/60 shadow-sm hover:border-amber-200 hover:shadow-md transition-all group">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 12.75c1.148 0 2.278.08 3.383.237 1.037.146 1.866.966 1.866 2.013 0 3.728-2.35 6.75-5.25 6.75S6.75 18.728 6.75 15c0-1.046.83-1.867 1.866-2.013A24.204 24.204 0 0 1 12 12.75Zm0 0c2.883 0 5.647.508 8.207 1.44a23.91 23.91 0 0 1-1.152-6.135c-.22-2.057-1.907-3.555-3.967-3.555H8.912c-2.06 0-3.747 1.498-3.967 3.555A23.867 23.867 0 0 1 3.793 14.19c2.56-.932 5.324-1.44 8.207-1.44ZM12 6a2.25 2.25 0 1 0 0-4.5A2.25 2.25 0 0 0 12 6Z" /></svg>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">Un bug ou une suggestion ?</p>
+                  <p className="text-xs text-gray-500">Aidez-nous a ameliorer la plateforme.</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">Un bug ou une suggestion ?</p>
-                <p className="text-xs text-gray-500">Aidez-nous a ameliorer la plateforme.</p>
-              </div>
-            </div>
-            <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-600 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-          </Link>
-        </div>
+              <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-600 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+            </Link>
+          </div>
+        )}
         </main>
       </div>
     </div>
@@ -932,33 +934,29 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
    ============================================================ */
 function HeroFocusEmpty() {
   return (
-    <div style={{ borderRadius: 20, padding: 36, marginBottom: 28, background: 'linear-gradient(135deg, #312c6e 0%, #4f46e5 60%, #8257f9 100%)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ borderRadius: 18, padding: '20px 28px', flexShrink: 0, background: 'linear-gradient(135deg, #312c6e 0%, #4f46e5 60%, #8257f9 100%)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', top: 40, right: 100, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
-      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr auto', gap: 32, alignItems: 'center' }}>
+      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, alignItems: 'center' }}>
         <div>
-          <div style={{ fontSize: 11, letterSpacing: 1.6, fontWeight: 700, opacity: 0.75, marginBottom: 10 }}>PREMIÈRE SESSION</div>
-          <div className="font-jakarta" style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.1, letterSpacing: -1, marginBottom: 10 }}>
+          <div style={{ fontSize: 10.5, letterSpacing: 1.6, fontWeight: 700, opacity: 0.75, marginBottom: 8 }}>PREMIÈRE SESSION</div>
+          <div className="font-jakarta" style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1, letterSpacing: -0.8, marginBottom: 8 }}>
             On commence par un QCM de calibrage ?
           </div>
-          <div style={{ fontSize: 14.5, opacity: 0.85, lineHeight: 1.5, maxWidth: 520, marginBottom: 24 }}>
-            20 questions, 15 minutes. On identifie vos points forts et les UE à travailler en priorité — puis on vous propose un plan de révision sur mesure.
+          <div style={{ fontSize: 13.5, opacity: 0.85, lineHeight: 1.45, maxWidth: 520, marginBottom: 16 }}>
+            20 questions, 15 minutes. On identifie vos points forts et les UE à travailler en priorité.
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <Link href="/qcm" style={{ background: '#fff', color: '#4f46e5', borderRadius: 10, padding: '12px 22px', fontWeight: 700, fontSize: 14, textDecoration: 'none', display: 'inline-block' }}>
+            <Link href="/qcm" style={{ background: '#fff', color: '#4f46e5', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13.5, textDecoration: 'none', display: 'inline-block' }}>
               Démarrer le calibrage →
             </Link>
-            <button style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 10, padding: '12px 18px', fontWeight: 500, fontSize: 14, cursor: 'pointer' }}>
-              Plus tard
-            </button>
           </div>
         </div>
-        <div style={{ width: 160, height: 160, borderRadius: 20, background: 'rgba(255,255,255,0.1)', display: 'grid', placeItems: 'center', backdropFilter: 'blur(4px)', flexShrink: 0 }}>
+        <div style={{ width: 130, height: 130, borderRadius: 18, background: 'rgba(255,255,255,0.1)', display: 'grid', placeItems: 'center', backdropFilter: 'blur(4px)', flexShrink: 0 }}>
           <div className="font-jakarta" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 48, fontWeight: 800, lineHeight: 1 }}>20</div>
-            <div style={{ fontSize: 11, letterSpacing: 1.4, opacity: 0.8, marginTop: 6 }}>QUESTIONS</div>
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.3)', margin: '10px 24px' }} />
-            <div style={{ fontSize: 13, opacity: 0.9 }}>≈ 15 min</div>
+            <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1 }}>20</div>
+            <div style={{ fontSize: 10.5, letterSpacing: 1.4, opacity: 0.8, marginTop: 5 }}>QUESTIONS</div>
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.3)', margin: '8px 20px' }} />
+            <div style={{ fontSize: 12.5, opacity: 0.9 }}>≈ 15 min</div>
           </div>
         </div>
       </div>
@@ -972,39 +970,39 @@ function HeroFocusFilled({ todaySubject, weekSessions, currentStreak }) {
   const circumference = 2 * Math.PI * 32;
 
   return (
-    <div style={{ borderRadius: 20, padding: 32, marginBottom: 28, background: 'linear-gradient(135deg, #312c6e 0%, #4f46e5 100%)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ borderRadius: 18, padding: '20px 28px', flexShrink: 0, background: 'linear-gradient(135deg, #312c6e 0%, #4f46e5 100%)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -50, right: -50, width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
-      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 280px', gap: 32, alignItems: 'center' }}>
+      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 260px', gap: 24, alignItems: 'center' }}>
         <div>
           {currentStreak > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <span>🔥</span>
-              <span style={{ fontSize: 11, letterSpacing: 1.4, fontWeight: 700, opacity: 0.9 }}>JOUR {currentStreak} · STREAK</span>
+              <span style={{ fontSize: 10.5, letterSpacing: 1.4, fontWeight: 700, opacity: 0.9 }}>JOUR {currentStreak} · STREAK</span>
             </div>
           )}
-          <div className="font-jakarta" style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.15, letterSpacing: -0.8, marginBottom: 10 }}>
+          <div className="font-jakarta" style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.15, letterSpacing: -0.6, marginBottom: 8 }}>
             {todaySubject
               ? `Aujourd'hui : 30 min sur ${todaySubject.name}`
               : 'Continuez sur votre lancée !'}
           </div>
-          <div style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.5, maxWidth: 480, marginBottom: 22 }}>
+          <div style={{ fontSize: 13.5, opacity: 0.85, lineHeight: 1.45, maxWidth: 480, marginBottom: 16 }}>
             {todaySubject
               ? `Basé sur vos scores, c'est la matière qui vous bloque le plus. Objectif : passer de ${todaySubject.avg}% à ${Math.min(100, todaySubject.avg + 13)}% cette semaine.`
               : 'Votre progression est sur la bonne voie. Continuez à pratiquer régulièrement.'}
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <Link href="/qcm" style={{ background: '#fff', color: '#4f46e5', borderRadius: 10, padding: '11px 20px', fontWeight: 700, fontSize: 14, textDecoration: 'none', display: 'inline-block' }}>
+            <Link href="/qcm" style={{ background: '#fff', color: '#4f46e5', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13.5, textDecoration: 'none', display: 'inline-block' }}>
               {todaySubject ? `Réviser — ${todaySubject.name} →` : 'Lancer un QCM →'}
             </Link>
-            <Link href="/qcm" style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 10, padding: '11px 16px', fontWeight: 500, fontSize: 14, textDecoration: 'none', display: 'inline-block' }}>
+            <Link href="/qcm" style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 10, padding: '9px 14px', fontWeight: 500, fontSize: 13.5, textDecoration: 'none', display: 'inline-block' }}>
               Changer de sujet
             </Link>
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 11, letterSpacing: 1.2, fontWeight: 700, opacity: 0.8, marginBottom: 12 }}>OBJECTIF DE LA SEMAINE</div>
+          <div style={{ fontSize: 10.5, letterSpacing: 1.2, fontWeight: 700, opacity: 0.8, marginBottom: 10 }}>OBJECTIF DE LA SEMAINE</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <svg width="80" height="80" viewBox="0 0 80 80">
+            <svg width="72" height="72" viewBox="0 0 80 80">
               <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="8" />
               <circle cx="40" cy="40" r="32" fill="none" stroke="#fff" strokeWidth="8"
                 strokeDasharray={circumference}
@@ -1013,10 +1011,10 @@ function HeroFocusFilled({ todaySubject, weekSessions, currentStreak }) {
               <text x="40" y="46" textAnchor="middle" fontSize="18" fontWeight="800" fill="#fff">{weekSessions}/{weekTarget}</text>
             </svg>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>Sessions effectuées</div>
+              <div style={{ fontSize: 13.5, fontWeight: 600 }}>Sessions effectuées</div>
               <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>
                 {weekTarget - weekSessions > 0
-                  ? `Plus que ${weekTarget - weekSessions} pour atteindre l'objectif`
+                  ? `Plus que ${weekTarget - weekSessions} pour l'objectif`
                   : 'Objectif atteint 🎉'}
               </div>
             </div>
@@ -1061,17 +1059,17 @@ function StatStripBar({ data }) {
   ];
 
   return (
-    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #eef0f7', marginBottom: 28, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', flexShrink: 0, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
       {stats.map((s, i) => (
-        <div key={i} style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, borderRight: i < 3 ? '1px solid #eef0f7' : 'none' }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: s.iconBg, color: s.iconColor, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+        <div key={i} style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, borderRight: i < 3 ? '1px solid #eef0f7' : 'none' }}>
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: s.iconBg, color: s.iconColor, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
             {s.icon}
           </div>
           <div>
-            <div style={{ fontSize: 11, letterSpacing: 0.8, fontWeight: 600, color: '#5f6280', textTransform: 'uppercase' }}>{s.label}</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-              <span className="font-jakarta" style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.5, color: '#0f1020' }}>{s.value}</span>
-              {s.delta && <span style={{ fontSize: 11, fontWeight: 700, color: '#3eb489' }}>{s.delta}</span>}
+            <div style={{ fontSize: 10.5, letterSpacing: 0.8, fontWeight: 600, color: '#5f6280', textTransform: 'uppercase' }}>{s.label}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+              <span className="font-jakarta" style={{ fontSize: 19, fontWeight: 800, letterSpacing: -0.5, color: '#0f1020' }}>{s.value}</span>
+              {s.delta && <span style={{ fontSize: 10.5, fontWeight: 700, color: '#3eb489' }}>{s.delta}</span>}
             </div>
           </div>
         </div>
@@ -1091,7 +1089,7 @@ function RecoListVertical({ recommendations }) {
   };
 
   return (
-    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #eef0f7', padding: 6, gridColumn: 'span 2' }}>
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: 6, gridColumn: 'span 2', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: '14px 18px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div className="font-jakarta" style={{ fontSize: 16, fontWeight: 700, color: '#0f1020' }}>À revoir cette semaine</div>
