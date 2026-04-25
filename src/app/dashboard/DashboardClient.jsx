@@ -314,8 +314,8 @@ export default function DashboardPage() {
   const todaySubject = data.recommendations.length > 0 ? data.recommendations[0] : null;
 
   return (
-    <div style={{ paddingTop: 64, background: '#f6f5fb', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
+    <div style={{ background: '#f6f5fb', minHeight: '100vh' }}>
+      <div style={{ display: 'flex', minHeight: '100vh' }}>
 
         {/* ===== SIDEBAR ===== */}
         <DashboardSideNav
@@ -752,6 +752,12 @@ const UE_SIDEBAR = [
 
 function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier }) {
   const [coursesOpen, setCoursesOpen] = useState(false);
+  const { user, logOut } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try { await logOut(); router.push('/'); } catch (e) { console.error(e); }
+  };
 
   const navItems = [
     {
@@ -791,8 +797,21 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
   return (
     <nav
       className="hidden md:flex flex-col shrink-0"
-      style={{ width: 220, background: '#fff', borderRight: '1px solid #eef0f7', padding: '24px 16px', minHeight: 'calc(100vh - 64px)', position: 'sticky', top: 64, alignSelf: 'flex-start', height: 'calc(100vh - 64px)', overflowY: 'auto' }}
+      style={{ width: 220, background: '#fff', borderRight: '1px solid #eef0f7', padding: '0 16px 24px', minHeight: '100vh', position: 'sticky', top: 0, alignSelf: 'flex-start', height: '100vh', overflowY: 'auto' }}
     >
+      {/* ── Logo ── */}
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 10px 18px', textDecoration: 'none', borderBottom: '1px solid #eef0f7', marginBottom: 16 }}>
+        <div style={{ width: 34, height: 34, background: '#4f46e5', borderRadius: 10, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+          </svg>
+        </div>
+        <div>
+          <div className="font-jakarta" style={{ fontSize: 13.5, fontWeight: 800, color: '#0f1020', lineHeight: 1.2 }}>Prépa <span style={{ color: '#4f46e5' }}>PASS/LAS</span></div>
+          <div style={{ fontSize: 9.5, letterSpacing: 0.8, color: '#8a8ea8', fontWeight: 600, textTransform: 'uppercase', marginTop: 1 }}>Tableau de bord</div>
+        </div>
+      </Link>
+
       <div style={{ fontSize: 10.5, letterSpacing: 1.4, fontWeight: 700, color: '#8a8ea8', padding: '0 10px 10px' }}>NAVIGATION</div>
 
       {navItems.map(item => {
@@ -865,18 +884,45 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
         );
       })}
 
-      {/* Premium upsell card */}
-      {tier === 'gratuit' && (
-        <div style={{ marginTop: 'auto', paddingTop: 24 }}>
-          <div style={{ padding: 14, borderRadius: 12, background: 'linear-gradient(135deg, #4f46e5 0%, #8257f9 100%)', color: '#fff' }}>
-            <div style={{ fontSize: 11, letterSpacing: 1.2, fontWeight: 700, opacity: 0.8, marginBottom: 4 }}>PLAN GRATUIT</div>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, lineHeight: 1.3 }}>Débloquez Progression, Objectifs & Classement</div>
-            <Link href="/tarifs" style={{ display: 'block', background: '#fff', color: '#4f46e5', borderRadius: 8, padding: 8, fontWeight: 700, fontSize: 12, textAlign: 'center', textDecoration: 'none' }}>
-              Passer Premium →
-            </Link>
+      {/* Espace + bas de sidebar */}
+      <div style={{ marginTop: 'auto', paddingTop: 16 }}>
+        {/* Premium upsell card */}
+        {tier === 'gratuit' && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ padding: 14, borderRadius: 12, background: 'linear-gradient(135deg, #4f46e5 0%, #8257f9 100%)', color: '#fff' }}>
+              <div style={{ fontSize: 11, letterSpacing: 1.2, fontWeight: 700, opacity: 0.8, marginBottom: 4 }}>PLAN GRATUIT</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, lineHeight: 1.3 }}>Débloquez Progression, Objectifs & Classement</div>
+              <Link href="/tarifs" style={{ display: 'block', background: '#fff', color: '#4f46e5', borderRadius: 8, padding: 8, fontWeight: 700, fontSize: 12, textAlign: 'center', textDecoration: 'none' }}>
+                Passer Premium →
+              </Link>
+            </div>
           </div>
+        )}
+
+        {/* Séparateur + déconnexion */}
+        <div style={{ borderTop: '1px solid #eef0f7', paddingTop: 12 }}>
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, padding: '0 10px' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                {(user.displayName?.[0] || user.email?.[0] || '?').toUpperCase()}
+              </div>
+              <span style={{ fontSize: 12.5, fontWeight: 500, color: '#2a2c44', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.displayName || user.email}
+              </span>
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 10, background: 'transparent', border: 'none', color: '#e45770', fontSize: 13.5, fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}
+            className="hover:bg-rose-50 transition-colors"
+          >
+            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+            </svg>
+            Se déconnecter
+          </button>
         </div>
-      )}
+      </div>
     </nav>
   );
 }

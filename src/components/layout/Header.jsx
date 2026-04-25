@@ -18,6 +18,9 @@ export default function Header() {
   const router = useRouter();
   const { user, loading, logOut } = useAuth();
 
+  // Le dashboard a son propre layout avec sidebar — pas de header global
+  if (pathname?.startsWith('/dashboard')) return null;
+
   const isActive = (href) => pathname === href;
 
   const handleLogout = async () => {
