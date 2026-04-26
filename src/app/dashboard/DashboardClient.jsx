@@ -358,7 +358,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 14, flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                  <SubjectPickerCard />
+                  <OnboardingPickerCard />
                   <QuickActionCards />
                 </div>
               )}
@@ -953,10 +953,10 @@ function HeroFocusEmpty() {
       <div style={{ position: 'relative' }}>
         <div style={{ fontSize: 10.5, letterSpacing: 1.6, fontWeight: 700, opacity: 0.75, marginBottom: 8 }}>BIENVENUE</div>
         <div className="font-jakarta" style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.15, letterSpacing: -0.6, marginBottom: 8 }}>
-          Par quelle matière voulez-vous commencer ?
+          Prêt pour votre premier QCM ?
         </div>
-        <div style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.45, maxWidth: 520 }}>
-          Choisissez une UE ci-dessous — on lance directement un entraînement personnalisé.
+        <div style={{ fontSize: 13.5, opacity: 0.85, lineHeight: 1.45, maxWidth: 520 }}>
+          Choisissez ci-dessous si vous voulez réviser par matière ou à partir d'une fiche de cours.
         </div>
       </div>
     </div>
@@ -1200,23 +1200,59 @@ const SUBJECT_PICKER_DATA = [
   { code: 'UE6', id: 'ssh',         name: 'SSH / Éthique',        accent: '#e11d48', bg: '#fff1f2', border: '#fecdd3' },
 ];
 
-function SubjectPickerCard() {
+function OnboardingPickerCard() {
+  const [tab, setTab] = useState('subject');
   return (
-    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: '18px 20px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div className="font-jakarta" style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: '#0f1020' }}>Choisissez votre UE</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        {SUBJECT_PICKER_DATA.map(({ code, id, name, accent, bg, border }) => (
-          <Link
-            key={id}
-            href={`/qcm?subject=${id}`}
-            style={{ padding: '10px 14px', borderRadius: 12, border: `1.5px solid ${border}`, background: bg, textDecoration: 'none', display: 'block' }}
-            className="hover:-translate-y-0.5 hover:shadow-sm transition-all"
-          >
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: accent, marginBottom: 3 }}>{code}</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#0f1020' }}>{name}</div>
-          </Link>
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: '16px 18px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Onglets */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexShrink: 0 }}>
+        {[
+          { key: 'subject', label: 'Par matière' },
+          { key: 'fiche',   label: 'Par fiche de cours' },
+        ].map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s', background: tab === t.key ? '#4f46e5' : '#f3f4f8', color: tab === t.key ? '#fff' : '#5f6280' }}>
+            {t.label}
+          </button>
         ))}
       </div>
+
+      {/* Contenu onglet Matière */}
+      {tab === 'subject' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flex: 1, overflowY: 'auto' }}>
+          {SUBJECT_PICKER_DATA.map(({ code, id, name, accent, bg, border }) => (
+            <Link key={id} href={`/qcm?subject=${id}`}
+              style={{ padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${border}`, background: bg, textDecoration: 'none', display: 'block' }}
+              className="hover:-translate-y-0.5 hover:shadow-sm transition-all"
+            >
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: accent, marginBottom: 3 }}>{code}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0f1020' }}>{name}</div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Contenu onglet Fiche */}
+      {tab === 'fiche' && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
+          <p style={{ fontSize: 12.5, color: '#5f6280', margin: 0, lineHeight: 1.5 }}>
+            Choisissez une fiche de cours — on génère un QCM ciblé sur son contenu.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            {SUBJECT_PICKER_DATA.map(({ code, id, name, accent, bg, border }) => (
+              <Link key={id} href={`/qcm?ue=${id}`}
+                style={{ padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${border}`, background: bg, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}
+                className="hover:-translate-y-0.5 hover:shadow-sm transition-all"
+              >
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: accent, minWidth: 28 }}>{code}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#0f1020', lineHeight: 1.3 }}>{name}</div>
+              </Link>
+            ))}
+          </div>
+          <Link href="/qcm" style={{ marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#4f46e5', textDecoration: 'none' }}>
+            Voir toutes les fiches →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
