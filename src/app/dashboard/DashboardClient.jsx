@@ -11,6 +11,8 @@ import { SUBJECT_COLORS, getSubjectName } from '@/data/constants';
 import { formatDate, formatDuration, scoreClass, scoreBarClass } from '@/utils/format';
 import QCMPage from '@/app/qcm/QCMClient';
 import ExamenPage from '@/app/examen/ExamenClient';
+import { FICHES_DATA } from '@/data/fiches';
+import { sanitizeHtml } from '@/utils/sanitize';
 
 /* ========== HELPERS ========== */
 function getSubjectBadgeColors(subjectId) {
@@ -59,7 +61,7 @@ const MENU_ITEMS = [
 
 /* ========== MAIN PAGE ========== */
 export default function DashboardPage() {
-  const { user, loading: authLoading, accessToken } = useAuth();
+  const { user, loading: authLoading, accessToken, logOut } = useAuth();
   const router = useRouter();
   const [activeSection, setActiveSection] = useState('overview');
   const [historyFilter, setHistoryFilter] = useState('all');
@@ -67,6 +69,8 @@ export default function DashboardPage() {
   const [chartMode, setChartMode] = useState('epreuves');
   const [activeQCM, setActiveQCM] = useState(null);     // config pour overlay QCM embarqué
   const [activeExamen, setActiveExamen] = useState(false); // booléen pour overlay Examen
+  const [activeFicheSubject, setActiveFicheSubject] = useState(null); // filtre matière fiches
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // tiroir mobile
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -360,6 +364,139 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* ===== BARRE MOBILE HAUTE ===== */}
+      <div className="md:hidden" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #eef0f7', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <div style={{ width: 30, height: 30, background: '#4f46e5', borderRadius: 8, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
+            </svg>
+          </div>
+          <span style={{ fontSize: 14, fontWeight: 800, color: '#0f1020' }}>Prépa <span style={{ color: '#4f46e5' }}>PASS/LAS</span></span>
+        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 12 }}>
+            {(user.displayName?.[0] || user.email?.[0] || '?').toUpperCase()}
+          </div>
+          <button onClick={() => setMobileMenuOpen(true)} style={{ padding: 6, borderRadius: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#2a2c44', display: 'flex' }}>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* ===== TIROIR DE NAVIGATION MOBILE ===== */}
+      {mobileMenuOpen && (
+        <div className="md:hidden" style={{ position: 'fixed', inset: 0, zIndex: 150, display: 'flex' }}>
+          {/* Backdrop */}
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,16,32,0.4)' }} onClick={() => setMobileMenuOpen(false)} />
+          {/* Drawer */}
+          <div style={{ position: 'relative', width: 280, background: '#fff', height: '100%', overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#8a8ea8', letterSpacing: 1.2, textTransform: 'uppercase' }}>Navigation</div>
+              <button onClick={() => setMobileMenuOpen(false)} style={{ padding: 6, borderRadius: 8, background: '#f5f5f8', border: 'none', cursor: 'pointer', color: '#5f6280', display: 'flex' }}>
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {[
+              { id: 'overview', label: "Vue d'ensemble", icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg> },
+              { id: 'fiches', label: 'Fiches & Cours', icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2V5zM19 18v3H6" /></svg> },
+              { id: 'historique', label: 'Historique', icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg> },
+              { id: 'progression', label: 'Progression', locked: !isPremiumPlus, icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg> },
+              { id: 'objectifs', label: 'Objectifs', locked: !isPremiumPlus, icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" /></svg> },
+              { id: 'classement', label: 'Classement', locked: !isPremiumPlus, icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172" /></svg> },
+            ].map(item => {
+              const isAct = item.id === 'fiches' ? activeSection === 'fiches' : activeSection === item.id;
+              return (
+                <button key={item.id}
+                  onClick={() => {
+                    if (item.locked) return;
+                    if (item.id === 'fiches') { setActiveFicheSubject(null); setActiveSection('fiches'); }
+                    else { setActiveSection(item.id); }
+                    setMobileMenuOpen(false);
+                  }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 12, marginBottom: 4, background: isAct ? '#4f46e5' : 'transparent', color: isAct ? '#fff' : item.locked ? '#c4c6d4' : '#2a2c44', fontSize: 14.5, fontWeight: isAct ? 600 : 500, border: 'none', cursor: item.locked ? 'default' : 'pointer', textAlign: 'left' }}
+                  className={isAct ? '' : (!item.locked ? 'hover:bg-gray-50 transition-colors' : '')}
+                >
+                  {item.icon}
+                  <span className="flex-1">{item.label}</span>
+                  {item.locked && <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>}
+                </button>
+              );
+            })}
+            {/* Quick actions */}
+            <div style={{ margin: '12px 0 8px', paddingTop: 12, borderTop: '1px solid #eef0f7', fontSize: 11, letterSpacing: 1.2, fontWeight: 700, color: '#8a8ea8', textTransform: 'uppercase' }}>Actions rapides</div>
+            <button onClick={() => { setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' }); setMobileMenuOpen(false); }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 12, marginBottom: 4, background: 'transparent', color: '#2a2c44', fontSize: 14.5, fontWeight: 500, border: 'none', cursor: 'pointer', textAlign: 'left' }}
+              className="hover:bg-gray-50 transition-colors"
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              Lancer un QCM
+            </button>
+            <button onClick={() => { setActiveExamen(true); setMobileMenuOpen(false); }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 12, marginBottom: 4, background: 'transparent', color: '#2a2c44', fontSize: 14.5, fontWeight: 500, border: 'none', cursor: 'pointer', textAlign: 'left' }}
+              className="hover:bg-gray-50 transition-colors"
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg>
+              Mode Examen
+            </button>
+            {/* User + logout */}
+            <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid #eef0f7' }}>
+              {user && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 6px', marginBottom: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+                    {(user.displayName?.[0] || user.email?.[0] || '?').toUpperCase()}
+                  </div>
+                  <div style={{ overflow: 'hidden' }}>
+                    <p style={{ fontSize: 13.5, fontWeight: 600, color: '#0f1020', margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{user.displayName || user.email}</p>
+                    <p style={{ fontSize: 11.5, color: '#8a8ea8', margin: 0 }}>{tier === 'gratuit' ? 'Compte gratuit' : 'Premium'}</p>
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={async () => { try { await logOut(); router.push('/'); } catch (e) { console.error(e); } }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: 'transparent', border: 'none', color: '#e45770', fontSize: 14, fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}
+                className="hover:bg-rose-50 transition-colors"
+              >
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" /></svg>
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== BARRE DE NAVIGATION MOBILE BASSE ===== */}
+      <div className="md:hidden" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderTop: '1px solid #eef0f7', display: 'flex', alignItems: 'stretch', height: 64 }}>
+        {[
+          { id: 'overview', label: 'Accueil', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg> },
+          { id: 'fiches', label: 'Fiches', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2V5zM19 18v3H6" /></svg> },
+          { id: 'qcm', label: 'QCM', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg> },
+          { id: 'historique', label: 'Historique', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg> },
+          { id: 'menu', label: 'Menu', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg> },
+        ].map(item => {
+          const isAct = item.id === 'menu' ? false : (item.id === 'fiches' ? activeSection === 'fiches' : activeSection === item.id);
+          return (
+            <button key={item.id}
+              onClick={() => {
+                if (item.id === 'menu') { setMobileMenuOpen(true); return; }
+                if (item.id === 'qcm') { setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' }); return; }
+                if (item.id === 'fiches') { setActiveFicheSubject(null); setActiveSection('fiches'); return; }
+                setActiveSection(item.id);
+              }}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: isAct ? '#4f46e5' : '#8a8ea8', padding: '4px 0 6px', transition: 'color .15s', position: 'relative' }}
+            >
+              {isAct && <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 28, height: 2.5, background: '#4f46e5', borderRadius: '0 0 3px 3px' }} />}
+              {item.icon}
+              <span style={{ fontSize: 10, fontWeight: isAct ? 700 : 500, letterSpacing: 0.2 }}>{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <div style={{ display: 'flex', height: '100vh' }}>
 
         {/* ===== SIDEBAR ===== */}
@@ -370,13 +507,14 @@ export default function DashboardPage() {
           tier={tier}
           onLaunchQCM={() => setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })}
           onLaunchExamen={() => setActiveExamen(true)}
+          onOpenFiches={(subjectId) => { setActiveFicheSubject(subjectId || null); setActiveSection('fiches'); }}
         />
 
         {/* ===== MAIN CONTENT ===== */}
-        <main style={{ flex: 1, padding: '20px 36px', minWidth: 0, maxWidth: '100%', overflowY: 'auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="md:pt-5 md:px-9 pt-[72px] px-4 pb-[80px] md:pb-5" style={{ flex: 1, minWidth: 0, maxWidth: '100%', overflowY: 'auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
 
           {/* GREETING */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0 }}>
+          <div className="hidden md:flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0 }}>
             <div>
               <p style={{ fontSize: 13, color: '#5f6280', marginBottom: 4 }}>
                 {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -389,22 +527,31 @@ export default function DashboardPage() {
               {(user.displayName?.[0] || user.email?.[0] || '?').toUpperCase()}
             </div>
           </div>
+          {/* Mobile greeting (compact) */}
+          <div className="md:hidden" style={{ marginBottom: 12, flexShrink: 0 }}>
+            <p style={{ fontSize: 11, color: '#8a8ea8', marginBottom: 2, textTransform: 'capitalize' }}>
+              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+            <h1 className="font-jakarta" style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.6, margin: 0, color: '#0f1020' }}>
+              Bonjour {user.displayName ? user.displayName.split(' ')[0] : ''} 👋
+            </h1>
+          </div>
 
           {/* ===== VUE D'ENSEMBLE ===== */}
           {activeSection === 'overview' && (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, gap: 14, overflow: 'hidden' }}>
+            <div className="md:overflow-hidden" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, gap: 14 }}>
               {data.hasAnySessions
                 ? <HeroFocusFilled todaySubject={todaySubject} weekSessions={data.thisWeekSessions} currentStreak={data.currentStreak} onLaunchQCM={setActiveQCM} />
                 : <HeroFocusEmpty />
               }
               <StatStripBar data={data} />
               {data.hasAnySessions ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 220px', gap: 14, flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px]" style={{ gap: 14, flex: 1, minHeight: 0 }} >
                   <RecoListVertical recommendations={data.recommendations} onLaunchQCM={setActiveQCM} />
                   <QuickActionCards onLaunchQCM={setActiveQCM} onLaunchExamen={() => setActiveExamen(true)} />
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 14, flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_220px]" style={{ gap: 14, flex: 1, minHeight: 0 }}>
                   <OnboardingPickerCard onLaunchQCM={setActiveQCM} />
                   <QuickActionCards onLaunchQCM={setActiveQCM} onLaunchExamen={() => setActiveExamen(true)} />
                 </div>
@@ -427,6 +574,11 @@ export default function DashboardPage() {
 
           {/* Sections non-overview */}
           <div className={activeSection !== 'overview' ? 'space-y-6' : 'hidden'} style={{ flex: 1, minHeight: 0 }}>
+
+            {/* ===== FICHES & COURS ===== */}
+            {activeSection === 'fiches' && (
+              <FichesSection initialSubject={activeFicheSubject} onLaunchQCM={setActiveQCM} />
+            )}
 
             {/* ===== HISTORIQUE ===== */}
             {activeSection === 'historique' && (
@@ -801,6 +953,268 @@ export default function DashboardPage() {
 }
 
 /* ============================================================
+   FICHES SECTION (embedded in dashboard)
+   ============================================================ */
+const FICHES_SUBJECT_COLORS = {
+  indigo:  { badge: 'bg-indigo-100 text-indigo-700', bar: 'bg-indigo-500', icon: 'text-indigo-500', light: 'bg-indigo-50', border: 'border-indigo-100', pill: 'bg-indigo-600 text-white', pillIdle: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' },
+  primary: { badge: 'bg-indigo-100 text-indigo-700', bar: 'bg-indigo-500', icon: 'text-indigo-500', light: 'bg-indigo-50', border: 'border-indigo-100', pill: 'bg-indigo-600 text-white', pillIdle: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' },
+  emerald: { badge: 'bg-emerald-100 text-emerald-700', bar: 'bg-emerald-500', icon: 'text-emerald-500', light: 'bg-emerald-50', border: 'border-emerald-100', pill: 'bg-emerald-600 text-white', pillIdle: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' },
+  violet:  { badge: 'bg-violet-100 text-violet-700', bar: 'bg-violet-500', icon: 'text-violet-500', light: 'bg-violet-50', border: 'border-violet-100', pill: 'bg-violet-600 text-white', pillIdle: 'bg-violet-50 text-violet-700 hover:bg-violet-100' },
+  cyan:    { badge: 'bg-cyan-100 text-cyan-700', bar: 'bg-cyan-500', icon: 'text-cyan-500', light: 'bg-cyan-50', border: 'border-cyan-100', pill: 'bg-cyan-600 text-white', pillIdle: 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100' },
+  amber:   { badge: 'bg-amber-100 text-amber-700', bar: 'bg-amber-500', icon: 'text-amber-500', light: 'bg-amber-50', border: 'border-amber-100', pill: 'bg-amber-600 text-white', pillIdle: 'bg-amber-50 text-amber-700 hover:bg-amber-100' },
+  rose:    { badge: 'bg-rose-100 text-rose-700', bar: 'bg-rose-500', icon: 'text-rose-500', light: 'bg-rose-50', border: 'border-rose-100', pill: 'bg-rose-600 text-white', pillIdle: 'bg-rose-50 text-rose-700 hover:bg-rose-100' },
+};
+
+const FICHES_SUBJECT_ICONS = {
+  anatomie:    'M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z',
+  chimie:      'M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5',
+  biocell:     'M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z',
+  biostats:    'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z',
+  biophysique: 'm3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z',
+  ssh:         'M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18',
+};
+
+function FichesSection({ initialSubject, onLaunchQCM }) {
+  const [currentSubject, setCurrentSubject] = useState(initialSubject || 'all');
+  const [search, setSearch] = useState('');
+  const [selectedFiche, setSelectedFiche] = useState(null);
+  const { isEssentiel } = usePremium();
+  const { user } = useAuth();
+
+  // Sync subject filter when prop changes (e.g. clicking different UEs in sidebar)
+  useEffect(() => {
+    setCurrentSubject(initialSubject || 'all');
+  }, [initialSubject]);
+
+  const filteredFiches = useMemo(() => {
+    let fiches = currentSubject === 'all' ? FICHES_DATA : FICHES_DATA.filter(f => f.subject === currentSubject);
+    if (search) {
+      const q = search.toLowerCase();
+      fiches = fiches.filter(f => f.title.toLowerCase().includes(q) || f.summary.toLowerCase().includes(q));
+    }
+    return fiches;
+  }, [currentSubject, search]);
+
+  const activeSubjectObj = SUBJECTS.find(s => s.id === currentSubject);
+  const activeCols = activeSubjectObj ? (FICHES_SUBJECT_COLORS[activeSubjectObj.color] || FICHES_SUBJECT_COLORS.primary) : null;
+
+  return (
+    <div style={{ minHeight: 0 }}>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ marginBottom: 16 }}>
+        <div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f1020', margin: 0, letterSpacing: -0.4 }}>Fiches &amp; Cours</h2>
+          <p style={{ fontSize: 13, color: '#5f6280', margin: '4px 0 0' }}>{filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''}{currentSubject !== 'all' && activeSubjectObj ? ` · ${activeSubjectObj.name}` : ' · toutes les matières'}</p>
+        </div>
+        {/* Search */}
+        <div style={{ position: 'relative' }}>
+          <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8a8ea8' }} width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Rechercher une fiche..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full sm:w-[220px]"
+            style={{ paddingLeft: 34, paddingRight: 12, paddingTop: 8, paddingBottom: 8, fontSize: 13, border: '1px solid #eef0f7', borderRadius: 10, outline: 'none', background: '#fff', color: '#2a2c44' }}
+          />
+        </div>
+      </div>
+
+      {/* Subject filter pills */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+        <button
+          onClick={() => setCurrentSubject('all')}
+          style={{ padding: '6px 14px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, border: 'none', cursor: 'pointer', background: currentSubject === 'all' ? '#4f46e5' : '#ece9ff', color: currentSubject === 'all' ? '#fff' : '#4f46e5', transition: 'all .15s' }}
+        >
+          Toutes
+        </button>
+        {SUBJECTS.map(sub => {
+          const cols = FICHES_SUBJECT_COLORS[sub.color] || FICHES_SUBJECT_COLORS.primary;
+          const isSelected = currentSubject === sub.id;
+          return (
+            <button
+              key={sub.id}
+              onClick={() => setCurrentSubject(sub.id)}
+              style={{ padding: '6px 14px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s' }}
+              className={isSelected ? cols.pill : cols.pillIdle}
+            >
+              {sub.name}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Fiches grid */}
+      {filteredFiches.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 24px', color: '#5f6280' }}>
+          <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Aucune fiche trouvée</p>
+          <p style={{ fontSize: 13 }}>Essayez un autre terme de recherche ou changez de matière.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+          {filteredFiches.map((fiche, idx) => {
+            const sub = SUBJECTS.find(s => s.id === fiche.subject);
+            const cols = FICHES_SUBJECT_COLORS[sub?.color] || FICHES_SUBJECT_COLORS.primary;
+            const iconPath = FICHES_SUBJECT_ICONS[fiche.subject] || '';
+            return (
+              <button
+                key={fiche.id}
+                onClick={() => setSelectedFiche(fiche)}
+                style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7f0', overflow: 'hidden', cursor: 'pointer', textAlign: 'left', padding: 0, transition: 'all .2s', display: 'flex', flexDirection: 'column' }}
+                className="hover:shadow-lg hover:border-gray-300 transition-all group"
+              >
+                <div className={`h-1 ${cols.bar}`} />
+                <div style={{ padding: '16px 18px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div className={`w-8 h-8 rounded-xl ${cols.light} ${cols.border} border flex items-center justify-center shrink-0`}>
+                      <svg className={`w-4 h-4 ${cols.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
+                      </svg>
+                    </div>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider ${cols.icon}`}>{sub?.name || ''}</span>
+                  </div>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f1020', lineHeight: 1.35, marginBottom: 8, flex: 1 }} className="group-hover:text-indigo-700 transition-colors">{fiche.title}</h3>
+                  <p style={{ fontSize: 12.5, color: '#5f6280', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 12 }}>{fiche.summary}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: '#4f46e5' }}>
+                    Lire la fiche
+                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Fiche detail modal */}
+      {selectedFiche && (
+        <FicheDetailModal
+          fiche={selectedFiche}
+          onClose={() => setSelectedFiche(null)}
+          isEssentiel={isEssentiel}
+          user={user}
+          onLaunchQCM={onLaunchQCM}
+        />
+      )}
+    </div>
+  );
+}
+
+function FicheDetailModal({ fiche, onClose, isEssentiel, user, onLaunchQCM }) {
+  const sub = SUBJECTS.find(s => s.id === fiche.subject);
+  const cols = FICHES_SUBJECT_COLORS[sub?.color] || FICHES_SUBJECT_COLORS.primary;
+  const iconPath = FICHES_SUBJECT_ICONS[fiche.subject] || '';
+
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '48px 16px 24px' }}>
+      {/* Backdrop */}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,16,32,0.45)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+
+      {/* Panel */}
+      <div style={{ position: 'relative', width: '100%', maxWidth: 720, background: '#fff', borderRadius: 20, boxShadow: '0 32px 80px rgba(15,16,32,0.18)', maxHeight: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Sticky header */}
+        <div style={{ flexShrink: 0, padding: '16px 24px', borderBottom: '1px solid #eef0f7', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className={`w-8 h-8 rounded-xl ${cols.light} ${cols.border} border flex items-center justify-center`}>
+              <svg className={`w-4 h-4 ${cols.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
+              </svg>
+            </div>
+            <span className={`text-xs font-bold uppercase tracking-wider ${cols.icon}`}>{sub?.name || ''}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Launch QCM on this subject */}
+            <button
+              onClick={() => { onLaunchQCM({ type: 'custom', subject: fiche.subject, subjectName: sub?.name || '', title: sub?.name || '' }); onClose(); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: '#ece9ff', color: '#4f46e5', border: 'none', cursor: 'pointer' }}
+              className="hover:bg-indigo-100 transition-colors"
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
+              QCM sur {sub?.name || 'cette matière'}
+            </button>
+            <button onClick={onClose} style={{ padding: 7, borderRadius: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#8a8ea8', display: 'flex' }} className="hover:bg-gray-100 transition-colors">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+          <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0f1020', marginBottom: 12, letterSpacing: -0.4 }}>{fiche.title}</h2>
+          <p style={{ fontSize: 13.5, color: '#5f6280', marginBottom: 24, lineHeight: 1.55 }}>{fiche.summary}</p>
+
+          {fiche.content ? (
+            <div
+              className="prose prose-gray max-w-none text-gray-700 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(fiche.content) }}
+            />
+          ) : (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: '#5f6280' }}>
+              <p>Contenu non disponible.</p>
+            </div>
+          )}
+
+          {/* Cours CTA */}
+          <div style={{ marginTop: 32, paddingTop: 20, borderTop: '1px solid #eef0f7' }}>
+            {isEssentiel ? (
+              <Link
+                href={`/cours?id=${fiche.id}`}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '16px 20px', background: 'linear-gradient(to right, #fffbeb, #fef3c7)', border: '2px solid #fde68a', borderRadius: 14, textDecoration: 'none', color: 'inherit' }}
+                className="hover:border-amber-300 hover:shadow transition-all group"
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, background: '#fde68a', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#92400e" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 13.5, fontWeight: 700, color: '#78350f', margin: 0 }}>Accéder au cours complet</p>
+                    <p style={{ fontSize: 12, color: '#b45309', margin: '2px 0 0' }}>Cours détaillé avec explications approfondies</p>
+                  </div>
+                </div>
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#d97706" strokeWidth="2.5" className="group-hover:translate-x-1 transition-transform">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: '#f9fafb', border: '2px solid #e5e7eb', borderRadius: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, background: '#e5e7eb', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 13.5, fontWeight: 700, color: '#6b7280', margin: 0 }}>Cours complet</p>
+                    <p style={{ fontSize: 12, color: '#9ca3af', margin: '2px 0 0' }}>Réservé aux membres Essentiel</p>
+                  </div>
+                </div>
+                <Link href="/tarifs" style={{ padding: '6px 14px', background: '#ece9ff', color: '#4f46e5', borderRadius: 999, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                  Essentiel →
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
    DASHBOARD SIDE NAV
    ============================================================ */
 const UE_SIDEBAR = [
@@ -812,7 +1226,7 @@ const UE_SIDEBAR = [
   { code: 'UE6', name: 'SSH / Éthique', id: 'ssh' },
 ];
 
-function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier, onLaunchQCM, onLaunchExamen }) {
+function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier, onLaunchQCM, onLaunchExamen, onOpenFiches }) {
   const [coursesOpen, setCoursesOpen] = useState(false);
   const { user, logOut } = useAuth();
   const router = useRouter();
@@ -877,8 +1291,8 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
       <div style={{ fontSize: 10.5, letterSpacing: 1.4, fontWeight: 700, color: '#8a8ea8', padding: '0 10px 10px' }}>NAVIGATION</div>
 
       {navItems.map(item => {
-        const isActive = activeSection === item.id;
         const isCourses = item.id === 'courses';
+        const isActive = isCourses ? activeSection === 'fiches' : activeSection === item.id;
 
         if (item.href) {
           const launchFn = item.id === 'qcm' ? onLaunchQCM : item.id === 'examen' ? onLaunchExamen : null;
@@ -897,7 +1311,10 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
         return (
           <Fragment key={item.id}>
             <button
-              onClick={() => isCourses ? setCoursesOpen(o => !o) : (!item.locked && setActiveSection(item.id))}
+              onClick={() => {
+                if (isCourses) { setCoursesOpen(o => !o); onOpenFiches(null); }
+                else if (!item.locked) { setActiveSection(item.id); }
+              }}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 12px', borderRadius: 10, marginBottom: 2,
@@ -931,17 +1348,21 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
             {isCourses && coursesOpen && (
               <div style={{ marginLeft: 24, borderLeft: '1px solid #eef0f7', paddingLeft: 4, marginBottom: 6 }}>
                 {UE_SIDEBAR.map(ue => (
-                  <Link key={ue.code} href={`/fiches`}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, fontSize: 12.5, color: '#2a2c44', textDecoration: 'none' }}
+                  <button key={ue.code}
+                    onClick={() => onOpenFiches(ue.id)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, fontSize: 12.5, color: '#2a2c44', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                     className="hover:bg-gray-50 transition-colors"
                   >
                     <span style={{ fontFamily: 'monospace', fontSize: 10.5, fontWeight: 700, color: '#4f46e5', minWidth: 24 }}>{ue.code}</span>
                     <span>{ue.name}</span>
-                  </Link>
+                  </button>
                 ))}
-                <Link href="/fiches" style={{ display: 'block', padding: '6px 10px', fontSize: 12, fontWeight: 600, color: '#4f46e5', textDecoration: 'none' }}>
+                <button
+                  onClick={() => onOpenFiches(null)}
+                  style={{ width: '100%', display: 'block', padding: '6px 10px', fontSize: 12, fontWeight: 600, color: '#4f46e5', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                >
                   Toutes les fiches →
-                </Link>
+                </button>
               </div>
             )}
           </Fragment>
@@ -1020,7 +1441,7 @@ function HeroFocusFilled({ todaySubject, weekSessions, currentStreak, onLaunchQC
   return (
     <div style={{ borderRadius: 18, padding: '20px 28px', flexShrink: 0, background: 'linear-gradient(135deg, #312c6e 0%, #4f46e5 100%)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -50, right: -50, width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
-      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 260px', gap: 24, alignItems: 'center' }}>
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_260px]" style={{ position: 'relative', gap: 24, alignItems: 'center' }}>
         <div>
           {currentStreak > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -1056,7 +1477,7 @@ function HeroFocusFilled({ todaySubject, weekSessions, currentStreak, onLaunchQC
             </button>
           </div>
         </div>
-        <div>
+        <div className="hidden md:block">
           <div style={{ fontSize: 10.5, letterSpacing: 1.2, fontWeight: 700, opacity: 0.8, marginBottom: 10 }}>OBJECTIF DE LA SEMAINE</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <svg width="72" height="72" viewBox="0 0 80 80">
@@ -1116,7 +1537,8 @@ function StatStripBar({ data }) {
   ];
 
   return (
-    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', flexShrink: 0, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+    <div className="overflow-x-auto" style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', flexShrink: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(140px, 1fr))' }}>
       {stats.map((s, i) => (
         <div key={i} style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, borderRight: i < 3 ? '1px solid #eef0f7' : 'none' }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, background: s.iconBg, color: s.iconColor, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
@@ -1131,6 +1553,7 @@ function StatStripBar({ data }) {
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }
@@ -1146,7 +1569,7 @@ function RecoListVertical({ recommendations, onLaunchQCM }) {
   };
 
   return (
-    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: 6, gridColumn: 'span 2', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div className="md:col-span-2" style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: 6, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: '14px 18px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div className="font-jakarta" style={{ fontSize: 16, fontWeight: 700, color: '#0f1020' }}>À revoir cette semaine</div>
