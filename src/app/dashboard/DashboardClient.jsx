@@ -450,6 +450,28 @@ export default function DashboardPage() {
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg>
               Mode Examen
             </button>
+            {/* Upgrade premium (mobile) */}
+            {!isPremiumPlus && (
+              <Link
+                href="/tarifs"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '12px 0', padding: '14px 16px', borderRadius: 14, background: 'linear-gradient(135deg, #4f46e5 0%, #8257f9 100%)', textDecoration: 'none' }}
+              >
+                <div style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.2)', borderRadius: 10, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0 }}>Passer Premium+</p>
+                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>Progression, Objectifs & Classement</p>
+                </div>
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.8)" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+            )}
+
             {/* User + logout */}
             <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid #eef0f7' }}>
               {user && (
@@ -459,7 +481,7 @@ export default function DashboardPage() {
                   </div>
                   <div style={{ overflow: 'hidden' }}>
                     <p style={{ fontSize: 13.5, fontWeight: 600, color: '#0f1020', margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{user.displayName || user.email}</p>
-                    <p style={{ fontSize: 11.5, color: '#8a8ea8', margin: 0 }}>{tier === 'gratuit' ? 'Compte gratuit' : 'Premium'}</p>
+                    <p style={{ fontSize: 11.5, color: '#8a8ea8', margin: 0 }}>{tier === 'gratuit' ? 'Compte gratuit' : tier === 'essentiel' ? 'Essentiel' : 'Premium+'}</p>
                   </div>
                 </div>
               )}
@@ -1550,15 +1572,24 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
       {/* Espace + bas de sidebar */}
       <div style={{ marginTop: 'auto', paddingTop: 16 }}>
         {/* Premium upsell card */}
-        {tier === 'gratuit' && (
+        {!isPremiumPlus && (
           <div style={{ marginBottom: 12 }}>
-            <div style={{ padding: 14, borderRadius: 12, background: 'linear-gradient(135deg, #4f46e5 0%, #8257f9 100%)', color: '#fff' }}>
-              <div style={{ fontSize: 11, letterSpacing: 1.2, fontWeight: 700, opacity: 0.8, marginBottom: 4 }}>PLAN GRATUIT</div>
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, lineHeight: 1.3 }}>Débloquez Progression, Objectifs & Classement</div>
-              <Link href="/tarifs" style={{ display: 'block', background: '#fff', color: '#4f46e5', borderRadius: 8, padding: 8, fontWeight: 700, fontSize: 12, textAlign: 'center', textDecoration: 'none' }}>
-                Passer Premium →
-              </Link>
-            </div>
+            <Link href="/tarifs" style={{ display: 'block', padding: 14, borderRadius: 12, background: 'linear-gradient(135deg, #4f46e5 0%, #8257f9 100%)', textDecoration: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.9)" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                </svg>
+                <span style={{ fontSize: 10.5, letterSpacing: 1.1, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>
+                  {tier === 'gratuit' ? 'PLAN GRATUIT' : 'PLAN ESSENTIEL'}
+                </span>
+              </div>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#fff', marginBottom: 10, lineHeight: 1.35 }}>
+                Débloquez Progression, Objectifs &amp; Classement
+              </div>
+              <div style={{ background: '#fff', color: '#4f46e5', borderRadius: 8, padding: '7px 10px', fontWeight: 700, fontSize: 12, textAlign: 'center' }}>
+                Passer Premium+ →
+              </div>
+            </Link>
           </div>
         )}
 
