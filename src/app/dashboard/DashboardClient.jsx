@@ -630,7 +630,7 @@ export default function DashboardPage() {
                 </div>
                 {filteredHistory.length === 0 ? (
                   <div className="px-6 pb-6">
-                    <EmptyState title="Aucune session" description="Aucune session trouvee pour ce filtre." ctaHref="/qcm" ctaLabel="Commencer un QCM" />
+                    <EmptyState title="Aucune session" description="Aucune session trouvee pour ce filtre." onCta={() => setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
                   </div>
                 ) : (
                   <>
@@ -684,7 +684,7 @@ export default function DashboardPage() {
                 description="Visualisez votre courbe de progression, vos points forts et axes d'amélioration."
               >
               {!data.hasAnySessions || data.last20.length < 2 ? (
-                  <EmptyState title="Pas assez de donnees" description="Effectuez plusieurs sessions pour voir votre progression." ctaHref="/qcm" ctaLabel="Commencer un QCM" />
+                  <EmptyState title="Pas assez de donnees" description="Effectuez plusieurs sessions pour voir votre progression." onCta={() => setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
                 ) : (
                   <>
                     {/* Score evolution */}
@@ -783,7 +783,7 @@ export default function DashboardPage() {
                 description="Suivez vos objectifs hebdomadaires et visualisez la répartition de vos sessions."
               >
               {!data.hasAnySessions ? (
-                <EmptyState title="Aucune donnee" description="Effectuez des sessions pour voir vos objectifs." ctaHref="/qcm" ctaLabel="Commencer un QCM" />
+                <EmptyState title="Aucune donnee" description="Effectuez des sessions pour voir vos objectifs." onCta={() => setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
               ) : (
                 <div className="space-y-6">
                   {/* Carte 1 : Objectifs de la semaine */}
@@ -2105,11 +2105,13 @@ function RecommendationCard({ rec }) {
 /* ============================================================
    EMPTY STATE
    ============================================================ */
-function EmptyState({ title, description, ctaHref, ctaLabel, userName }) {
+function EmptyState({ title, description, ctaHref, ctaLabel, onCta, userName }) {
   const displayTitle = userName ? `Prêt${userName ? ' ' + userName : ''} ?` : title;
   const displayDesc = userName
     ? 'Lancez un premier QCM pour calibrer votre niveau. Vos stats s\'afficheront ici en temps réel.'
     : description;
+
+  const ctaClass = "inline-flex px-6 py-3 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25";
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
@@ -2120,11 +2122,13 @@ function EmptyState({ title, description, ctaHref, ctaLabel, userName }) {
       </div>
       <h3 className="text-xl font-bold text-gray-900 mb-2">{userName ? displayTitle : title}</h3>
       <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">{userName ? displayDesc : description}</p>
-      {ctaHref && (
-        <Link
-          href={ctaHref}
-          className="inline-flex px-6 py-3 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25"
-        >
+      {onCta && (
+        <button onClick={onCta} className={ctaClass}>
+          {ctaLabel || 'Commencer maintenant'}
+        </button>
+      )}
+      {!onCta && ctaHref && (
+        <Link href={ctaHref} className={ctaClass}>
           {ctaLabel || 'Commencer maintenant'}
         </Link>
       )}
