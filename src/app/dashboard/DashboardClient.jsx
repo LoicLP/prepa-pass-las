@@ -539,19 +539,19 @@ export default function DashboardPage() {
 
           {/* ===== VUE D'ENSEMBLE ===== */}
           {activeSection === 'overview' && (
-            <div className="md:overflow-hidden" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, gap: 14 }}>
+            <div className="md:overflow-hidden md:flex-1 md:min-h-0" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {data.hasAnySessions
                 ? <HeroFocusFilled todaySubject={todaySubject} weekSessions={data.thisWeekSessions} currentStreak={data.currentStreak} onLaunchQCM={setActiveQCM} />
                 : <HeroFocusEmpty />
               }
               <StatStripBar data={data} />
               {data.hasAnySessions ? (
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px]" style={{ gap: 14, flex: 1, minHeight: 0 }} >
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] md:flex-1 md:min-h-0" style={{ gap: 14 }}>
                   <RecoListVertical recommendations={data.recommendations} onLaunchQCM={setActiveQCM} />
                   <QuickActionCards onLaunchQCM={setActiveQCM} onLaunchExamen={() => setActiveExamen(true)} />
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_220px]" style={{ gap: 14, flex: 1, minHeight: 0 }}>
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] md:flex-1 md:min-h-0" style={{ gap: 14 }}>
                   <OnboardingPickerCard onLaunchQCM={setActiveQCM} />
                   <QuickActionCards onLaunchQCM={setActiveQCM} onLaunchExamen={() => setActiveExamen(true)} />
                 </div>
@@ -1569,7 +1569,7 @@ function RecoListVertical({ recommendations, onLaunchQCM }) {
   };
 
   return (
-    <div className="md:col-span-2" style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: 6, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div className="md:col-span-2 md:overflow-hidden" style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: 6, display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '14px 18px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div className="font-jakarta" style={{ fontSize: 16, fontWeight: 700, color: '#0f1020' }}>À revoir cette semaine</div>
