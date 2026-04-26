@@ -365,7 +365,7 @@ export default function DashboardPage() {
       )}
 
       {/* ===== BARRE MOBILE HAUTE ===== */}
-      <div className="md:hidden" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #eef0f7', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="md:hidden flex items-center justify-between" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #eef0f7', padding: '0 16px', height: 56 }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <div style={{ width: 30, height: 30, background: '#4f46e5', borderRadius: 8, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="2">
@@ -388,7 +388,7 @@ export default function DashboardPage() {
 
       {/* ===== TIROIR DE NAVIGATION MOBILE ===== */}
       {mobileMenuOpen && (
-        <div className="md:hidden" style={{ position: 'fixed', inset: 0, zIndex: 150, display: 'flex' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 150, display: 'flex' }}>
           {/* Backdrop */}
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,16,32,0.4)' }} onClick={() => setMobileMenuOpen(false)} />
           {/* Drawer */}
@@ -470,7 +470,7 @@ export default function DashboardPage() {
       )}
 
       {/* ===== BARRE DE NAVIGATION MOBILE BASSE ===== */}
-      <div className="md:hidden" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderTop: '1px solid #eef0f7', display: 'flex', alignItems: 'stretch', height: 64 }}>
+      <div className="md:hidden flex items-stretch" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderTop: '1px solid #eef0f7', height: 64 }}>
         {[
           { id: 'overview', label: 'Accueil', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg> },
           { id: 'fiches', label: 'Fiches', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2V5zM19 18v3H6" /></svg> },
