@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useTimer } from '@/hooks/useTimer';
 import { SUBJECTS } from '@/data/subjects';
 import { FICHES_DATA } from '@/data/fiches';
@@ -157,6 +158,7 @@ export default function QCMPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [tipIndex, setTipIndex] = useState(0);
   const [correctionOpen, setCorrectionOpen] = useState(true);
+  const [aiGenerated, setAiGenerated] = useState(false);
   const pillsRef = useRef(null);
 
   // ----- Hooks -----
@@ -165,6 +167,7 @@ export default function QCMPage() {
   const timer = useTimer({ mode: 'up' });
   const [stats, setStats] = useSupabaseStats(user?.id, 'qcm_stats');
   const { generateQuestions: generateAIQuestions, isGenerating } = useGeminiQuestions();
+  const searchParams = useSearchParams();
 
   const totalDone = stats.sessions?.length || 0;
   const avgScore = totalDone > 0 ? Math.round(stats.sessions.reduce((a, s) => a + (s.percentage || s.score || 0), 0) / totalDone) : 0;
@@ -240,16 +243,21 @@ export default function QCMPage() {
     // Try AI generation first
     const subjectName = topic.subject ? (topic.subjectName || getSubjectName(topic.subject)) : (topic.title || topic.subjectName);
     const ficheTopic = topic.title || null;
+    const ficheContent = topic.content || null;
 
     if (topic.subject || ficheTopic) {
-      const aiQuestions = await generateAIQuestions(topic.subject, subjectName, questionCount, 'qcm', ficheTopic);
-      if (aiQuestions && aiQuestions.length > 0) {
+      const result = await generateAIQuestions(topic.subject, subjectName, questionCount, 'qcm', ficheTopic, ficheContent);
+      // result is either { questions, aiGenerated, topic } or null
+      const aiQuestions = result?.questions ?? result;
+      if (Array.isArray(aiQuestions) && aiQuestions.length > 0) {
+        setAiGenerated(result?.aiGenerated === true);
         launchWithQuestions(aiQuestions);
         return;
       }
     }
 
     // Fallback to static questions
+    setAiGenerated(false);
     const qs = generateStaticQuestions(topic, questionCount);
     launchWithQuestions(qs);
   }, [user, isEssentiel, questionCount, generateStaticQuestions, generateAIQuestions, launchWithQuestions]);
@@ -272,8 +280,38 @@ export default function QCMPage() {
       subjectName: subject?.name || '',
       title: fiche.title,
       summary: fiche.summary,
+      content: fiche.content || null,
     });
   }, [pendingFiche, startQuiz]);
+
+  // ----- Auto-start from URL param ?fiche=<id> -----
+  useEffect(() => {
+    const ficheId = searchParams?.get('fiche');
+    if (!ficheId) return;
+    const fiche = FICHES_DATA.find(f => f.id === ficheId);
+    if (!fiche) return;
+    const subject = SUBJECTS.find(s => s.id === fiche.subject);
+    // Show the confirmation modal (same flow as selecting from the list)
+    setPendingFiche({ fiche, subject });
+    setView('hero');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // ----- Auto-start from URL param ?subject=<id> -----
+  useEffect(() => {
+    const subjectId = searchParams?.get('subject');
+    if (!subjectId) return;
+    const subject = SUBJECTS.find(s => s.id === subjectId);
+    if (!subject) return;
+    // Lance directement un quiz sur cette matière
+    startQuiz({
+      type: 'custom',
+      subject: subject.id,
+      subjectName: subject.name,
+      title: subject.name,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // ----- Custom quiz start -----
   const startCustomQuiz = useCallback(() => {
@@ -909,7 +947,7 @@ export default function QCMPage() {
           <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 md:p-8 shadow-sm">
             <div className="flex items-center justify-between mb-5">
               <span className="text-sm font-medium text-gray-500">Question {currentIndex + 1}</span>
-              <span className={`px-3 py-1 ${colors.badge} text-xs font-bold rounded-full`}>{badgeText}</span>
+              <span className={`px-3 py-1 ${colors.badge} text-xs font-bold rounded-full`}>{selectedTopic?.title || badgeText}</span>
             </div>
             <p className="text-lg md:text-xl font-bold text-gray-900 mb-6 leading-relaxed">{q.question}</p>
 

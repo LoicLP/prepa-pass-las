@@ -358,7 +358,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 14, flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                  <HowItWorksCard />
+                  <SubjectPickerCard />
                   <QuickActionCards />
                 </div>
               )}
@@ -949,28 +949,14 @@ function HeroFocusEmpty() {
   return (
     <div style={{ borderRadius: 18, padding: '20px 28px', flexShrink: 0, background: 'linear-gradient(135deg, #312c6e 0%, #4f46e5 60%, #8257f9 100%)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
-      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, alignItems: 'center' }}>
-        <div>
-          <div style={{ fontSize: 10.5, letterSpacing: 1.6, fontWeight: 700, opacity: 0.75, marginBottom: 8 }}>PREMIÈRE SESSION</div>
-          <div className="font-jakarta" style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1, letterSpacing: -0.8, marginBottom: 8 }}>
-            On commence par un QCM de calibrage ?
-          </div>
-          <div style={{ fontSize: 13.5, opacity: 0.85, lineHeight: 1.45, maxWidth: 520, marginBottom: 16 }}>
-            20 questions, 15 minutes. On identifie vos points forts et les UE à travailler en priorité.
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <Link href="/qcm" style={{ background: '#fff', color: '#4f46e5', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13.5, textDecoration: 'none', display: 'inline-block' }}>
-              Démarrer le calibrage →
-            </Link>
-          </div>
+      <div style={{ position: 'absolute', bottom: -60, left: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+      <div style={{ position: 'relative' }}>
+        <div style={{ fontSize: 10.5, letterSpacing: 1.6, fontWeight: 700, opacity: 0.75, marginBottom: 8 }}>BIENVENUE</div>
+        <div className="font-jakarta" style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.15, letterSpacing: -0.6, marginBottom: 8 }}>
+          Par quelle matière voulez-vous commencer ?
         </div>
-        <div style={{ width: 130, height: 130, borderRadius: 18, background: 'rgba(255,255,255,0.1)', display: 'grid', placeItems: 'center', backdropFilter: 'blur(4px)', flexShrink: 0 }}>
-          <div className="font-jakarta" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1 }}>20</div>
-            <div style={{ fontSize: 10.5, letterSpacing: 1.4, opacity: 0.8, marginTop: 5 }}>QUESTIONS</div>
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.3)', margin: '8px 20px' }} />
-            <div style={{ fontSize: 12.5, opacity: 0.9 }}>≈ 15 min</div>
-          </div>
+        <div style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.45, maxWidth: 520 }}>
+          Choisissez une UE ci-dessous — on lance directement un entraînement personnalisé.
         </div>
       </div>
     </div>
@@ -1196,6 +1182,39 @@ function HowItWorksCard() {
               <div style={{ fontSize: 12, color: '#5f6280', marginTop: 2 }}>{s.d}</div>
             </div>
           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   SUBJECT PICKER CARD (onboarding empty state)
+   ============================================================ */
+const SUBJECT_PICKER_DATA = [
+  { code: 'UE1', id: 'chimie',      name: 'Chimie / Biochimie',  accent: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+  { code: 'UE2', id: 'biocell',     name: 'Biologie cellulaire', accent: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  { code: 'UE3', id: 'biophysique', name: 'Biophysique',          accent: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+  { code: 'UE4', id: 'biostats',    name: 'Biostatistiques',      accent: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
+  { code: 'UE5', id: 'anatomie',    name: 'Anatomie',             accent: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
+  { code: 'UE6', id: 'ssh',         name: 'SSH / Éthique',        accent: '#e11d48', bg: '#fff1f2', border: '#fecdd3' },
+];
+
+function SubjectPickerCard() {
+  return (
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: '18px 20px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="font-jakarta" style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: '#0f1020' }}>Choisissez votre UE</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {SUBJECT_PICKER_DATA.map(({ code, id, name, accent, bg, border }) => (
+          <Link
+            key={id}
+            href={`/qcm?subject=${id}`}
+            style={{ padding: '10px 14px', borderRadius: 12, border: `1.5px solid ${border}`, background: bg, textDecoration: 'none', display: 'block' }}
+            className="hover:-translate-y-0.5 hover:shadow-sm transition-all"
+          >
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: accent, marginBottom: 3 }}>{code}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#0f1020' }}>{name}</div>
+          </Link>
         ))}
       </div>
     </div>
