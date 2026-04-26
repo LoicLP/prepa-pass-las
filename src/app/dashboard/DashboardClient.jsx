@@ -13,6 +13,7 @@ import QCMPage from '@/app/qcm/QCMClient';
 import ExamenPage from '@/app/examen/ExamenClient';
 import { FICHES_DATA } from '@/data/fiches';
 import { sanitizeHtml } from '@/utils/sanitize';
+import { loadCoursForFiche } from '@/data/cours';
 
 /* ========== HELPERS ========== */
 function getSubjectBadgeColors(subjectId) {
@@ -962,10 +963,182 @@ const FICHES_SUBJECT_ICONS = {
   ssh:         'M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18',
 };
 
+/* ===== COURS MODAL (full-screen, reste dans le dashboard) ===== */
+function CoursModal({ fiche, onClose }) {
+  const { isEssentiel, isLoaded } = usePremium();
+  const [cours, setCours] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState(null);
+  const scrollRef = useRef(null);
+
+  const sub = SUBJECTS.find(s => s.id === fiche.subject);
+  const cols = FICHES_SUBJECT_COLORS[sub?.color] || FICHES_SUBJECT_COLORS.primary;
+  const iconPath = FICHES_SUBJECT_ICONS[fiche.subject] || '';
+
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!fiche?.id || !isEssentiel || !isLoaded) { setLoading(false); return; }
+    setLoading(true);
+    loadCoursForFiche(fiche.id).then((data) => {
+      setCours(data);
+      setLoading(false);
+    }).catch(() => {
+      setCours(null);
+      setLoading(false);
+    });
+  }, [fiche?.id, isEssentiel, isLoaded]);
+
+  useEffect(() => {
+    if (!cours?.sections || !scrollRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) setActiveSection(e.target.id); });
+      },
+      { root: scrollRef.current, rootMargin: '-80px 0px -60% 0px', threshold: 0 }
+    );
+    const els = scrollRef.current.querySelectorAll('[data-cours-section]');
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [cours]);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: '#f8f9fb', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ flexShrink: 0, height: 56, padding: '0 20px', borderBottom: '1px solid #eef0f7', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', boxShadow: '0 1px 4px rgba(15,16,32,0.06)' }}>
+        <button
+          onClick={onClose}
+          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 10, background: '#f3f4f6', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#374151' }}
+          className="hover:bg-gray-200 transition-colors"
+        >
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+          </svg>
+          Retour aux fiches
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className={`w-7 h-7 rounded-lg ${cols.light} flex items-center justify-center`} style={{ flexShrink: 0 }}>
+            <svg className={`w-3.5 h-3.5 ${cols.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
+            </svg>
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#0f1020', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fiche.title}</span>
+        </div>
+        <div style={{ width: 120 }} />
+      </div>
+
+      {/* Content */}
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '28px 16px' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+
+          {/* Loading */}
+          {loading && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 0', gap: 16 }}>
+              <div style={{ width: 36, height: 36, border: '3px solid #e5e7eb', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <p style={{ color: '#6b7280', fontSize: 14 }}>Chargement du cours...</p>
+            </div>
+          )}
+
+          {/* Pas de cours disponible */}
+          {!loading && !cours && (
+            <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+              <div style={{ width: 56, height: 56, background: '#f3f4f6', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              </div>
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#374151', marginBottom: 8 }}>Cours bientôt disponible</p>
+              <p style={{ fontSize: 13.5, color: '#6b7280', maxWidth: 360, margin: '0 auto' }}>Le cours détaillé pour &laquo;&nbsp;{fiche.title}&nbsp;&raquo; est en cours de rédaction.</p>
+            </div>
+          )}
+
+          {/* Cours */}
+          {!loading && cours && (
+            <>
+              {/* Hero */}
+              <div style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #3730a3 60%, #4338ca 100%)', borderRadius: 18, padding: '28px 28px 24px', marginBottom: 24, color: '#fff' }}>
+                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-4`} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                  <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20" style={{ color: '#fbbf24' }}>
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  Essentiel · {sub?.name || ''}
+                </div>
+                <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 10px', letterSpacing: -0.5, lineHeight: 1.25 }}>{fiche.title}</h1>
+                {cours.introduction && <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.6 }}>{cours.introduction}</p>}
+                <div style={{ display: 'flex', gap: 12, marginTop: 18 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
+                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    ~{cours.readTime || 15} min
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
+                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                    {cours.sections.length} sections
+                  </div>
+                </div>
+              </div>
+
+              {/* Sections */}
+              {cours.sections.map((sec, i) => {
+                const sectionId = `modal-section-${i}`;
+                const isAct = activeSection === sectionId;
+                return (
+                  <div
+                    key={i}
+                    id={sectionId}
+                    data-cours-section
+                    style={{ background: '#fff', borderRadius: 16, border: `1.5px solid ${isAct ? '#c7d2fe' : '#eef0f7'}`, padding: '22px 24px', marginBottom: 14, scrollMarginTop: 80, transition: 'border-color 0.2s' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                      <span className={`w-9 h-9 rounded-xl ${cols.light} ${cols.border} border flex items-center justify-center text-sm font-black ${cols.icon}`} style={{ flexShrink: 0 }}>{i + 1}</span>
+                      <div>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f1020', margin: 0 }}>{sec.title}</h3>
+                        <p style={{ fontSize: 11, color: '#9ca3af', margin: '2px 0 0' }}>Section {i + 1} sur {cours.sections.length}</p>
+                      </div>
+                    </div>
+                    <div
+                      className="prose prose-gray max-w-none text-gray-700 leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(sec.content) }}
+                    />
+                  </div>
+                );
+              })}
+
+              {/* Footer */}
+              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #eef0f7', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                <button
+                  onClick={onClose}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: '#fff', border: '2px solid #e5e7eb', borderRadius: 12, fontSize: 13, fontWeight: 700, color: '#374151', cursor: 'pointer' }}
+                  className="hover:border-indigo-300 hover:text-indigo-600 transition-all"
+                >
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+                  Retour aux fiches
+                </button>
+                <button
+                  onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: '#0f1020', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 700, color: '#fff', cursor: 'pointer' }}
+                  className="hover:bg-gray-800 transition-colors"
+                >
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" /></svg>
+                  Haut de page
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FichesSection({ initialSubject, onLaunchQCM }) {
   const [currentSubject, setCurrentSubject] = useState(initialSubject || 'all');
   const [search, setSearch] = useState('');
   const [selectedFiche, setSelectedFiche] = useState(null);
+  const [activeCours, setActiveCours] = useState(null);
   const { isEssentiel } = usePremium();
   const { user } = useAuth();
 
@@ -1086,13 +1259,22 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
           isEssentiel={isEssentiel}
           user={user}
           onLaunchQCM={onLaunchQCM}
+          onOpenCours={(fiche) => { setActiveCours(fiche); setSelectedFiche(null); }}
+        />
+      )}
+
+      {/* Cours full-screen overlay */}
+      {activeCours && (
+        <CoursModal
+          fiche={activeCours}
+          onClose={() => setActiveCours(null)}
         />
       )}
     </div>
   );
 }
 
-function FicheDetailModal({ fiche, onClose, isEssentiel, user, onLaunchQCM }) {
+function FicheDetailModal({ fiche, onClose, isEssentiel, user, onLaunchQCM, onOpenCours }) {
   const sub = SUBJECTS.find(s => s.id === fiche.subject);
   const cols = FICHES_SUBJECT_COLORS[sub?.color] || FICHES_SUBJECT_COLORS.primary;
   const iconPath = FICHES_SUBJECT_ICONS[fiche.subject] || '';
@@ -1157,13 +1339,13 @@ function FicheDetailModal({ fiche, onClose, isEssentiel, user, onLaunchQCM }) {
           {/* Cours CTA */}
           <div style={{ marginTop: 32, paddingTop: 20, borderTop: '1px solid #eef0f7' }}>
             {isEssentiel ? (
-              <Link
-                href={`/cours?id=${fiche.id}`}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '16px 20px', background: 'linear-gradient(to right, #fffbeb, #fef3c7)', border: '2px solid #fde68a', borderRadius: 14, textDecoration: 'none', color: 'inherit' }}
+              <button
+                onClick={() => onOpenCours(fiche)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '16px 20px', background: 'linear-gradient(to right, #fffbeb, #fef3c7)', border: '2px solid #fde68a', borderRadius: 14, cursor: 'pointer', textAlign: 'left' }}
                 className="hover:border-amber-300 hover:shadow transition-all group"
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 40, height: 40, background: '#fde68a', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 40, height: 40, background: '#fde68a', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#92400e" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
                     </svg>
@@ -1176,7 +1358,7 @@ function FicheDetailModal({ fiche, onClose, isEssentiel, user, onLaunchQCM }) {
                 <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#d97706" strokeWidth="2.5" className="group-hover:translate-x-1 transition-transform">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                 </svg>
-              </Link>
+              </button>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: '#f9fafb', border: '2px solid #e5e7eb', borderRadius: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
