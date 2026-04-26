@@ -937,7 +937,7 @@ export default function DashboardPage() {
 
         {/* ===== BANNIERE CONTACT ===== */}
         {activeSection !== 'overview' && (
-          <div className="mt-8">
+          <div className="hidden md:block mt-8">
             <Link href="/contact" className="flex items-center justify-between p-5 bg-gradient-to-r from-amber-50/80 to-orange-50/50 rounded-2xl border border-amber-100/60 shadow-sm hover:border-amber-200 hover:shadow-md transition-all group">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
