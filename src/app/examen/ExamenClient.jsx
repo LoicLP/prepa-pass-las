@@ -650,13 +650,15 @@ export default function ExamenPage({ onBack = null }) {
   // ===== MODE CHOICE VIEW =====
   if (view === 'modeChoice') {
     return (
-      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => onBack ? onBack() : setView('hero')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-            Retour
-          </button>
-          <div className="text-center mb-10">
+      <section className={`bg-slate-50 ${onBack ? 'h-full flex flex-col justify-center py-6' : 'pt-24 pb-16 md:pt-28 md:pb-20 min-h-screen'}`}>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          {!onBack && (
+            <button onClick={() => setView('hero')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+              Retour
+            </button>
+          )}
+          <div className={`text-center ${onBack ? 'mb-6' : 'mb-10'}`}>
             <div className="inline-flex items-center gap-2 bg-primary-50 px-4 py-2 rounded-full border border-primary-200 mb-5">
               <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
               <span className="text-sm font-semibold text-primary-700">Nouvelle &eacute;preuve</span>
@@ -664,10 +666,10 @@ export default function ExamenPage({ onBack = null }) {
             <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-3">Comment souhaitez-vous r&eacute;viser ?</h2>
             <p className="text-gray-500 text-base max-w-lg mx-auto">Choisissez votre mode de r&eacute;vision pour commencer.</p>
           </div>
-          <div className="grid md:grid-cols-2 gap-5 mb-8">
+          <div className={`grid md:grid-cols-2 gap-5 ${onBack ? '' : 'mb-8'}`}>
             {/* Fiches-based */}
-            <button onClick={() => setView('fichesSelection')} className="group bg-white rounded-2xl border-2 border-gray-200 p-6 text-left hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 transition-all hover:-translate-y-0.5">
-              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <button onClick={() => setView('fichesSelection')} className={`group bg-white rounded-2xl border-2 border-gray-200 text-left hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 transition-all hover:-translate-y-0.5 ${onBack ? 'p-5' : 'p-6'}`}>
+              <div className={`bg-amber-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${onBack ? 'w-10 h-10 mb-3' : 'w-12 h-12 mb-4'}`}>
                 <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">&Agrave; partir de nos fiches</h3>
@@ -687,8 +689,8 @@ export default function ExamenPage({ onBack = null }) {
               </div>
             </button>
             {/* Custom */}
-            <button onClick={() => setView('customSelection')} className="group bg-white rounded-2xl border-2 border-gray-200 p-6 text-left hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 transition-all hover:-translate-y-0.5">
-              <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <button onClick={() => setView('customSelection')} className={`group bg-white rounded-2xl border-2 border-gray-200 text-left hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 transition-all hover:-translate-y-0.5 ${onBack ? 'p-5' : 'p-6'}`}>
+              <div className={`bg-violet-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${onBack ? 'w-10 h-10 mb-3' : 'w-12 h-12 mb-4'}`}>
                 <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Sujet personnalis&eacute;</h3>

@@ -322,8 +322,8 @@ export default function DashboardPage() {
 
       {/* ===== OVERLAY EXAMEN EMBARQUÉ ===== */}
       {activeExamen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#f8fafc', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #eef0f7', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#f8fafc', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flexShrink: 0, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #eef0f7', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
             <button onClick={() => setActiveExamen(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, color: '#5f6280', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, transition: 'all .15s' }} className="hover:bg-gray-100 hover:text-gray-900">
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
               Retour au tableau de bord
@@ -331,7 +331,7 @@ export default function DashboardPage() {
             <div style={{ width: 1, height: 20, background: '#e2e4f0' }} />
             <span style={{ fontSize: 13, color: '#9ca3af' }}>Mode Examen</span>
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
             <Suspense fallback={null}>
               <ExamenPage onBack={() => setActiveExamen(false)} />
             </Suspense>
