@@ -14,6 +14,7 @@ import ExamenPage from '@/app/examen/ExamenClient';
 import { FICHES_DATA } from '@/data/fiches';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
+import { supabase } from '@/lib/supabase';
 
 /* ========== HELPERS ========== */
 function getSubjectBadgeColors(subjectId) {
@@ -2162,6 +2163,66 @@ function AccountSection({ user, tier, isPremiumPlus, accessToken }) {
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState(null);
 
+  // Email
+  const [newEmail, setNewEmail] = useState('');
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailMsg, setEmailMsg] = useState(null); // { type: 'success'|'error', text }
+
+  // Password
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState(null);
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
+
+  // Détecter si l'utilisateur est connecté via OAuth (Google) → pas de mot de passe
+  const isOAuth = user?.app_metadata?.provider === 'google' ||
+    (user?.identities?.length > 0 && user.identities.every(id => id.provider !== 'email'));
+
+  const handleEmailUpdate = async (e) => {
+    e.preventDefault();
+    if (!newEmail || newEmail === user?.email) return;
+    setEmailLoading(true);
+    setEmailMsg(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      if (error) throw error;
+      setEmailMsg({ type: 'success', text: 'Un lien de confirmation a été envoyé à votre nouvelle adresse e-mail.' });
+      setNewEmail('');
+    } catch (err) {
+      setEmailMsg({ type: 'error', text: err.message || 'Erreur lors de la mise à jour.' });
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+    if (!newPassword) return;
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg({ type: 'error', text: 'Les mots de passe ne correspondent pas.' });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordMsg({ type: 'error', text: 'Le mot de passe doit contenir au moins 8 caractères.' });
+      return;
+    }
+    setPasswordLoading(true);
+    setPasswordMsg(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setPasswordMsg({ type: 'success', text: 'Mot de passe mis à jour avec succès.' });
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setPasswordMsg({ type: 'error', text: err.message || 'Erreur lors de la mise à jour.' });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   const tierLabel = tier === 'gratuit' ? 'Gratuit' : tier === 'essentiel' ? 'Essentiel' : 'Premium+';
   const tierColor = tier === 'gratuit' ? { bg: '#f3f4f6', text: '#374151' } : tier === 'essentiel' ? { bg: '#fffbeb', text: '#92400e' } : { bg: '#ede9fe', text: '#5b21b6' };
 
@@ -2275,6 +2336,124 @@ function AccountSection({ user, tier, isPremiumPlus, accessToken }) {
           </div>
         )}
       </div>
+      {/* Modifier l'adresse e-mail */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+          Adresse e-mail
+        </h3>
+        <p className="text-sm text-gray-400 mb-4">Actuelle : <span className="font-medium text-gray-600">{user?.email}</span></p>
+        <form onSubmit={handleEmailUpdate} className="space-y-3">
+          <div>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Nouvelle adresse e-mail</label>
+            <input
+              type="email"
+              value={newEmail}
+              onChange={e => setNewEmail(e.target.value)}
+              placeholder="nouvelle@email.com"
+              required
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, color: '#0f1020', outline: 'none', boxSizing: 'border-box' }}
+              className="focus:border-indigo-400 transition-colors"
+            />
+          </div>
+          {emailMsg && (
+            <p style={{ fontSize: 12.5, color: emailMsg.type === 'success' ? '#059669' : '#dc2626', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {emailMsg.type === 'success' ? '✓' : '✕'} {emailMsg.text}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={emailLoading || !newEmail}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: '#4f46e5', color: '#fff', borderRadius: 10, fontWeight: 600, fontSize: 13.5, border: 'none', cursor: emailLoading || !newEmail ? 'not-allowed' : 'pointer', opacity: !newEmail ? 0.5 : 1 }}
+            className="hover:bg-indigo-700 transition-colors"
+          >
+            {emailLoading && <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
+            {emailLoading ? 'Mise à jour…' : 'Mettre à jour l\'e-mail'}
+          </button>
+        </form>
+      </div>
+
+      {/* Modifier le mot de passe */}
+      {!isOAuth ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Mot de passe
+          </h3>
+          <p className="text-sm text-gray-400 mb-4">Choisissez un mot de passe d'au moins 8 caractères.</p>
+          <form onSubmit={handlePasswordUpdate} className="space-y-3">
+            <div>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Nouveau mot de passe</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showNewPwd ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  minLength={8}
+                  style={{ width: '100%', padding: '10px 42px 10px 14px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, color: '#0f1020', outline: 'none', boxSizing: 'border-box' }}
+                  className="focus:border-indigo-400 transition-colors"
+                />
+                <button type="button" onClick={() => setShowNewPwd(v => !v)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0 }}>
+                  {showNewPwd
+                    ? <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
+                    : <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                  }
+                </button>
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Confirmer le mot de passe</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showConfirmPwd ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  style={{ width: '100%', padding: '10px 42px 10px 14px', borderRadius: 10, border: `1.5px solid ${confirmPassword && newPassword !== confirmPassword ? '#f87171' : '#e5e7eb'}`, fontSize: 14, color: '#0f1020', outline: 'none', boxSizing: 'border-box' }}
+                  className="focus:border-indigo-400 transition-colors"
+                />
+                <button type="button" onClick={() => setShowConfirmPwd(v => !v)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0 }}>
+                  {showConfirmPwd
+                    ? <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
+                    : <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                  }
+                </button>
+              </div>
+              {confirmPassword && newPassword !== confirmPassword && (
+                <p style={{ fontSize: 11.5, color: '#ef4444', marginTop: 4 }}>Les mots de passe ne correspondent pas</p>
+              )}
+            </div>
+            {passwordMsg && (
+              <p style={{ fontSize: 12.5, color: passwordMsg.type === 'success' ? '#059669' : '#dc2626', display: 'flex', alignItems: 'center', gap: 6 }}>
+                {passwordMsg.type === 'success' ? '✓' : '✕'} {passwordMsg.text}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={passwordLoading || !newPassword || newPassword !== confirmPassword}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: '#059669', color: '#fff', borderRadius: 10, fontWeight: 600, fontSize: 13.5, border: 'none', cursor: passwordLoading || !newPassword || newPassword !== confirmPassword ? 'not-allowed' : 'pointer', opacity: !newPassword || newPassword !== confirmPassword ? 0.5 : 1 }}
+              className="hover:bg-emerald-700 transition-colors"
+            >
+              {passwordLoading && <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
+              {passwordLoading ? 'Mise à jour…' : 'Mettre à jour le mot de passe'}
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Mot de passe
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb' }}>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#6b7280" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" /></svg>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>Connexion via Google — gestion du mot de passe désactivée.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
