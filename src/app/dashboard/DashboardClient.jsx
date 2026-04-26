@@ -420,13 +420,12 @@ export default function DashboardPage() {
               return (
                 <button key={item.id}
                   onClick={() => {
-                    if (item.locked) return;
                     if (item.id === 'fiches') { setActiveFicheSubject(null); setActiveSection('fiches'); }
                     else { setActiveSection(item.id); }
                     setMobileMenuOpen(false);
                   }}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 12, marginBottom: 4, background: isAct ? '#4f46e5' : 'transparent', color: isAct ? '#fff' : item.locked ? '#c4c6d4' : '#2a2c44', fontSize: 14.5, fontWeight: isAct ? 600 : 500, border: 'none', cursor: item.locked ? 'default' : 'pointer', textAlign: 'left' }}
-                  className={isAct ? '' : (!item.locked ? 'hover:bg-gray-50 transition-colors' : '')}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 12, marginBottom: 4, background: isAct ? '#4f46e5' : 'transparent', color: isAct ? '#fff' : '#2a2c44', fontSize: 14.5, fontWeight: isAct ? 600 : 500, border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                  className={isAct ? '' : 'hover:bg-gray-50 transition-colors'}
                 >
                   {item.icon}
                   <span className="flex-1">{item.label}</span>
@@ -1523,7 +1522,7 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
             <button
               onClick={() => {
                 if (isCourses) { setCoursesOpen(o => !o); onOpenFiches(null); }
-                else if (!item.locked) { setActiveSection(item.id); }
+                else { setActiveSection(item.id); }
               }}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 10,
@@ -1531,7 +1530,7 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
                 background: isActive ? '#4f46e5' : 'transparent',
                 color: isActive ? '#fff' : '#2a2c44',
                 fontSize: 14, fontWeight: isActive ? 600 : 500,
-                border: 'none', cursor: item.locked ? 'default' : 'pointer',
+                border: 'none', cursor: 'pointer',
                 textAlign: 'left',
               }}
               className={isActive ? '' : 'hover:bg-gray-50 transition-colors'}
