@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, Fragment, Suspense } from 'react';
+import { useState, useMemo, useEffect, useRef, Fragment, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
@@ -63,6 +63,7 @@ const MENU_ITEMS = [
 export default function DashboardPage() {
   const { user, loading: authLoading, accessToken, logOut } = useAuth();
   const router = useRouter();
+  const mainRef = useRef(null);
   const [activeSection, setActiveSection] = useState('overview');
   const [historyFilter, setHistoryFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(10);
@@ -77,6 +78,11 @@ export default function DashboardPage() {
       router.push('/connexion');
     }
   }, [authLoading, user, router]);
+
+  // Remettre le scroll à zéro quand on change de section
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+  }, [activeSection]);
 
   const [qcmStats] = useSupabaseStats(user?.id, 'qcm_stats');
   const [examStats] = useSupabaseStats(user?.id, 'examen_stats');
@@ -511,7 +517,7 @@ export default function DashboardPage() {
         />
 
         {/* ===== MAIN CONTENT ===== */}
-        <main className="md:pt-5 md:px-9 pt-[72px] px-4 pb-[80px] md:pb-5" style={{ flex: 1, minWidth: 0, maxWidth: '100%', overflowY: 'auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main ref={mainRef} className="md:pt-5 md:px-9 pt-[72px] px-4 pb-[80px] md:pb-5" style={{ flex: 1, minWidth: 0, maxWidth: '100%', overflowY: 'auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
 
           {/* GREETING */}
           <div className="hidden md:flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0 }}>
@@ -556,8 +562,8 @@ export default function DashboardPage() {
                   <QuickActionCards onLaunchQCM={setActiveQCM} onLaunchExamen={() => setActiveExamen(true)} />
                 </div>
               )}
-              {/* Contact bas de page */}
-              <Link href="/contact" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', borderRadius: 14, background: 'linear-gradient(to right, #fffbeb, #fff7ed)', border: '1px solid #fde68a', textDecoration: 'none', color: 'inherit' }} className="hover:border-amber-300 hover:shadow-sm transition-all group">
+              {/* Contact bas de page — masqué sur mobile */}
+              <Link href="/contact" style={{ flexShrink: 0, padding: '12px 18px', borderRadius: 14, background: 'linear-gradient(to right, #fffbeb, #fff7ed)', border: '1px solid #fde68a', textDecoration: 'none', color: 'inherit' }} className="hidden md:flex items-center justify-between hover:border-amber-300 hover:shadow-sm transition-all group">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 34, height: 34, background: '#fef3c7', borderRadius: 10, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                     <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
