@@ -579,7 +579,7 @@ export default function DashboardPage() {
           )}
 
           {/* Sections non-overview */}
-          <div className={activeSection !== 'overview' ? 'space-y-6' : 'hidden'} style={{ flex: 1, minHeight: 0 }}>
+          <div className={`${activeSection !== 'overview' ? 'space-y-6' : 'hidden'} md:flex-1 md:min-h-0`}>
 
             {/* ===== FICHES & COURS ===== */}
             {activeSection === 'fiches' && (
