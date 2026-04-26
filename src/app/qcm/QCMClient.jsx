@@ -134,6 +134,16 @@ function QuitModal({ answered, total, score, timerFormatted, onContinue, onQuit 
   );
 }
 
+/* ========== SUBJECT DATA (for subject picker view) ========== */
+const QCM_SUBJECT_DATA = [
+  { code: 'UE1', id: 'chimie',      name: 'Chimie / Biochimie',  accent: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+  { code: 'UE2', id: 'biocell',     name: 'Biologie cellulaire', accent: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  { code: 'UE3', id: 'biophysique', name: 'Biophysique',          accent: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+  { code: 'UE4', id: 'biostats',    name: 'Biostatistiques',      accent: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
+  { code: 'UE5', id: 'anatomie',    name: 'Anatomie',             accent: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
+  { code: 'UE6', id: 'ssh',         name: 'SSH / Éthique',        accent: '#e11d48', bg: '#fff1f2', border: '#fecdd3' },
+];
+
 /* ========== MAIN PAGE COMPONENT ========== */
 export default function QCMPage({ initialConfig = null, onBack = null }) {
   // ----- State machine -----
@@ -159,6 +169,7 @@ export default function QCMPage({ initialConfig = null, onBack = null }) {
   const [tipIndex, setTipIndex] = useState(0);
   const [correctionOpen, setCorrectionOpen] = useState(true);
   const [aiGenerated, setAiGenerated] = useState(false);
+  const [selectedSubjectId, setSelectedSubjectId] = useState(null);
   const pillsRef = useRef(null);
 
   // ----- Hooks -----
@@ -653,9 +664,9 @@ export default function QCMPage({ initialConfig = null, onBack = null }) {
   // ===== MODE CHOICE VIEW =====
   if (view === 'modeChoice') {
     return (
-      <section className="pt-24 pb-16 md:pt-28 md:pb-20 min-h-screen bg-slate-50">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => setView('hero')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <button onClick={() => onBack ? onBack() : setView('hero')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
             Retour
           </button>
@@ -667,13 +678,29 @@ export default function QCMPage({ initialConfig = null, onBack = null }) {
             <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-3">Comment souhaitez-vous r&eacute;viser ?</h2>
             <p className="text-gray-500 text-base max-w-lg mx-auto">Choisissez votre mode de r&eacute;vision pour commencer.</p>
           </div>
-          <div className="grid md:grid-cols-2 gap-5 mb-8">
+          <div className="grid md:grid-cols-3 gap-5 mb-8">
+            {/* Par matière */}
+            <button onClick={() => setView('subjectSelection')} className="group bg-white rounded-2xl border-2 border-gray-200 p-6 text-left hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/10 transition-all hover:-translate-y-0.5">
+              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Par mati&egrave;re</h3>
+              <p className="text-sm text-gray-500 leading-relaxed mb-4">Un QCM g&eacute;n&eacute;r&eacute; sur l&rsquo;ensemble d&rsquo;une mati&egrave;re du programme (UE1&ndash;UE6).</p>
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" /></svg>
+                  6 mati&egrave;res
+                </span>
+                <svg className="w-5 h-5 text-gray-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+              </div>
+            </button>
+            {/* Par fiche */}
             <button onClick={() => setView('fichesSelection')} className="group bg-white rounded-2xl border-2 border-gray-200 p-6 text-left hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 transition-all hover:-translate-y-0.5">
               <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">&Agrave; partir de nos fiches</h3>
-              <p className="text-sm text-gray-500 leading-relaxed mb-4">G&eacute;n&eacute;rez un QCM &agrave; partir de nos fiches de r&eacute;vision et de nos cours, class&eacute;s par mati&egrave;re.</p>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Par fiche de cours</h3>
+              <p className="text-sm text-gray-500 leading-relaxed mb-4">G&eacute;n&eacute;rez un QCM &agrave; partir d&rsquo;une fiche de r&eacute;vision cibl&eacute;e.</p>
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 bg-primary-50 px-3 py-1.5 rounded-lg">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
@@ -682,11 +709,12 @@ export default function QCMPage({ initialConfig = null, onBack = null }) {
                 <svg className="w-5 h-5 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
               </div>
             </button>
+            {/* Sujet libre */}
             <button onClick={() => setView('customSelection')} className="group bg-white rounded-2xl border-2 border-gray-200 p-6 text-left hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 transition-all hover:-translate-y-0.5">
               <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Sujet personnalis&eacute;</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Sujet libre</h3>
               <p className="text-sm text-gray-500 leading-relaxed mb-4">Tapez n&rsquo;importe quel sujet et obtenez un QCM cibl&eacute; instantan&eacute;ment.</p>
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 bg-violet-50 px-3 py-1.5 rounded-lg">
@@ -697,6 +725,67 @@ export default function QCMPage({ initialConfig = null, onBack = null }) {
               </div>
             </button>
           </div>
+        </div>
+      </section>
+    );
+  }
+
+  // ===== SUBJECT SELECTION VIEW =====
+  if (view === 'subjectSelection') {
+    const selectedSubject = QCM_SUBJECT_DATA.find(s => s.id === selectedSubjectId);
+
+    return (
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+            Retour
+          </button>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Choisissez une mati&egrave;re</h2>
+            <p className="text-gray-500 text-base">Le QCM couvrira l&rsquo;ensemble du programme de cette mati&egrave;re.</p>
+          </div>
+          {/* Grille des matières */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            {QCM_SUBJECT_DATA.map(({ code, id, name, accent, bg, border }) => {
+              const isSelected = selectedSubjectId === id;
+              return (
+                <button key={id} onClick={() => setSelectedSubjectId(isSelected ? null : id)}
+                  className="text-left rounded-2xl p-5 transition-all hover:-translate-y-0.5"
+                  style={{ border: `2px solid ${isSelected ? accent : border}`, background: isSelected ? accent : bg, boxShadow: isSelected ? `0 4px 14px ${accent}33` : 'none' }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.4, color: isSelected ? 'rgba(255,255,255,0.7)' : accent, marginBottom: 6 }}>{code}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: isSelected ? '#fff' : '#0f1020', lineHeight: 1.3 }}>{name}</div>
+                </button>
+              );
+            })}
+          </div>
+          {/* Panneau de configuration (visible quand une matière est sélectionnée) */}
+          {selectedSubject && (
+            <div className="bg-white rounded-2xl border-2 p-6 transition-all" style={{ borderColor: selectedSubject.accent + '40' }}>
+              <p className="text-sm text-gray-600 mb-4">
+                QCM sur <strong className="text-gray-900">{selectedSubject.name}</strong> — combien de questions ?
+              </p>
+              <div className="flex gap-3 mb-5">
+                {[5, 10, 20, 30].map(n => (
+                  <button key={n} onClick={() => setQuestionCount(n)}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold border-2 transition-all"
+                    style={{ borderColor: questionCount === n ? selectedSubject.accent : '#e5e7eb', background: questionCount === n ? selectedSubject.accent : '#fff', color: questionCount === n ? '#fff' : '#6b7280' }}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => startQuiz({ type: 'custom', subject: selectedSubject.id, subjectName: selectedSubject.name, title: selectedSubject.name, count: questionCount })}
+                className="w-full py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+                style={{ background: selectedSubject.accent }}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5" /></svg>
+                Lancer le QCM · {questionCount} questions
+              </button>
+            </div>
+          )}
         </div>
       </section>
     );

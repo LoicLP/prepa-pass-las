@@ -368,7 +368,7 @@ export default function DashboardPage() {
           setActiveSection={setActiveSection}
           isPremiumPlus={isPremiumPlus}
           tier={tier}
-          onLaunchQCM={() => setActiveQCM({ initialView: 'fichesSelection', subjectName: 'QCM', title: 'QCM' })}
+          onLaunchQCM={() => setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })}
           onLaunchExamen={() => setActiveExamen(true)}
         />
 
@@ -1042,14 +1042,14 @@ function HeroFocusFilled({ todaySubject, weekSessions, currentStreak, onLaunchQC
             <button
               onClick={() => onLaunchQCM(todaySubject
                 ? { type: 'custom', subject: todaySubject.id, subjectName: todaySubject.name, title: todaySubject.name }
-                : { initialView: 'fichesSelection', subjectName: 'QCM', title: 'QCM' }
+                : { initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' }
               )}
               style={{ background: '#fff', color: '#4f46e5', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13.5, border: 'none', cursor: 'pointer' }}
             >
               {todaySubject ? `Réviser — ${todaySubject.name} →` : 'Lancer un QCM →'}
             </button>
             <button
-              onClick={() => onLaunchQCM({ initialView: 'fichesSelection', subjectName: 'QCM', title: 'QCM' })}
+              onClick={() => onLaunchQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })}
               style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 10, padding: '9px 14px', fontWeight: 500, fontSize: 13.5, cursor: 'pointer' }}
             >
               Changer de sujet
@@ -1152,7 +1152,7 @@ function RecoListVertical({ recommendations, onLaunchQCM }) {
           <div className="font-jakarta" style={{ fontSize: 16, fontWeight: 700, color: '#0f1020' }}>À revoir cette semaine</div>
           <div style={{ fontSize: 12.5, color: '#5f6280' }}>Sélectionné pour vous · mis à jour à chaque session</div>
         </div>
-        <button onClick={() => onLaunchQCM({ initialView: 'fichesSelection', subjectName: 'QCM', title: 'QCM' })} style={{ background: 'transparent', border: 'none', color: '#4f46e5', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+        <button onClick={() => onLaunchQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} style={{ background: 'transparent', border: 'none', color: '#4f46e5', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
           Tout travailler →
         </button>
       </div>
@@ -1193,7 +1193,7 @@ function QuickActionCards({ onLaunchQCM, onLaunchExamen }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <button
-        onClick={() => onLaunchQCM({ initialView: 'fichesSelection', subjectName: 'QCM', title: 'QCM' })}
+        onClick={() => onLaunchQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })}
         style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid #eef0f7', color: 'inherit', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left' }}
         className="hover:-translate-y-0.5 hover:shadow-md transition-all"
       >
