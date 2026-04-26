@@ -313,6 +313,18 @@ export default function QCMPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // ----- Auto-filter from URL param ?ue=<id> (depuis onboarding dashboard) -----
+  useEffect(() => {
+    const ueId = searchParams?.get('ue');
+    if (!ueId) return;
+    const subject = SUBJECTS.find(s => s.id === ueId);
+    if (!subject) return;
+    // Préfiltre la liste des fiches sur cette matière, sans lancer de quiz
+    setSubjectFilter(ueId);
+    setView('hero');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   // ----- Custom quiz start -----
   const startCustomQuiz = useCallback(() => {
     if (!customText.trim()) return;
