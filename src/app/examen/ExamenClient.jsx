@@ -498,8 +498,11 @@ export default function ExamenPage({ onBack = null }) {
 
   // ==================== RENDER VIEWS ====================
 
-  // En mode embarqué (dashboard), on saute le hero
-  if (view === 'hero' && onBack) return null;
+  // En mode embarqué (dashboard), on saute le hero → modeChoice directement
+  if (view === 'hero' && onBack) {
+    setView('modeChoice');
+    return null;
+  }
 
   // ===== HERO VIEW =====
   if (view === 'hero') {
