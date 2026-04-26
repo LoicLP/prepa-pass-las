@@ -678,9 +678,12 @@ export default function DashboardPage() {
 
             {/* ===== PROGRESSION (Premium) ===== */}
             {activeSection === 'progression' && (
-              !isPremiumPlus ? (
-                <PremiumLock title="Progression detaillee" description="Visualisez votre courbe de progression, vos points forts et axes d'amelioration avec Premium+." />
-              ) : !data.hasAnySessions || data.last20.length < 2 ? (
+              <PremiumBlurGate
+                locked={!isPremiumPlus}
+                title="Progression détaillée"
+                description="Visualisez votre courbe de progression, vos points forts et axes d'amélioration."
+              >
+              {!data.hasAnySessions || data.last20.length < 2 ? (
                   <EmptyState title="Pas assez de donnees" description="Effectuez plusieurs sessions pour voir votre progression." ctaHref="/qcm" ctaLabel="Commencer un QCM" />
                 ) : (
                   <>
@@ -768,14 +771,18 @@ export default function DashboardPage() {
                       </div>
                     )}
                   </>
-                )
+                )}
+              </PremiumBlurGate>
             )}
 
             {/* ===== OBJECTIFS (Premium) ===== */}
             {activeSection === 'objectifs' && (
-              !isPremiumPlus ? (
-                <PremiumLock title="Objectifs et statistiques detaillees" description="Suivez vos objectifs et visualisez la repartition de vos sessions avec Premium+." />
-              ) : !data.hasAnySessions ? (
+              <PremiumBlurGate
+                locked={!isPremiumPlus}
+                title="Objectifs & Statistiques"
+                description="Suivez vos objectifs hebdomadaires et visualisez la répartition de vos sessions."
+              >
+              {!data.hasAnySessions ? (
                 <EmptyState title="Aucune donnee" description="Effectuez des sessions pour voir vos objectifs." ctaHref="/qcm" ctaLabel="Commencer un QCM" />
               ) : (
                 <div className="space-y-6">
@@ -944,16 +951,19 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </div>
-              )
+              )}
+              </PremiumBlurGate>
             )}
 
             {/* ===== CLASSEMENT (Premium) ===== */}
             {activeSection === 'classement' && (
-              !isPremiumPlus ? (
-                <PremiumLock title="Classement et comparaison" description="Comparez vos performances avec les autres etudiants grace a Premium+." />
-              ) : (
+              <PremiumBlurGate
+                locked={!isPremiumPlus}
+                title="Classement & Comparaison"
+                description="Comparez vos performances avec les autres étudiants et suivez votre progression dans le classement."
+              >
                 <ClassementSection allSessions={allSessions} userId={user?.id} accessToken={accessToken} />
-              )
+              </PremiumBlurGate>
             )}
 
           </div>
@@ -2125,6 +2135,43 @@ function EmptyState({ title, description, ctaHref, ctaLabel, userName }) {
 /* ============================================================
    PREMIUM LOCK
    ============================================================ */
+/* ============================================================
+   PREMIUM BLUR GATE — affiche le contenu flouté si locked=true
+   ============================================================ */
+function PremiumBlurGate({ locked, title, description, children }) {
+  if (!locked) return children;
+  return (
+    <div style={{ position: 'relative' }}>
+      {/* Contenu flouté */}
+      <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.85 }}>
+        {children}
+      </div>
+      {/* Overlay central */}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: '16px' }}>
+        <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderRadius: 20, border: '1px solid #eef0f7', boxShadow: '0 24px 64px rgba(15,16,32,0.18)', padding: '32px 36px', maxWidth: 340, width: '100%' }}>
+          <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg, #4f46e5 0%, #8257f9 100%)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+            </svg>
+          </div>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f1020', marginBottom: 8, letterSpacing: -0.3 }}>{title}</h3>
+          <p style={{ fontSize: 13.5, color: '#5f6280', marginBottom: 22, lineHeight: 1.55 }}>{description}</p>
+          <Link
+            href="/tarifs"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 28px', background: 'linear-gradient(135deg, #4f46e5 0%, #8257f9 100%)', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '0 6px 20px rgba(79,70,229,0.35)' }}
+            className="hover:opacity-90 transition-opacity"
+          >
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+            </svg>
+            Passer Premium+
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PremiumLock({ title, description }) {
   return (
     <div className="relative">
