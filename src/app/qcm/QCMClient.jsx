@@ -135,7 +135,7 @@ function QuitModal({ answered, total, score, timerFormatted, onContinue, onQuit 
 }
 
 /* ========== MAIN PAGE COMPONENT ========== */
-export default function QCMPage() {
+export default function QCMPage({ initialConfig = null, onBack = null }) {
   // ----- State machine -----
   const [view, setView] = useState('hero');
   const [questionCount, setQuestionCount] = useState(10);
@@ -343,6 +343,20 @@ export default function QCMPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // ----- Auto-start/navigate from initialConfig prop (mode embarqué dashboard) -----
+  useEffect(() => {
+    if (!initialConfig) return;
+    if (initialConfig.initialView) {
+      // Navigation vers une vue spécifique (ex: fichesSelection avec filtre matière)
+      if (initialConfig.initialSubjectFilter) setSubjectFilter(initialConfig.initialSubjectFilter);
+      setView(initialConfig.initialView);
+    } else {
+      // Lancement direct du quiz
+      startQuiz(initialConfig);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ----- Custom quiz start -----
   const startCustomQuiz = useCallback(() => {
     if (!customText.trim()) return;
@@ -440,8 +454,12 @@ export default function QCMPage() {
   const confirmQuit = useCallback(() => {
     timer.stop();
     setShowQuitModal(false);
-    setView('hero');
-  }, [timer]);
+    if (onBack) {
+      onBack();
+    } else {
+      setView('hero');
+    }
+  }, [timer, onBack]);
 
   // ----- Keyboard shortcuts -----
   useEffect(() => {
@@ -492,6 +510,9 @@ export default function QCMPage() {
   }, [subjectFilter, searchQuery]);
 
   // ==================== RENDER VIEWS ====================
+
+  // En mode embarqué (dashboard), on saute le hero — on attend le démarrage auto
+  if (view === 'hero' && initialConfig && !initialConfig.initialView) return null;
 
   // ===== HERO VIEW =====
   if (view === 'hero') {
@@ -686,9 +707,9 @@ export default function QCMPage() {
     const filteredFiches = getFilteredFiches();
     const countPills = [5, 10, 15, 20];
     return (
-      <section className="pt-24 pb-16 md:pt-28 md:pb-20 min-h-screen bg-slate-50">
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
+          <button onClick={() => onBack ? onBack() : setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
             Retour
           </button>
@@ -883,7 +904,7 @@ export default function QCMPage() {
     const colors = getColors(subject?.color);
     const tip = LOADING_TIPS[tipIndex];
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center pt-16">
+      <div className={`bg-slate-50 flex items-center justify-center ${onBack ? 'min-h-[60vh]' : 'min-h-screen pt-16'}`}>
         <div className="max-w-md mx-auto px-4 text-center w-full">
           <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-sm">
             <div className="mb-6">
@@ -912,7 +933,7 @@ export default function QCMPage() {
               <p key={tipIndex} className="text-xs text-primary-700 font-medium leading-relaxed tip-fade">{tip.text}</p>
             </div>
 
-            <button onClick={() => { setView('hero'); }} className="mt-6 text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors">Annuler</button>
+            <button onClick={() => { onBack ? onBack() : setView('hero'); }} className="mt-6 text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors">Annuler</button>
           </div>
         </div>
       </div>
@@ -933,7 +954,7 @@ export default function QCMPage() {
     const correctIndex = q.options.findIndex(o => o.correct);
 
     return (
-      <div className="min-h-screen bg-slate-50 pt-20 pb-8">
+      <div className={`bg-slate-50 pb-8 ${onBack ? 'pt-6' : 'min-h-screen pt-20'}`}>
         <div className="max-w-3xl mx-auto px-4">
           {/* Top bar */}
           <div className="flex items-center justify-between mb-4">
@@ -1096,7 +1117,7 @@ export default function QCMPage() {
     const showConfetti = pct >= 70;
 
     return (
-      <section className="py-24 md:py-28 min-h-screen bg-slate-50">
+      <section className={`bg-slate-50 ${onBack ? 'py-10' : 'py-24 md:py-28 min-h-screen'}`}>
         {/* Confetti */}
         {showConfetti && (
           <div className="fixed inset-0 pointer-events-none z-50" aria-hidden="true">
@@ -1216,9 +1237,16 @@ export default function QCMPage() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" /></svg>
               Recommencer
             </button>
-            <button onClick={() => setView('hero')} className="px-6 py-3 bg-white text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:border-primary-300 transition-colors">
-              Nouveau QCM
-            </button>
+            {onBack ? (
+              <button onClick={onBack} className="px-6 py-3 bg-white text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:border-primary-300 transition-colors flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+                Retour au tableau de bord
+              </button>
+            ) : (
+              <button onClick={() => setView('hero')} className="px-6 py-3 bg-white text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:border-primary-300 transition-colors">
+                Nouveau QCM
+              </button>
+            )}
           </div>
         </div>
         {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, Fragment } from 'react';
+import { useState, useMemo, useEffect, Fragment, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SUBJECTS } from '@/data/subjects';
 import { SUBJECT_COLORS, getSubjectName } from '@/data/constants';
 import { formatDate, formatDuration, scoreClass, scoreBarClass } from '@/utils/format';
+import QCMPage from '@/app/qcm/QCMClient';
 
 /* ========== HELPERS ========== */
 function getSubjectBadgeColors(subjectId) {
@@ -63,6 +64,7 @@ export default function DashboardPage() {
   const [historyFilter, setHistoryFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(10);
   const [chartMode, setChartMode] = useState('epreuves');
+  const [activeQCM, setActiveQCM] = useState(null); // config pour overlay QCM embarqué
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -315,6 +317,28 @@ export default function DashboardPage() {
 
   return (
     <div style={{ background: '#f6f5fb', height: '100vh', overflow: 'hidden' }}>
+
+      {/* ===== OVERLAY QCM EMBARQUÉ ===== */}
+      {activeQCM && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#f8fafc', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          {/* Barre de navigation overlay */}
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #eef0f7', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+            <button onClick={() => setActiveQCM(null)} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, color: '#5f6280', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, transition: 'all .15s' }} className="hover:bg-gray-100 hover:text-gray-900">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+              Retour au tableau de bord
+            </button>
+            <div style={{ width: 1, height: 20, background: '#e2e4f0' }} />
+            <span style={{ fontSize: 13, color: '#9ca3af' }}>QCM · {activeQCM.subjectName || activeQCM.title}</span>
+          </div>
+          {/* QCM embarqué */}
+          <div style={{ flex: 1 }}>
+            <Suspense fallback={null}>
+              <QCMPage initialConfig={activeQCM} onBack={() => setActiveQCM(null)} />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', height: '100vh' }}>
 
         {/* ===== SIDEBAR ===== */}
@@ -358,7 +382,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 14, flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                  <OnboardingPickerCard />
+                  <OnboardingPickerCard onLaunchQCM={setActiveQCM} />
                   <QuickActionCards />
                 </div>
               )}
@@ -1200,12 +1224,11 @@ const SUBJECT_PICKER_DATA = [
   { code: 'UE6', id: 'ssh',         name: 'SSH / Éthique',        accent: '#e11d48', bg: '#fff1f2', border: '#fecdd3' },
 ];
 
-function OnboardingPickerCard() {
+function OnboardingPickerCard({ onLaunchQCM }) {
   const [tab, setTab] = useState('subject');
   const [customTopic, setCustomTopic] = useState('');
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [qCount, setQCount] = useState(10);
-  const router = useRouter();
 
   const TABS = [
     { key: 'subject', label: 'Par matière' },
@@ -1215,12 +1238,13 @@ function OnboardingPickerCard() {
 
   const handleCustomSubmit = () => {
     if (!customTopic.trim()) return;
-    router.push(`/qcm?topic=${encodeURIComponent(customTopic.trim())}`);
+    onLaunchQCM({ type: 'custom', subject: null, subjectName: customTopic.trim(), title: customTopic.trim() });
   };
 
   const handleSubjectLaunch = () => {
     if (!selectedSubject) return;
-    router.push(`/qcm?subject=${selectedSubject}&count=${qCount}`);
+    const s = SUBJECT_PICKER_DATA.find(x => x.id === selectedSubject);
+    onLaunchQCM({ type: 'custom', subject: selectedSubject, subjectName: s?.name || selectedSubject, title: s?.name || selectedSubject, count: qCount });
   };
 
   return (
@@ -1292,18 +1316,22 @@ function OnboardingPickerCard() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {SUBJECT_PICKER_DATA.map(({ code, id, name, accent, bg, border }) => (
-              <Link key={id} href={`/qcm?ue=${id}`}
-                style={{ padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${border}`, background: bg, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}
+              <button key={id}
+                onClick={() => onLaunchQCM({ initialView: 'fichesSelection', initialSubjectFilter: id, subjectName: name, title: name })}
+                style={{ padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${border}`, background: bg, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textAlign: 'left', transition: 'all .15s' }}
                 className="hover:-translate-y-0.5 hover:shadow-sm transition-all"
               >
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: accent, minWidth: 28 }}>{code}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#0f1020', lineHeight: 1.3 }}>{name}</div>
-              </Link>
+              </button>
             ))}
           </div>
-          <Link href="/qcm" style={{ marginTop: 2, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#4f46e5', textDecoration: 'none' }}>
+          <button
+            onClick={() => onLaunchQCM({ initialView: 'fichesSelection', subjectName: 'Toutes les fiches', title: 'Toutes les fiches' })}
+            style={{ marginTop: 2, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#4f46e5', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
             Voir toutes les fiches →
-          </Link>
+          </button>
         </div>
       )}
 
