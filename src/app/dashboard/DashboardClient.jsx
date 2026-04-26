@@ -1202,15 +1202,31 @@ const SUBJECT_PICKER_DATA = [
 
 function OnboardingPickerCard() {
   const [tab, setTab] = useState('subject');
+  const [customTopic, setCustomTopic] = useState('');
+  const router = useRouter();
+
+  const TABS = [
+    { key: 'subject', label: 'Par matière' },
+    { key: 'fiche',   label: 'Par fiche de cours' },
+    { key: 'custom',  label: 'Sujet libre' },
+  ];
+
+  const handleCustomSubmit = () => {
+    if (!customTopic.trim()) return;
+    router.push(`/qcm?topic=${encodeURIComponent(customTopic.trim())}`);
+  };
+
   return (
-    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: '16px 18px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: '14px 18px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Phrase d'intro */}
+      <p style={{ fontSize: 12.5, color: '#5f6280', margin: '0 0 12px', lineHeight: 1.5, flexShrink: 0 }}>
+        Lancez votre premier QCM <strong style={{ color: '#0f1020' }}>par matière</strong>, à partir d'une <strong style={{ color: '#0f1020' }}>fiche de cours</strong> ou sur un <strong style={{ color: '#0f1020' }}>sujet de votre choix</strong>.
+      </p>
+
       {/* Onglets */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexShrink: 0 }}>
-        {[
-          { key: 'subject', label: 'Par matière' },
-          { key: 'fiche',   label: 'Par fiche de cours' },
-        ].map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s', background: tab === t.key ? '#4f46e5' : '#f3f4f8', color: tab === t.key ? '#fff' : '#5f6280' }}>
+      <div style={{ display: 'flex', gap: 5, marginBottom: 12, flexShrink: 0, flexWrap: 'wrap' }}>
+        {TABS.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s', background: tab === t.key ? '#4f46e5' : '#f3f4f8', color: tab === t.key ? '#fff' : '#5f6280' }}>
             {t.label}
           </button>
         ))}
@@ -1234,9 +1250,6 @@ function OnboardingPickerCard() {
       {/* Contenu onglet Fiche */}
       {tab === 'fiche' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
-          <p style={{ fontSize: 12.5, color: '#5f6280', margin: 0, lineHeight: 1.5 }}>
-            Choisissez une fiche de cours — on génère un QCM ciblé sur son contenu.
-          </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {SUBJECT_PICKER_DATA.map(({ code, id, name, accent, bg, border }) => (
               <Link key={id} href={`/qcm?ue=${id}`}
@@ -1248,9 +1261,36 @@ function OnboardingPickerCard() {
               </Link>
             ))}
           </div>
-          <Link href="/qcm" style={{ marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#4f46e5', textDecoration: 'none' }}>
+          <Link href="/qcm" style={{ marginTop: 2, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#4f46e5', textDecoration: 'none' }}>
             Voir toutes les fiches →
           </Link>
+        </div>
+      )}
+
+      {/* Contenu onglet Sujet libre */}
+      {tab === 'custom' && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <p style={{ fontSize: 12.5, color: '#5f6280', margin: 0, lineHeight: 1.5 }}>
+            Entrez n'importe quel sujet du programme — l'IA génère un QCM ciblé.
+          </p>
+          <input
+            type="text"
+            placeholder="Ex : cycle de Krebs, loi de Beer-Lambert…"
+            value={customTopic}
+            onChange={e => setCustomTopic(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleCustomSubmit(); }}
+            style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e2e4f0', fontSize: 13, color: '#0f1020', outline: 'none', background: '#fafafa', boxSizing: 'border-box', transition: 'border-color .15s' }}
+            onFocus={e => { e.target.style.borderColor = '#4f46e5'; e.target.style.background = '#fff'; }}
+            onBlur={e => { e.target.style.borderColor = '#e2e4f0'; e.target.style.background = '#fafafa'; }}
+          />
+          <button
+            onClick={handleCustomSubmit}
+            disabled={!customTopic.trim()}
+            style={{ padding: '10px 0', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: customTopic.trim() ? 'pointer' : 'not-allowed', background: customTopic.trim() ? '#4f46e5' : '#e9eaf3', color: customTopic.trim() ? '#fff' : '#a0a3bb', transition: 'all .15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5" /></svg>
+            Générer mon QCM
+          </button>
         </div>
       )}
     </div>

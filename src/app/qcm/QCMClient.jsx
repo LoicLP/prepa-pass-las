@@ -325,6 +325,19 @@ export default function QCMPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // ----- Auto-start from URL param ?topic=<text> (depuis onboarding dashboard) -----
+  useEffect(() => {
+    const topicText = searchParams?.get('topic');
+    if (!topicText?.trim()) return;
+    startQuiz({
+      type: 'custom',
+      subject: null,
+      subjectName: 'Sujet libre',
+      title: topicText.trim().length > 60 ? topicText.trim().substring(0, 57) + '...' : topicText.trim(),
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   // ----- Custom quiz start -----
   const startCustomQuiz = useCallback(() => {
     if (!customText.trim()) return;
