@@ -1203,6 +1203,8 @@ const SUBJECT_PICKER_DATA = [
 function OnboardingPickerCard() {
   const [tab, setTab] = useState('subject');
   const [customTopic, setCustomTopic] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [qCount, setQCount] = useState(10);
   const router = useRouter();
 
   const TABS = [
@@ -1216,6 +1218,11 @@ function OnboardingPickerCard() {
     router.push(`/qcm?topic=${encodeURIComponent(customTopic.trim())}`);
   };
 
+  const handleSubjectLaunch = () => {
+    if (!selectedSubject) return;
+    router.push(`/qcm?subject=${selectedSubject}&count=${qCount}`);
+  };
+
   return (
     <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: '14px 18px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Phrase d'intro */}
@@ -1226,7 +1233,7 @@ function OnboardingPickerCard() {
       {/* Onglets */}
       <div style={{ display: 'flex', gap: 5, marginBottom: 12, flexShrink: 0, flexWrap: 'wrap' }}>
         {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s', background: tab === t.key ? '#4f46e5' : '#f3f4f8', color: tab === t.key ? '#fff' : '#5f6280' }}>
+          <button key={t.key} onClick={() => { setTab(t.key); setSelectedSubject(null); }} style={{ padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s', background: tab === t.key ? '#4f46e5' : '#f3f4f8', color: tab === t.key ? '#fff' : '#5f6280' }}>
             {t.label}
           </button>
         ))}
@@ -1234,16 +1241,49 @@ function OnboardingPickerCard() {
 
       {/* Contenu onglet Matière */}
       {tab === 'subject' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flex: 1, overflowY: 'auto' }}>
-          {SUBJECT_PICKER_DATA.map(({ code, id, name, accent, bg, border }) => (
-            <Link key={id} href={`/qcm?subject=${id}`}
-              style={{ padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${border}`, background: bg, textDecoration: 'none', display: 'block' }}
-              className="hover:-translate-y-0.5 hover:shadow-sm transition-all"
-            >
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: accent, marginBottom: 3 }}>{code}</div>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0f1020' }}>{name}</div>
-            </Link>
-          ))}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
+          {/* Grille de sélection */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
+            {SUBJECT_PICKER_DATA.map(({ code, id, name, accent, bg, border }) => {
+              const isSelected = selectedSubject === id;
+              return (
+                <button key={id} onClick={() => setSelectedSubject(isSelected ? null : id)}
+                  style={{ padding: '9px 12px', borderRadius: 10, border: `1.5px solid ${isSelected ? accent : border}`, background: isSelected ? accent : bg, textDecoration: 'none', display: 'block', textAlign: 'left', cursor: 'pointer', transition: 'all .15s', boxShadow: isSelected ? `0 2px 8px ${accent}33` : 'none' }}
+                >
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: isSelected ? 'rgba(255,255,255,0.75)' : accent, marginBottom: 2 }}>{code}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: isSelected ? '#fff' : '#0f1020' }}>{name}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Panneau de configuration (visible quand une matière est sélectionnée) */}
+          {selectedSubject && (() => {
+            const s = SUBJECT_PICKER_DATA.find(x => x.id === selectedSubject);
+            return (
+              <div style={{ background: '#f7f8ff', borderRadius: 10, border: '1.5px solid #e2e4f8', padding: '11px 14px', display: 'flex', flexDirection: 'column', gap: 9, flexShrink: 0 }}>
+                <p style={{ margin: 0, fontSize: 12, color: '#5f6280', lineHeight: 1.45 }}>
+                  Le QCM portera sur <strong style={{ color: '#0f1020' }}>l'ensemble de la matière {s.name}</strong>. Combien de questions ?
+                </p>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[5, 10, 20, 30].map(n => (
+                    <button key={n} onClick={() => setQCount(n)}
+                      style={{ flex: 1, padding: '6px 0', borderRadius: 8, fontSize: 12.5, fontWeight: 700, border: `1.5px solid ${qCount === n ? s.accent : '#e2e4f0'}`, background: qCount === n ? s.accent : '#fff', color: qCount === n ? '#fff' : '#5f6280', cursor: 'pointer', transition: 'all .15s' }}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={handleSubjectLaunch}
+                  style={{ padding: '9px 0', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', background: s.accent, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, transition: 'opacity .15s' }}
+                  className="hover:opacity-90"
+                >
+                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5" /></svg>
+                  Lancer le QCM · {qCount} questions
+                </button>
+              </div>
+            );
+          })()}
         </div>
       )}
 

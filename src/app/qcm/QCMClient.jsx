@@ -245,8 +245,11 @@ export default function QCMPage() {
     const ficheTopic = topic.title || null;
     const ficheContent = topic.content || null;
 
+    // Prioritize count passed directly in topic object (e.g. from dashboard onboarding URL param)
+    const effectiveCount = topic.count || questionCount;
+
     if (topic.subject || ficheTopic) {
-      const result = await generateAIQuestions(topic.subject, subjectName, questionCount, 'qcm', ficheTopic, ficheContent);
+      const result = await generateAIQuestions(topic.subject, subjectName, effectiveCount, 'qcm', ficheTopic, ficheContent);
       // result is either { questions, aiGenerated, topic } or null
       const aiQuestions = result?.questions ?? result;
       if (Array.isArray(aiQuestions) && aiQuestions.length > 0) {
@@ -258,7 +261,7 @@ export default function QCMPage() {
 
     // Fallback to static questions
     setAiGenerated(false);
-    const qs = generateStaticQuestions(topic, questionCount);
+    const qs = generateStaticQuestions(topic, effectiveCount);
     launchWithQuestions(qs);
   }, [user, isEssentiel, questionCount, generateStaticQuestions, generateAIQuestions, launchWithQuestions]);
 
@@ -297,18 +300,20 @@ export default function QCMPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // ----- Auto-start from URL param ?subject=<id> -----
+  // ----- Auto-start from URL param ?subject=<id>&count=<n> -----
   useEffect(() => {
     const subjectId = searchParams?.get('subject');
     if (!subjectId) return;
     const subject = SUBJECTS.find(s => s.id === subjectId);
     if (!subject) return;
-    // Lance directement un quiz sur cette matière
+    const countParam = parseInt(searchParams?.get('count') || '', 10);
+    const count = [5, 10, 15, 20, 30].includes(countParam) ? countParam : undefined;
     startQuiz({
       type: 'custom',
       subject: subject.id,
       subjectName: subject.name,
       title: subject.name,
+      count,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
