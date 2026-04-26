@@ -1147,12 +1147,20 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
     setCurrentSubject(initialSubject || 'all');
   }, [initialSubject]);
 
+  const SUBJECT_ORDER = ['chimie', 'biocell', 'biophysique', 'biostats', 'anatomie', 'ssh'];
+
   const filteredFiches = useMemo(() => {
     let fiches = currentSubject === 'all' ? FICHES_DATA : FICHES_DATA.filter(f => f.subject === currentSubject);
     if (search) {
       const q = search.toLowerCase();
       fiches = fiches.filter(f => f.title.toLowerCase().includes(q) || f.summary.toLowerCase().includes(q));
     }
+    // Tri par matière (ordre UE1 → UE6)
+    fiches = [...fiches].sort((a, b) => {
+      const ia = SUBJECT_ORDER.indexOf(a.subject);
+      const ib = SUBJECT_ORDER.indexOf(b.subject);
+      return ia - ib;
+    });
     return fiches;
   }, [currentSubject, search]);
 
