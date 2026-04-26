@@ -10,6 +10,7 @@ import { SUBJECTS } from '@/data/subjects';
 import { SUBJECT_COLORS, getSubjectName } from '@/data/constants';
 import { formatDate, formatDuration, scoreClass, scoreBarClass } from '@/utils/format';
 import QCMPage from '@/app/qcm/QCMClient';
+import ExamenPage from '@/app/examen/ExamenClient';
 
 /* ========== HELPERS ========== */
 function getSubjectBadgeColors(subjectId) {
@@ -64,7 +65,8 @@ export default function DashboardPage() {
   const [historyFilter, setHistoryFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(10);
   const [chartMode, setChartMode] = useState('epreuves');
-  const [activeQCM, setActiveQCM] = useState(null); // config pour overlay QCM embarqué
+  const [activeQCM, setActiveQCM] = useState(null);     // config pour overlay QCM embarqué
+  const [activeExamen, setActiveExamen] = useState(false); // booléen pour overlay Examen
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -318,6 +320,25 @@ export default function DashboardPage() {
   return (
     <div style={{ background: '#f6f5fb', height: '100vh', overflow: 'hidden' }}>
 
+      {/* ===== OVERLAY EXAMEN EMBARQUÉ ===== */}
+      {activeExamen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#f8fafc', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #eef0f7', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+            <button onClick={() => setActiveExamen(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, color: '#5f6280', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, transition: 'all .15s' }} className="hover:bg-gray-100 hover:text-gray-900">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+              Retour au tableau de bord
+            </button>
+            <div style={{ width: 1, height: 20, background: '#e2e4f0' }} />
+            <span style={{ fontSize: 13, color: '#9ca3af' }}>Mode Examen</span>
+          </div>
+          <div style={{ flex: 1 }}>
+            <Suspense fallback={null}>
+              <ExamenPage onBack={() => setActiveExamen(false)} />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
       {/* ===== OVERLAY QCM EMBARQUÉ ===== */}
       {activeQCM && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#f8fafc', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
@@ -347,6 +368,8 @@ export default function DashboardPage() {
           setActiveSection={setActiveSection}
           isPremiumPlus={isPremiumPlus}
           tier={tier}
+          onLaunchQCM={() => setActiveQCM({ initialView: 'fichesSelection', subjectName: 'QCM', title: 'QCM' })}
+          onLaunchExamen={() => setActiveExamen(true)}
         />
 
         {/* ===== MAIN CONTENT ===== */}
@@ -371,19 +394,19 @@ export default function DashboardPage() {
           {activeSection === 'overview' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, gap: 14, overflow: 'hidden' }}>
               {data.hasAnySessions
-                ? <HeroFocusFilled todaySubject={todaySubject} weekSessions={data.thisWeekSessions} currentStreak={data.currentStreak} />
+                ? <HeroFocusFilled todaySubject={todaySubject} weekSessions={data.thisWeekSessions} currentStreak={data.currentStreak} onLaunchQCM={setActiveQCM} />
                 : <HeroFocusEmpty />
               }
               <StatStripBar data={data} />
               {data.hasAnySessions ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 220px', gap: 14, flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                  <RecoListVertical recommendations={data.recommendations} />
-                  <QuickActionCards />
+                  <RecoListVertical recommendations={data.recommendations} onLaunchQCM={setActiveQCM} />
+                  <QuickActionCards onLaunchQCM={setActiveQCM} onLaunchExamen={() => setActiveExamen(true)} />
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 14, flex: 1, minHeight: 0, overflow: 'hidden' }}>
                   <OnboardingPickerCard onLaunchQCM={setActiveQCM} />
-                  <QuickActionCards />
+                  <QuickActionCards onLaunchQCM={setActiveQCM} onLaunchExamen={() => setActiveExamen(true)} />
                 </div>
               )}
               {/* Contact bas de page */}
@@ -789,7 +812,7 @@ const UE_SIDEBAR = [
   { code: 'UE6', name: 'SSH / Éthique', id: 'ssh' },
 ];
 
-function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier }) {
+function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier, onLaunchQCM, onLaunchExamen }) {
   const [coursesOpen, setCoursesOpen] = useState(false);
   const { user, logOut } = useAuth();
   const router = useRouter();
@@ -858,14 +881,16 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
         const isCourses = item.id === 'courses';
 
         if (item.href) {
+          const launchFn = item.id === 'qcm' ? onLaunchQCM : item.id === 'examen' ? onLaunchExamen : null;
           return (
-            <Link key={item.id} href={item.href}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'transparent', color: '#2a2c44', fontSize: 14, fontWeight: 500, textDecoration: 'none', marginBottom: 2 }}
+            <button key={item.id}
+              onClick={launchFn || undefined}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'transparent', color: '#2a2c44', fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: 2 }}
               className="hover:bg-gray-50 transition-colors"
             >
               {item.icon}
               <span className="flex-1">{item.label}</span>
-            </Link>
+            </button>
           );
         }
 
@@ -987,7 +1012,7 @@ function HeroFocusEmpty() {
   );
 }
 
-function HeroFocusFilled({ todaySubject, weekSessions, currentStreak }) {
+function HeroFocusFilled({ todaySubject, weekSessions, currentStreak, onLaunchQCM }) {
   const weekTarget = 10;
   const weekPct = Math.min(1, weekSessions / weekTarget);
   const circumference = 2 * Math.PI * 32;
@@ -1014,12 +1039,21 @@ function HeroFocusFilled({ todaySubject, weekSessions, currentStreak }) {
               : 'Votre progression est sur la bonne voie. Continuez à pratiquer régulièrement.'}
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <Link href="/qcm" style={{ background: '#fff', color: '#4f46e5', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13.5, textDecoration: 'none', display: 'inline-block' }}>
+            <button
+              onClick={() => onLaunchQCM(todaySubject
+                ? { type: 'custom', subject: todaySubject.id, subjectName: todaySubject.name, title: todaySubject.name }
+                : { initialView: 'fichesSelection', subjectName: 'QCM', title: 'QCM' }
+              )}
+              style={{ background: '#fff', color: '#4f46e5', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13.5, border: 'none', cursor: 'pointer' }}
+            >
               {todaySubject ? `Réviser — ${todaySubject.name} →` : 'Lancer un QCM →'}
-            </Link>
-            <Link href="/qcm" style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 10, padding: '9px 14px', fontWeight: 500, fontSize: 13.5, textDecoration: 'none', display: 'inline-block' }}>
+            </button>
+            <button
+              onClick={() => onLaunchQCM({ initialView: 'fichesSelection', subjectName: 'QCM', title: 'QCM' })}
+              style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 10, padding: '9px 14px', fontWeight: 500, fontSize: 13.5, cursor: 'pointer' }}
+            >
               Changer de sujet
-            </Link>
+            </button>
           </div>
         </div>
         <div>
@@ -1104,7 +1138,7 @@ function StatStripBar({ data }) {
 /* ============================================================
    RECO LIST VERTICAL
    ============================================================ */
-function RecoListVertical({ recommendations }) {
+function RecoListVertical({ recommendations, onLaunchQCM }) {
   const colorMap = {
     rose:  { bg: '#fbe5ea', fg: '#e45770' },
     amber: { bg: '#fdf4e2', fg: '#e8a948' },
@@ -1118,16 +1152,17 @@ function RecoListVertical({ recommendations }) {
           <div className="font-jakarta" style={{ fontSize: 16, fontWeight: 700, color: '#0f1020' }}>À revoir cette semaine</div>
           <div style={{ fontSize: 12.5, color: '#5f6280' }}>Sélectionné pour vous · mis à jour à chaque session</div>
         </div>
-        <Link href="/qcm" style={{ background: 'transparent', border: 'none', color: '#4f46e5', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>
+        <button onClick={() => onLaunchQCM({ initialView: 'fichesSelection', subjectName: 'QCM', title: 'QCM' })} style={{ background: 'transparent', border: 'none', color: '#4f46e5', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
           Tout travailler →
-        </Link>
+        </button>
       </div>
       {recommendations.map((rec, i) => {
         const c = colorMap[rec.scoreColor] || colorMap.sky;
         const colors = SUBJECT_COLORS[rec.color] || SUBJECT_COLORS.primary;
         return (
-          <Link href="/qcm" key={i}
-            style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', gap: 14, alignItems: 'center', padding: '12px 14px', borderRadius: 10, textDecoration: 'none', color: 'inherit' }}
+          <button key={i}
+            onClick={() => onLaunchQCM({ type: 'custom', subject: rec.id, subjectName: rec.name, title: rec.name })}
+            style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', gap: 14, alignItems: 'center', padding: '12px 14px', borderRadius: 10, color: 'inherit', background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
             className="hover:bg-gray-50 transition-colors"
           >
             <div style={{ width: 42, height: 42, borderRadius: 10, background: c.bg, color: c.fg, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>
@@ -1144,7 +1179,7 @@ function RecoListVertical({ recommendations }) {
             <div style={{ background: '#f4f2ff', color: '#4f46e5', borderRadius: 8, padding: '8px 14px', fontWeight: 600, fontSize: 12.5, flexShrink: 0 }}>
               Réviser
             </div>
-          </Link>
+          </button>
         );
       })}
     </div>
@@ -1154,11 +1189,12 @@ function RecoListVertical({ recommendations }) {
 /* ============================================================
    QUICK ACTION CARDS (sidebar column)
    ============================================================ */
-function QuickActionCards() {
+function QuickActionCards({ onLaunchQCM, onLaunchExamen }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <Link href="/qcm"
-        style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid #eef0f7', textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: 12 }}
+      <button
+        onClick={() => onLaunchQCM({ initialView: 'fichesSelection', subjectName: 'QCM', title: 'QCM' })}
+        style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid #eef0f7', color: 'inherit', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left' }}
         className="hover:-translate-y-0.5 hover:shadow-md transition-all"
       >
         <div style={{ width: 36, height: 36, borderRadius: 10, background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
@@ -1168,9 +1204,10 @@ function QuickActionCards() {
           <div className="font-jakarta" style={{ fontSize: 13.5, fontWeight: 700, color: '#0f1020' }}>Lancer un QCM</div>
           <div style={{ fontSize: 11.5, color: '#5f6280' }}>Entraînement libre</div>
         </div>
-      </Link>
-      <Link href="/examen"
-        style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid #eef0f7', textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: 12 }}
+      </button>
+      <button
+        onClick={onLaunchExamen}
+        style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid #eef0f7', color: 'inherit', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left' }}
         className="hover:-translate-y-0.5 hover:shadow-md transition-all"
       >
         <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fbe5ea', color: '#e45770', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
@@ -1180,7 +1217,7 @@ function QuickActionCards() {
           <div className="font-jakarta" style={{ fontSize: 13.5, fontWeight: 700, color: '#0f1020' }}>Examen blanc</div>
           <div style={{ fontSize: 11.5, color: '#5f6280' }}>Conditions réelles</div>
         </div>
-      </Link>
+      </button>
     </div>
   );
 }

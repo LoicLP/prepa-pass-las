@@ -208,7 +208,7 @@ function FinishModal({ unanswered, onConfirm, onCancel }) {
 }
 
 /* ========== MAIN PAGE COMPONENT ========== */
-export default function ExamenPage() {
+export default function ExamenPage({ onBack = null }) {
   // ----- State machine -----
   const [view, setView] = useState('hero');
   const [subjectFilter, setSubjectFilter] = useState('all');
@@ -427,8 +427,8 @@ export default function ExamenPage() {
   const confirmQuit = useCallback(() => {
     timer.stop();
     setShowQuitModal(false);
-    setView('hero');
-  }, [timer]);
+    if (onBack) { onBack(); } else { setView('hero'); }
+  }, [timer, onBack]);
 
   // ----- Save stats on results -----
   useEffect(() => {
@@ -497,6 +497,9 @@ export default function ExamenPage() {
   }, [subjectFilter, searchQuery]);
 
   // ==================== RENDER VIEWS ====================
+
+  // En mode embarqué (dashboard), on saute le hero
+  if (view === 'hero' && onBack) return null;
 
   // ===== HERO VIEW =====
   if (view === 'hero') {
@@ -644,9 +647,9 @@ export default function ExamenPage() {
   // ===== MODE CHOICE VIEW =====
   if (view === 'modeChoice') {
     return (
-      <section className="pt-24 pb-16 md:pt-28 md:pb-20 min-h-screen bg-slate-50">
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => setView('hero')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
+          <button onClick={() => onBack ? onBack() : setView('hero')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
             Retour
           </button>
@@ -746,9 +749,9 @@ export default function ExamenPage() {
   if (view === 'fichesSelection') {
     const filteredFiches = getFilteredFiches();
     return (
-      <section className="pt-24 pb-16 md:pt-28 md:pb-20 min-h-screen bg-slate-50">
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
+          <button onClick={() => onBack ? onBack() : setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
             Retour
           </button>
@@ -865,9 +868,9 @@ export default function ExamenPage() {
   // ===== CUSTOM SELECTION VIEW =====
   if (view === 'customSelection') {
     return (
-      <section className="pt-24 pb-16 md:pt-28 md:pb-20 min-h-screen bg-slate-50">
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
+          <button onClick={() => onBack ? onBack() : setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
             Retour
           </button>
@@ -929,7 +932,7 @@ export default function ExamenPage() {
     const topicTitle = selectedTopic?.type === 'mixed' ? 'Toutes les mati\u00e8res du tronc commun' : selectedTopic?.title;
     const tip = LOADING_TIPS[tipIndex];
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center pt-16">
+      <div className={`bg-slate-50 flex items-center justify-center ${onBack ? 'min-h-[60vh]' : 'min-h-screen pt-16'}`}>
         <div className="max-w-md mx-auto px-4 text-center w-full">
           <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-sm">
             <div className="mb-6">
@@ -960,7 +963,7 @@ export default function ExamenPage() {
               </p>
             </div>
 
-            <button onClick={() => setView('hero')} className="text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors">Annuler</button>
+            <button onClick={() => { onBack ? onBack() : setView('hero'); }} className="text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors">Annuler</button>
           </div>
         </div>
       </div>
@@ -986,7 +989,7 @@ export default function ExamenPage() {
     }
 
     return (
-      <div className="min-h-screen bg-slate-50 pt-20 pb-8">
+      <div className={`bg-slate-50 pb-8 ${onBack ? 'pt-6' : 'min-h-screen pt-20'}`}>
         <div className="max-w-3xl mx-auto px-4">
           {/* Top bar */}
           <div className="flex items-center justify-between mb-4">
@@ -1103,7 +1106,7 @@ export default function ExamenPage() {
     const showConfetti = pct >= 70;
 
     return (
-      <section className="py-24 md:py-28 min-h-screen bg-slate-50">
+      <section className={`bg-slate-50 ${onBack ? 'py-10' : 'py-24 md:py-28 min-h-screen'}`}>
         {/* Confetti */}
         {showConfetti && (
           <div className="fixed inset-0 pointer-events-none z-50" aria-hidden="true">
@@ -1206,9 +1209,16 @@ export default function ExamenPage() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
               Nouvelle &eacute;preuve
             </button>
-            <button onClick={() => setView('hero')} className="px-6 py-3 bg-white text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:border-primary-300 transition-colors">
-              Retour &agrave; l&apos;accueil
-            </button>
+            {onBack ? (
+              <button onClick={onBack} className="px-6 py-3 bg-white text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:border-primary-300 transition-colors flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+                Retour au tableau de bord
+              </button>
+            ) : (
+              <button onClick={() => setView('hero')} className="px-6 py-3 bg-white text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:border-primary-300 transition-colors">
+                Retour &agrave; l&apos;accueil
+              </button>
+            )}
           </div>
         </div>
       </section>
