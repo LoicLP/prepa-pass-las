@@ -362,6 +362,19 @@ export default function DashboardPage() {
                   <QuickActionCards />
                 </div>
               )}
+              {/* Contact bas de page */}
+              <Link href="/contact" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', borderRadius: 14, background: 'linear-gradient(to right, #fffbeb, #fff7ed)', border: '1px solid #fde68a', textDecoration: 'none', color: 'inherit' }} className="hover:border-amber-300 hover:shadow-sm transition-all group">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 34, height: 34, background: '#fef3c7', borderRadius: 10, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                    <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#0f1020', margin: 0 }}>Un bug ou une suggestion ?</p>
+                    <p style={{ fontSize: 11.5, color: '#5f6280', margin: 0 }}>Aidez-nous à améliorer la plateforme</p>
+                  </div>
+                </div>
+                <svg className="w-4 h-4 text-amber-400 group-hover:text-amber-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+              </Link>
             </div>
           )}
 
@@ -1158,18 +1171,6 @@ function QuickActionCards() {
           <div style={{ fontSize: 11.5, color: '#5f6280' }}>Conditions réelles</div>
         </div>
       </Link>
-      <Link href="/contact"
-        style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid #eef0f7', textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: 12 }}
-        className="hover:-translate-y-0.5 hover:shadow-md transition-all"
-      >
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fdf4e2', color: '#e8a948', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
-        </div>
-        <div>
-          <div className="font-jakarta" style={{ fontSize: 13.5, fontWeight: 700, color: '#0f1020' }}>Nous contacter</div>
-          <div style={{ fontSize: 11.5, color: '#5f6280' }}>Bug, question, suggestion</div>
-        </div>
-      </Link>
     </div>
   );
 }
@@ -1179,20 +1180,20 @@ function QuickActionCards() {
    ============================================================ */
 function HowItWorksCard() {
   const steps = [
-    { n: 1, t: 'QCM de calibrage', d: '20 questions · 6 matières' },
-    { n: 2, t: 'Plan personnalisé', d: 'Points faibles identifiés' },
-    { n: 3, t: 'Révisez chaque jour', d: '30 min pour progresser' },
+    { n: 1, t: 'Passez le QCM de calibrage', d: '20 questions réparties sur les 6 matières' },
+    { n: 2, t: 'Recevez votre plan personnalisé', d: 'On identifie vos points faibles et vos priorités' },
+    { n: 3, t: 'Révisez chaque jour', d: '30 min suffisent pour progresser et maintenir votre streak' },
   ];
   return (
-    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: '14px 16px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div className="font-jakarta" style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: '#0f1020' }}>Comment ça marche</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eef0f7', padding: '18px 20px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="font-jakarta" style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#0f1020' }}>Comment ça marche</div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
         {steps.map((s, i) => (
-          <div key={s.n} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i === 0 ? 'none' : '1px solid #f3f4f8' }}>
-            <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{s.n}</div>
+          <div key={s.n} style={{ display: 'flex', gap: 12, padding: '11px 0', borderTop: i === 0 ? 'none' : '1px solid #f3f4f8' }}>
+            <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 12.5, flexShrink: 0 }}>{s.n}</div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: 13, color: '#0f1020' }}>{s.t}</div>
-              <div style={{ fontSize: 11.5, color: '#5f6280' }}>{s.d}</div>
+              <div style={{ fontWeight: 600, fontSize: 13.5, color: '#0f1020' }}>{s.t}</div>
+              <div style={{ fontSize: 12, color: '#5f6280', marginTop: 2 }}>{s.d}</div>
             </div>
           </div>
         ))}
