@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import QCMPage from './QCMClient';
 
 export const metadata = {
@@ -7,5 +8,9 @@ export const metadata = {
 };
 
 export default function Page() {
-  return <QCMPage />;
+  return (
+    <Suspense fallback={null}>
+      <QCMPage />
+    </Suspense>
+  );
 }

@@ -6,13 +6,14 @@ export function useGeminiQuestions() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
 
-  const generateQuestions = useCallback(async (subject, subjectName, count, mode = 'qcm', ficheTopic = null) => {
+  const generateQuestions = useCallback(async (subject, subjectName, count, mode = 'qcm', ficheTopic = null, ficheContent = null) => {
     setIsGenerating(true);
     setError(null);
 
     try {
       const payload = { subject, subjectName, count, mode };
       if (ficheTopic) payload.ficheTopic = ficheTopic;
+      if (ficheContent) payload.ficheContent = ficheContent;
 
       const res = await fetch('/api/generate-questions', {
         method: 'POST',
@@ -31,7 +32,8 @@ export function useGeminiQuestions() {
         throw new Error('Aucune question générée');
       }
 
-      return data.questions;
+      // Return with metadata so the UI can show AI badge
+      return { questions: data.questions, aiGenerated: data.aiGenerated === true, topic: data.topic || null };
     } catch (err) {
       console.warn('[Gemini] Erreur de génération:', err.message);
       setError(err.message);
