@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FICHES_DATA } from '@/data/fiches';
 import { SUBJECTS } from '@/data/subjects';
 import { usePremium } from '@/contexts/PremiumContext';
@@ -64,15 +65,19 @@ function FloatingSubjectCards() {
     })),
   []);
 
-  /* slots[i] = index into allSubjects shown in slot i */
-  const [slots, setSlots] = useState(() => {
+  /* slots[i] = index into allSubjects shown in slot i.
+     Ordre initial déterministe (le SSR doit produire le même HTML que l'hydratation),
+     mélangé seulement après montage côté client. */
+  const [slots, setSlots] = useState([0, 1, 2, 3]);
+
+  useEffect(() => {
     const indices = [0, 1, 2, 3, 4, 5];
     for (let i = indices.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
-    return indices.slice(0, 4);
-  });
+    setSlots(indices.slice(0, 4));
+  }, []);
 
   /* Track which slot is currently fading out (-1 = none) */
   const [fadingSlot, setFadingSlot] = useState(-1);
@@ -108,7 +113,7 @@ function FloatingSubjectCards() {
   }, [allSubjects]);
 
   return (
-    <div className="hidden lg:block relative h-[340px]">
+    <div className="hidden lg:block relative h-[280px]">
       {slots.map((subjectIdx, slotIdx) => {
         const subject = allSubjects[subjectIdx];
         if (!subject) return null;
@@ -420,7 +425,7 @@ function FicheModal({ fiche, onClose, premiumUser, user, onLoginRequired, onUpgr
                     </div>
                     <div className="text-left">
                       <p className="text-sm font-bold text-gray-500">Cours complet</p>
-                      <p className="text-xs text-gray-400">R&eacute;serv&eacute; aux membres Essentiel</p>
+                      <p className="text-xs text-gray-400">R&eacute;serv&eacute; aux membres Premium</p>
                     </div>
                   </div>
                   <span className="px-3 py-1.5 bg-primary-100 text-primary-700 text-xs font-bold rounded-full">Essentiel</span>
@@ -440,6 +445,13 @@ function FicheModal({ fiche, onClose, premiumUser, user, onLoginRequired, onUpgr
 export default function FichesPage() {
   const { isEssentiel } = usePremium();
   const { user } = useAuth();
+  const router = useRouter();
+
+  // Page publique /fiches : un utilisateur connecté est redirigé vers son dashboard (section Fiches)
+  useEffect(() => {
+    if (user) router.replace('/dashboard?open=fiches');
+  }, [user, router]);
+
   const [currentSubject, setCurrentSubject] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedFiche, setSelectedFiche] = useState(null);
@@ -479,68 +491,68 @@ export default function FichesPage() {
 
   return (
     <>
-      {/* ====== HERO ====== */}
-      <section className="gradient-hero pt-28 pb-14 md:pt-36 md:pb-20 relative overflow-hidden">
+      {/* ====== HERO (compact) ====== */}
+      <section className="gradient-hero pt-24 pb-8 md:pt-28 md:pb-10 relative overflow-hidden">
         <div className="absolute w-[250px] h-[250px] bg-violet-300/10 rounded-full blur-[80px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             {/* Left text */}
             <div>
-              <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-indigo-200 mb-6">
-                <span className="relative flex h-2.5 w-2.5">
+              <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur px-3.5 py-1.5 rounded-full border border-indigo-200 mb-4">
+                <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
                 </span>
-                <span className="text-sm font-semibold text-indigo-700">{FICHES_DATA.length} fiches disponibles</span>
+                <span className="text-xs font-semibold text-indigo-700">{FICHES_DATA.length} fiches disponibles</span>
               </div>
-              <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-5">
+              <h1 className="text-3xl sm:text-4xl font-black text-gray-900 leading-[1.1] mb-3">
                 Fiches et{' '}
                 <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent">
                   cours complets
                 </span>{' '}
                 en un clic
               </h1>
-              <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-xl">
-                Revisez efficacement avec des <strong className="text-gray-900">fiches de revision</strong> synthetiques et des{' '}
-                <strong className="text-gray-900">cours detailles</strong> couvrant le{' '}
-                <strong className="text-gray-900">tronc commun</strong> du programme PASS/LAS. Chaque fiche est{' '}
-                <strong className="text-gray-900">telechargeable en PDF</strong>.
+              <p className="text-base text-gray-600 leading-relaxed mb-5 max-w-xl">
+                Des <strong className="text-gray-900">fiches synth&eacute;tiques</strong> et des{' '}
+                <strong className="text-gray-900">cours d&eacute;taill&eacute;s</strong> sur tout le
+                tronc commun — chaque fiche est{' '}
+                <strong className="text-gray-900">t&eacute;l&eacute;chargeable en PDF</strong>.
               </p>
 
               {/* Stats row */}
-              <div className="flex flex-wrap items-center gap-5 sm:gap-6">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 bg-indigo-100 rounded-xl flex items-center justify-center">
-                    <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
+                    <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                     </svg>
                   </div>
                   <div>
-                    <div className="text-xl font-black text-gray-900">{FICHES_DATA.length}</div>
+                    <div className="text-lg font-black text-gray-900">{FICHES_DATA.length}</div>
                     <div className="text-xs font-medium text-gray-500">Fiches &amp; cours</div>
                   </div>
                 </div>
                 <div className="w-px h-10 bg-gray-200/60 hidden sm:block" />
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 bg-violet-100 rounded-xl flex items-center justify-center">
-                    <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <div className="w-9 h-9 bg-violet-100 rounded-xl flex items-center justify-center">
+                    <svg className="w-4 h-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
                     </svg>
                   </div>
                   <div>
-                    <div className="text-xl font-black text-gray-900">{SUBJECTS.length}</div>
+                    <div className="text-lg font-black text-gray-900">{SUBJECTS.length}</div>
                     <div className="text-xs font-medium text-gray-500">UE couvertes</div>
                   </div>
                 </div>
                 <div className="w-px h-10 bg-gray-200/60 hidden sm:block" />
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center">
-                    <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center">
+                    <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
                   </div>
                   <div>
-                    <div className="text-xl font-black text-gray-900">PDF</div>
+                    <div className="text-lg font-black text-gray-900">PDF</div>
                     <div className="text-xs font-medium text-gray-500">Telechargeable</div>
                   </div>
                 </div>
@@ -615,6 +627,68 @@ export default function FichesPage() {
           </div>
         </div>
       </section>
+
+      {/* ====== INCITATION AU SUIVI (visiteurs) ====== */}
+      {!user && (
+        <section className="pt-4 pb-2">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div
+              className="rounded-2xl border border-indigo-100 p-5 md:p-6 grid md:grid-cols-[1fr_auto] gap-5 items-center"
+              style={{ background: 'linear-gradient(135deg, #eef2ff 0%, #ffffff 55%, #faf9ff 100%)' }}
+            >
+              {/* Copy + CTA */}
+              <div>
+                <h3 className="text-base md:text-lg font-black text-gray-900 mb-1.5">
+                  📖 Ne perds plus le fil de tes lectures
+                </h3>
+                <p className="text-sm text-gray-600 leading-relaxed mb-3 max-w-2xl">
+                  Avec un compte gratuit, chaque fiche lue est <strong>marqu&eacute;e</strong>,
+                  ta <strong>progression par UE</strong>{' '}
+                  se remplit, et Pico te rappelle o&ugrave; tu en &eacute;tais &agrave; ta
+                  prochaine session.
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/connexion"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-indigo-500/25"
+                    style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
+                  >
+                    Activer mon suivi gratuit
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                  </Link>
+                  <span className="text-[11px] text-gray-400">
+                    Sans carte bancaire &middot; <strong className="text-violet-600">2 jours de Premium offerts</strong>
+                  </span>
+                </div>
+              </div>
+
+              {/* Aperçu du tracking */}
+              <div className="hidden md:block w-64 shrink-0">
+                <div className="bg-white rounded-xl border border-gray-100 shadow-md p-3.5 mb-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[12px] font-bold text-gray-900 truncate">Le syst&egrave;me cardiovasculaire</span>
+                    <span className="shrink-0 inline-flex items-center gap-1 text-[9.5px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5">
+                      ✓ Lue
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-gray-400">⏱ 8 min de lecture</span>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-100 shadow-md p-3.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">UE5 &middot; Anatomie</span>
+                    <span className="text-[10px] font-black text-indigo-600 tabular-nums">12/25 lues</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: '48%', background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ====== RESULTS COUNTER ====== */}
       <section className="pt-1 pb-1">

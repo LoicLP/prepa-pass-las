@@ -45,6 +45,16 @@ const FAQ_ITEMS = [
     answer:
       'En PASS, 8 à 10h par jour. Notre plateforme aide à optimiser ce temps avec des sessions QCM ciblées de 30 min à 1h en complément. La régularité est la clé.',
   },
+  {
+    question: 'C\'est quoi les XP, les grades et la série ?',
+    answer:
+      'Chaque bonne réponse rapporte des XP qui te font monter en grade de carabin, de Bizuth à Major de promo. Réviser chaque jour entretient ta série 🔥 (avec des jokers si tu rates un jour). Défis quotidiens, badges et tenues de Pico complètent le système — conçu pour récompenser la régularité, pas la chance.',
+  },
+  {
+    question: 'Comment fonctionnent les révisions espacées (« À consolider ») ?',
+    answer:
+      'Chaque question ratée rejoint automatiquement ta pile « À consolider ». Tu la retravailles en sessions courtes jusqu\'à y répondre juste — elle sort alors de la pile. C\'est la répétition espacée : la méthode la plus efficace pour ancrer durablement une notion avant le concours.',
+  },
 ];
 
 export default function FaqSection() {

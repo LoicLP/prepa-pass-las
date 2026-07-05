@@ -169,20 +169,23 @@ export async function POST(request) {
       .filter(q => {
         if (!q.question || !Array.isArray(q.options) || q.options.length !== 4) return false;
         const correctCount = q.options.filter(o => o.correct === true).length;
-        if (correctCount !== 1) return false;
+        // QCM : une seule bonne réponse (boucle rapide). Examen : format concours, 1 à 3 bonnes réponses.
+        if (mode === 'examen') { if (correctCount < 1 || correctCount > 3) return false; }
+        else if (correctCount !== 1) return false;
         if (!q.options.every(o => typeof o.text === 'string' && o.text.length > 0)) return false;
         return true;
       })
-      .map((q, index) => ({
-        id: index + 1,
-        subject: subject || q.subject || 'custom',
-        question: q.question,
-        options: shuffleArray(q.options.map(o => ({
-          text: o.text,
-          correct: o.correct === true,
-        }))),
-        explanation: q.explanation || 'Pas d\'explication disponible.',
-      }));
+      .map((q, index) => {
+        const options = shuffleArray(q.options.map(o => ({ text: o.text, correct: o.correct === true })));
+        return {
+          id: index + 1,
+          subject: subject || q.subject || 'custom',
+          question: q.question,
+          options,
+          multi: options.filter(o => o.correct).length > 1,
+          explanation: q.explanation || 'Pas d\'explication disponible.',
+        };
+      });
 
     if (validQuestions.length === 0) {
       return Response.json(

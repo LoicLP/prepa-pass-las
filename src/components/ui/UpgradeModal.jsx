@@ -2,23 +2,19 @@
 
 import Link from 'next/link';
 
+// Plan unique : quel que soit le palier requis, on pr\u00e9sente Premium.
+const PREMIUM_CONFIG = {
+  title: 'Passe Premium',
+  description: 'Cette fonctionnalit\u00e9 est r\u00e9serv\u00e9e aux membres Premium. D\u00e9bloque tout : QCM illimit\u00e9s par IA, examens blancs, cours complets, progression et classement.',
+  buttonText: 'D\u00e9couvrir Premium',
+  iconBg: 'bg-primary-100',
+  iconColor: 'text-primary-600',
+  buttonBg: 'bg-primary-600 hover:bg-primary-700',
+};
+
 const TIER_CONFIG = {
-  essentiel: {
-    title: 'Passez \u00e0 l\u2019Essentiel',
-    description: 'Cette fonctionnalit\u00e9 est r\u00e9serv\u00e9e aux membres Essentiel. D\u00e9bloquez les QCM illimit\u00e9s, les cours, le mode examen et bien plus.',
-    buttonText: 'D\u00e9couvrir l\u2019Essentiel',
-    iconBg: 'bg-primary-100',
-    iconColor: 'text-primary-600',
-    buttonBg: 'bg-primary-600 hover:bg-primary-700',
-  },
-  'premium+': {
-    title: 'Passez au Premium+',
-    description: 'Cette fonctionnalit\u00e9 est r\u00e9serv\u00e9e aux membres Premium+. Acc\u00e9dez au mode examen complet, au suivi de progression avanc\u00e9 et au classement.',
-    buttonText: 'D\u00e9couvrir le Premium+',
-    iconBg: 'bg-amber-100',
-    iconColor: 'text-amber-600',
-    buttonBg: 'bg-gray-900 hover:bg-gray-800',
-  },
+  essentiel: PREMIUM_CONFIG,
+  'premium+': PREMIUM_CONFIG,
 };
 
 export default function UpgradeModal({ onClose, requiredTier = 'essentiel' }) {

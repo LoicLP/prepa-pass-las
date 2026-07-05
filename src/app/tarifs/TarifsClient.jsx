@@ -40,25 +40,15 @@ function PremiumCheckIcon() {
 }
 
 const BILLING_PERIODS = [
-  { id: 'monthly', label: 'Mensuel', discount: 0 },
-  { id: 'quarterly', label: 'Trimestriel', discount: 15, badge: '-15%' },
-  { id: 'yearly', label: 'Annuel', discount: 30, badge: '-30%' },
+  { id: 'monthly', label: 'Mensuel' },
+  { id: 'yearly', label: 'Annuel', badge: '-50%' },
 ];
 
-const BASE_PRICES = { essentiel: 19.90, premium: 39.90 };
-
-function getPrice(base, discount) {
-  if (discount === 0) return base.toFixed(2).replace('.', ',');
-  return Math.ceil(base * (1 - discount / 100));
-}
-
-function getSaving(base, discount, period) {
-  const roundedBase = Math.ceil(base);
-  const discountedMonthly = Math.ceil(base * (1 - discount / 100));
-  const months = period === 'yearly' ? 12 : period === 'quarterly' ? 3 : 1;
-  const saving = (roundedBase - discountedMonthly) * months;
-  return saving;
-}
+// Un seul plan Premium : 24,99 €/mois ou 149,99 €/an (soit 12,50 €/mois)
+const PREMIUM_PRICING = {
+  monthly: { display: '24,99', suffix: '/mois', note: 'sans engagement, annulable à tout moment' },
+  yearly: { display: '12,50', suffix: '/mois', note: 'facturé 149,99 € par an', strike: '24,99', badge: '-150 €/an' },
+};
 
 export default function TarifsPage() {
   const { tier, isLoaded } = usePremium();
@@ -111,26 +101,27 @@ export default function TarifsPage() {
       setLoadingPlan(null);
     }
   };
-  const currentPeriod = BILLING_PERIODS.find(p => p.id === billing);
-  const discount = currentPeriod.discount;
-
-  const essentielPrice = getPrice(BASE_PRICES.essentiel, discount);
-  const premiumPrice = getPrice(BASE_PRICES.premium, discount);
-
-  const periodLabel = billing === 'yearly' ? '/mois, factur\u00e9 annuellement' : billing === 'quarterly' ? '/mois, factur\u00e9 trimestriellement' : '/mois';
+  const pricing = PREMIUM_PRICING[billing];
+  const isPaidTier = tier === 'essentiel' || tier === 'premium+';
 
   return (
     <>
-      {/* Hero */}
-      <section className="gradient-hero noise-overlay dot-grid pt-28 pb-10 md:pt-36 md:pb-14 relative overflow-hidden">
+      {/* Hero (compact) */}
+      <section className="gradient-hero noise-overlay dot-grid pt-24 pb-8 md:pt-28 md:pb-10 relative overflow-hidden">
         <div className="blob-1"></div>
         <div className="blob-2"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-4">
-            Des tarifs <span className="tarif-gradient-text">adapt&eacute;s</span> à chaque étudiant
+          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur px-3.5 py-1.5 rounded-full border border-violet-200 mb-4">
+            <span className="text-sm leading-none">💎</span>
+            <span className="text-xs font-semibold text-violet-700">Un seul plan, z&eacute;ro prise de t&ecirc;te</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 leading-[1.1] mb-4">
+            Tout illimit&eacute;, <span className="tarif-gradient-text">un seul prix</span>
           </h1>
-          <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
-            Choisissez la formule qui correspond &agrave; votre rythme. <strong className="text-gray-900">Sans engagement</strong>, annulable &agrave; tout moment.
+          <p className="text-base md:text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
+            Sans engagement, annulable &agrave; tout moment — et{' '}
+            <strong className="text-gray-900">2 jours de Premium offerts</strong>{' '}
+            &agrave; l&apos;inscription, sans carte bancaire.
           </p>
         </div>
       </section>
@@ -141,16 +132,17 @@ export default function TarifsPage() {
 
           {/* Billing Toggle */}
           <div className="flex justify-center mb-10">
-            <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
+            <div className="inline-flex items-center bg-white border border-gray-200 shadow-sm rounded-full p-1">
               {BILLING_PERIODS.map(p => (
                 <button
                   key={p.id}
                   onClick={() => setBilling(p.id)}
-                  className={`flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all ${
                     billing === p.id
-                      ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
+                      ? 'text-white shadow-lg shadow-indigo-500/30'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
+                  style={billing === p.id ? { background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' } : undefined}
                 >
                   {p.label}
                   {p.badge && (
@@ -165,7 +157,7 @@ export default function TarifsPage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
 
             {/* FREE */}
             <div className="pricing-card bg-white rounded-2xl border-2 border-gray-200 p-7">
@@ -203,157 +195,78 @@ export default function TarifsPage() {
                 <ul className="space-y-3">
                   <li className="flex items-center gap-2 text-sm text-gray-600">
                     <CheckIcon />
-                    1 QCM par jour
+                    <span><strong>2 jours de Premium offerts</strong>{' '}&agrave; l&apos;inscription</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-600">
                     <CheckIcon />
-                    <strong>Toutes les fiches</strong> accessibles
+                    1 QCM par jour, corrections d&eacute;taill&eacute;es
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-600">
                     <CheckIcon />
-                    Corrections d&eacute;taill&eacute;es
+                    <span><strong>Toutes les fiches</strong> accessibles</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckIcon />
+                    Dashboard, Pico, XP &amp; s&eacute;rie &#128293;
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-400">
                     <CrossIcon />
-                    Fiches t&eacute;l&eacute;chargeables en PDF
+                    QCM illimit&eacute;s g&eacute;n&eacute;r&eacute;s par IA
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-400">
                     <CrossIcon />
-                    Acc&egrave;s aux cours
+                    Cours complets &amp; fiches PDF
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-400">
                     <CrossIcon />
-                    Mode Examen
+                    Examens blancs format concours
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-400">
                     <CrossIcon />
-                    Mode Examen complet
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-400">
-                    <CrossIcon />
-                    Suivi de progression avanc&eacute;
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-400">
-                    <CrossIcon />
-                    Objectifs personnalis&eacute;s
+                    Progression, Objectifs &amp; Classement
                   </li>
                 </ul>
               </div>
             </div>
 
-            {/* ESSENTIEL */}
-            <div className="pricing-card popular bg-white rounded-2xl border-2 border-primary-500 p-7 relative shadow-xl shadow-primary-500/10">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary-600 text-white text-xs font-bold rounded-full">
-                Le plus populaire
+            {/* PREMIUM — plan unique */}
+            <div className="relative">
+              {/* Halo lumineux */}
+              <div
+                className="absolute -inset-2.5 rounded-3xl opacity-30 blur-2xl pointer-events-none"
+                style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
+              ></div>
+            <div className="pricing-card popular bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border-2 border-primary-500 p-7 text-white relative shadow-xl shadow-primary-500/20 h-full">
+              <div
+                className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 text-white text-xs font-bold rounded-full"
+                style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
+              >
+                Recommandé
               </div>
-              <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mb-5">
-                <svg className="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" /></svg>
-              </div>
-              <div className="mb-5">
-                <h3 className="text-lg font-bold text-gray-900">Essentiel</h3>
-                <p className="text-sm text-gray-500 mt-1">Pour une pr&eacute;paration compl&egrave;te</p>
-              </div>
-              <div className="mb-5">
-                {discount > 0 && (
-                  <span className="text-lg text-gray-400 line-through mr-2">19,90&euro;</span>
-                )}
-                <span className="text-4xl font-black text-gray-900">{essentielPrice}&euro;</span>
-                <span className="text-sm text-gray-500">{periodLabel}</span>
-                {discount > 0 && (
-                  <span className="ml-2 inline-flex px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">
-                    -{getSaving(BASE_PRICES.essentiel, discount, billing)}&euro;/{billing === 'yearly' ? 'an' : 'trim.'}
-                  </span>
-                )}
-              </div>
-              {isLoaded && tier === 'essentiel' ? (
-                <>
-                  <button className="block w-full py-3 text-center bg-accent-500 text-white font-bold rounded-xl mb-2 cursor-default">
-                    Essentiel activ&eacute; &#10003;
-                  </button>
-                  <button
-                    onClick={handlePortal}
-                    disabled={loadingPlan === 'portal'}
-                    className="block w-full py-2 text-center text-xs text-gray-500 hover:text-primary-600 transition-colors mb-3"
-                  >
-                    {loadingPlan === 'portal' ? 'Chargement...' : 'Gérer mon abonnement →'}
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => handleSubscribe('essentiel')}
-                  disabled={loadingPlan === 'essentiel'}
-                  className="block w-full py-3 text-center bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25 mb-5 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {loadingPlan === 'essentiel' ? 'Chargement...' : 'Commencer avec Essentiel'}
-                </button>
-              )}
-              <div className="border-t border-primary-100 pt-5">
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckIcon />
-                    <strong>QCM illimit&eacute;s</strong>
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckIcon />
-                    Fiches t&eacute;l&eacute;chargeables en <strong>PDF</strong>
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckIcon />
-                    <strong>Acc&egrave;s aux cours</strong> d&eacute;taill&eacute;s
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckIcon />
-                    <strong>Mode Examen</strong> chronom&eacute;tr&eacute;
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckIcon />
-                    Corrections d&eacute;taill&eacute;es
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-400">
-                    <CrossIcon />
-                    Mode Examen complet
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-400">
-                    <CrossIcon />
-                    Suivi de progression avanc&eacute;
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-400">
-                    <CrossIcon />
-                    Objectifs personnalis&eacute;s
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-400">
-                    <CrossIcon />
-                    Classement et comparaison
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* PREMIUM+ */}
-            <div className="pricing-card bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border-2 border-gray-700 p-7 text-white">
               <div className="w-12 h-12 bg-accent-500/20 rounded-xl flex items-center justify-center mb-5">
                 <svg className="w-6 h-6 text-accent-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" /></svg>
               </div>
               <div className="mb-5">
-                <h3 className="text-lg font-bold">Premium+</h3>
-                <p className="text-sm text-gray-400 mt-1">La pr&eacute;paration ultime</p>
+                <h3 className="text-lg font-bold">Premium</h3>
+                <p className="text-sm text-gray-400 mt-1">Tout illimit&eacute;, jusqu&apos;au concours</p>
               </div>
-              <div className="mb-5">
-                {discount > 0 && (
-                  <span className="text-lg text-gray-500 line-through mr-2">39,90&euro;</span>
+              <div className="mb-1">
+                {pricing.strike && (
+                  <span className="text-lg text-gray-500 line-through mr-2">{pricing.strike}&euro;</span>
                 )}
-                <span className="text-4xl font-black">{premiumPrice}&euro;</span>
-                <span className="text-sm text-gray-400">{periodLabel}</span>
-                {discount > 0 && (
-                  <span className="ml-2 inline-flex px-2 py-0.5 bg-accent-500/20 text-accent-400 text-xs font-bold rounded-full">
-                    -{getSaving(BASE_PRICES.premium, discount, billing)}&euro;/{billing === 'yearly' ? 'an' : 'trim.'}
+                <span className="text-4xl font-black">{pricing.display}&euro;</span>
+                <span className="text-sm text-gray-400">{pricing.suffix}</span>
+                {pricing.badge && (
+                  <span className="ml-2 inline-flex px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full">
+                    {pricing.badge}
                   </span>
                 )}
               </div>
-              {isLoaded && tier === 'premium+' ? (
+              <p className="text-xs text-gray-500 mb-5">{pricing.note}</p>
+              {isLoaded && isPaidTier ? (
                 <>
                   <button className="block w-full py-3 text-center bg-accent-500 text-white font-bold rounded-xl mb-2 cursor-default">
-                    Premium+ activ&eacute; &#10003;
+                    Premium activ&eacute; &#10003;
                   </button>
                   <button
                     onClick={handlePortal}
@@ -367,36 +280,70 @@ export default function TarifsPage() {
                 <button
                   onClick={() => handleSubscribe('premium+')}
                   disabled={loadingPlan === 'premium+'}
-                  className="block w-full py-3 text-center bg-white text-gray-900 font-bold rounded-xl hover:bg-gray-100 transition-colors mb-5 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="block w-full py-3 text-center font-bold rounded-xl transition-opacity hover:opacity-90 mb-5 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-lg shadow-indigo-900/40"
+                  style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
                 >
-                  {loadingPlan === 'premium+' ? 'Chargement...' : 'Commencer avec Premium+'}
+                  {loadingPlan === 'premium+' ? 'Chargement...' : 'Passer Premium'}
                 </button>
               )}
               <div className="border-t border-gray-700 pt-5">
                 <ul className="space-y-3">
                   <li className="flex items-center gap-2 text-sm text-gray-300">
                     <PremiumCheckIcon />
-                    <strong className="text-white">Tout de l&apos;Essentiel</strong>
+                    <span><strong className="text-white">QCM illimit&eacute;s</strong>{' '}g&eacute;n&eacute;r&eacute;s par IA</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-300">
                     <PremiumCheckIcon />
-                    <strong className="text-white">Mode Examen complet</strong>
+                    <span>Pile «&nbsp;&Agrave; consolider&nbsp;» — <strong className="text-white">r&eacute;p&eacute;tition espac&eacute;e</strong></span>
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-300">
                     <PremiumCheckIcon />
-                    <strong className="text-white">Suivi de progression avanc&eacute;</strong>
+                    <span><strong className="text-white">Examens blancs</strong> format concours (40 q / 60 min)</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-300">
                     <PremiumCheckIcon />
-                    <strong className="text-white">Objectifs personnalis&eacute;s</strong>
+                    <span><strong className="text-white">Cours complets</strong> + fiches PDF</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-300">
                     <PremiumCheckIcon />
-                    <strong className="text-white">Classement et comparaison</strong>
+                    <strong className="text-white">Progression, Objectifs &amp; Classement</strong>
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-gray-300">
+                    <PremiumCheckIcon />
+                    Pico, XP, d&eacute;fis &amp; s&eacute;rie — la gamification compl&egrave;te
                   </li>
                 </ul>
               </div>
             </div>
+            </div>
+          </div>
+
+          {/* Réassurance */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
+            <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
+              <span className="text-base leading-none">🔒</span> Paiement s&eacute;curis&eacute; via Stripe
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
+              <span className="text-base leading-none">↩️</span> Annulable en 2 clics
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
+              <span className="text-base leading-none">🎁</span> 2 jours d&apos;essai — sans carte bancaire
+            </span>
+          </div>
+
+          {/* Ancrage : comparaison prépa privée */}
+          <div
+            className="mt-12 max-w-3xl mx-auto rounded-2xl border border-indigo-100 px-6 py-6 md:px-8 text-center"
+            style={{ background: 'linear-gradient(135deg, #eef2ff 0%, #faf9ff 60%)' }}
+          >
+            <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-400 mb-2">Pour situer</p>
+            <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+              Une pr&eacute;pa priv&eacute;e co&ucirc;te{' '}
+              <strong className="text-gray-900">2 000 &agrave; 6 000 &euro; l&apos;ann&eacute;e</strong>.
+              Ton QG de r&eacute;vision complet — QCM illimit&eacute;s, examens blancs, coach de
+              progression — c&apos;est{' '}
+              <strong className="text-indigo-600">149,99 &euro; l&apos;ann&eacute;e</strong>.
+            </p>
           </div>
 
           {/* FAQ Tarifs */}
@@ -410,12 +357,16 @@ export default function TarifsPage() {
             </div>
             <div className="space-y-4">
               <FaqItem
-                question="Puis-je changer de formule à tout moment ?"
-                answer="Oui, vous pouvez passer d'une formule à l'autre à tout moment. Le changement prend effet immédiatement et votre facturation est ajustée au prorata."
+                question="Que se passe-t-il à la fin des 2 jours offerts ?"
+                answer="Ton compte repasse automatiquement en plan Découverte — rien à faire, aucune carte bancaire n'est demandée. Tes XP, ta série et tes statistiques sont conservés, et tu peux passer Premium quand tu veux."
+              />
+              <FaqItem
+                question="Puis-je passer du mensuel à l'annuel (et inversement) ?"
+                answer="Oui, à tout moment depuis « Gérer mon abonnement » dans ton tableau de bord. Le changement prend effet immédiatement et la facturation est ajustée au prorata."
               />
               <FaqItem
                 question="Y a-t-il un engagement de durée ?"
-                answer="Non, aucun engagement. Vous pouvez résilier à tout moment depuis votre tableau de bord. Votre accès reste actif jusqu'à la fin de la période payée."
+                answer="Non, aucun engagement. Tu peux résilier en 2 clics depuis ton tableau de bord. Ton accès reste actif jusqu'à la fin de la période payée."
               />
             </div>
           </div>

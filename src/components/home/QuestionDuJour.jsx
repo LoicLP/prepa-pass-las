@@ -4,8 +4,13 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { QUESTIONS } from '@/data/questions';
 import { SUBJECTS } from '@/data/subjects';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function QuestionDuJour() {
+  const { user } = useAuth();
+  // Connecté → dashboard avec le lanceur QCM ; visiteur → inscription (2 jours de Premium offerts)
+  const moreHref = user ? '/dashboard?open=qcm' : '/connexion';
+
   const q = useMemo(() => {
     const dayIndex = Math.floor(Date.now() / 86400000) % QUESTIONS.length;
     return QUESTIONS[dayIndex];
@@ -103,10 +108,32 @@ export default function QuestionDuJour() {
           {q.explanation}
         </div>
       )}
-      <div className="mt-4 text-center">
-        <Link href="/qcm" className="text-sm text-primary-600 font-semibold hover:underline">
-          Plus de QCM &rarr;
-        </Link>
+      <div className="mt-4">
+        {validated ? (
+          <>
+            <Link
+              href={moreHref}
+              className="w-full py-3.5 rounded-xl text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg shadow-indigo-500/25"
+              style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
+            >
+              Continuer avec des QCM illimit&eacute;s
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+              </svg>
+            </Link>
+            {!user && (
+              <p className="mt-2 text-center text-[11px] text-gray-400">
+                Compte gratuit &middot; <strong className="text-violet-600">2 jours de Premium offerts</strong>
+              </p>
+            )}
+          </>
+        ) : (
+          <div className="text-center">
+            <Link href={moreHref} className="text-sm text-primary-600 font-semibold hover:underline">
+              Plus de QCM &rarr;
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

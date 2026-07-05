@@ -91,7 +91,12 @@ export default function ConnexionPage() {
 
         {/* Titre */}
         <h1 className="text-2xl font-black text-gray-900 text-center mb-1">Connectez-vous</h1>
-        <p className="text-sm text-gray-400 text-center mb-8">pour accéder à votre espace d&apos;entraînement.</p>
+        <p className="text-sm text-gray-400 text-center mb-4">pour accéder à votre espace d&apos;entraînement.</p>
+        <div className="flex justify-center mb-6">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-200 rounded-full px-3 py-1.5">
+            🎁 Nouveau compte : 2 jours de Premium offerts
+          </span>
+        </div>
 
         {/* Message de succès reset */}
         {resetSent && (

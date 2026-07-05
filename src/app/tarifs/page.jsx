@@ -1,8 +1,8 @@
 import TarifsPage from './TarifsClient';
 
 export const metadata = {
-  title: 'Tarifs PASS/LAS - Formules Gratuit, Essentiel & Premium+',
-  description: 'Choisissez la formule adapt\u00e9e \u00e0 votre pr\u00e9paration PASS/LAS\u00a0: D\u00e9couverte gratuite, Essentiel (fiches + cours) ou Premium+ (tout inclus, examens blancs). Sans engagement, r\u00e9siliable \u00e0 tout moment.',
+  title: 'Tarifs PASS/LAS - Gratuit ou Premium tout illimité',
+  description: 'Un plan unique Premium \u00e0 24,99\u00a0\u20ac/mois ou 149,99\u00a0\u20ac/an\u00a0: QCM illimit\u00e9s par IA, examens blancs, cours complets, progression et classement. Sans engagement, 2 jours offerts \u00e0 l\u2019inscription.',
   alternates: { canonical: '/tarifs' },
 };
 

@@ -9,7 +9,7 @@ const LOCAL_STORAGE_KEYS = {
   examen_stats: 'prepa-examen-stats',
 };
 
-export function useSupabaseStats(userId, statKey) {
+export function useSupabaseStats(userId, statKey, refreshToken = 0) {
   const [value, setValue] = useState(DEFAULT_STATS);
   const [isLoaded, setIsLoaded] = useState(false);
   // Ref pour toujours avoir la valeur courante sans dépendance dans le callback
@@ -61,7 +61,7 @@ export function useSupabaseStats(userId, statKey) {
     };
 
     load();
-  }, [userId, statKey]);
+  }, [userId, statKey, refreshToken]);
 
   const setStoredValue = useCallback(async (newValue) => {
     // Calculer la nouvelle valeur à partir de l'ancienne (via ref)

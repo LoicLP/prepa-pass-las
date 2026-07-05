@@ -207,10 +207,37 @@ function FinishModal({ unanswered, onConfirm, onCancel }) {
   );
 }
 
+/* ========== CHRONO CIRCULAIRE ========== */
+function ExamTimerRing({ seconds, totalSeconds, dark = false }) {
+  const R = 26;
+  const C = 2 * Math.PI * R;
+  const frac = totalSeconds > 0 ? Math.max(0, Math.min(1, seconds / totalSeconds)) : 0;
+  const urgent = seconds <= 60;
+  const low = seconds <= 300;
+  const color = urgent ? '#e45770' : low ? '#f59e0b' : (dark ? '#a78bfa' : '#7c3aed');
+  const trackColor = urgent ? (dark ? '#3a2030' : '#fee2e2') : (dark ? 'rgba(255,255,255,0.12)' : '#eef0f7');
+  const mm = Math.floor(seconds / 60);
+  const ss = String(seconds % 60).padStart(2, '0');
+  return (
+    <div className={`relative shrink-0 ${urgent ? 'ring-urgent' : ''}`} style={{ width: 62, height: 62 }}>
+      <svg width="62" height="62" style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx="31" cy="31" r={R} fill="none" stroke={trackColor} strokeWidth="6" />
+        <circle cx="31" cy="31" r={R} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round"
+          strokeDasharray={C} strokeDashoffset={C * (1 - frac)} style={{ transition: 'stroke-dashoffset 1s linear, stroke .3s' }} />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center font-mono font-bold" style={{ fontSize: 12.5, color: urgent ? '#e45770' : (dark ? '#fff' : '#0f1020'), fontVariantNumeric: 'tabular-nums' }}>
+        {mm}:{ss}
+      </div>
+    </div>
+  );
+}
+
 /* ========== MAIN PAGE COMPONENT ========== */
-export default function ExamenPage({ onBack = null }) {
+export default function ExamenPage({ onBack = null, onViewChange = null }) {
   // ----- State machine -----
   const [view, setView] = useState('hero');
+  // Remonte la vue courante au parent (le dashboard masque la sidebar pendant l'épreuve)
+  useEffect(() => { onViewChange?.(view); }, [view, onViewChange]);
   const [subjectFilter, setSubjectFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTopic, setSelectedTopic] = useState(null);
@@ -226,6 +253,14 @@ export default function ExamenPage({ onBack = null }) {
   const [customText, setCustomText] = useState('');
   const [customTopic, setCustomTopic] = useState('');
   const [startTime, setStartTime] = useState(null);
+  const [flags, setFlags] = useState([]); // questions marquées 🚩 « à revoir »
+  const [showGrid, setShowGrid] = useState(false); // grille de réponses
+  const [darkFocus, setDarkFocus] = useState(false); // mode focus sombre
+  const [pendingQuestions, setPendingQuestions] = useState(null); // épreuve prête, en attente de « Prêt ? »
+  const [finishing, setFinishing] = useState(false); // écran « Copie rendue »
+  const questionTimesRef = useRef([]); // secondes passées par question
+  const lastSwitchRef = useRef(Date.now());
+  const currentQRef = useRef(0);
   const [tipIndex, setTipIndex] = useState(0);
   const [correctionOpen, setCorrectionOpen] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -242,13 +277,29 @@ export default function ExamenPage({ onBack = null }) {
 
   // ----- Finish exam function -----
   const finishExam = useCallback(() => {
-    setView('results');
+    // Créditer le temps passé sur la question affichée au moment du rendu
+    const idx = currentQRef.current;
+    if (questionTimesRef.current[idx] != null) {
+      questionTimesRef.current[idx] += Math.round((Date.now() - lastSwitchRef.current) / 1000);
+    }
+    lastSwitchRef.current = Date.now();
+    // Écran « Copie rendue » avant la correction
+    setFinishing(true);
+    setTimeout(() => { setFinishing(false); setView('results'); }, 1800);
   }, []);
 
   // Keep finishRef in sync
   useEffect(() => {
     finishRef.current = finishExam;
   }, [finishExam]);
+
+  // Mode focus sombre : préférence persistée
+  useEffect(() => {
+    try { if (localStorage.getItem('exam_dark_focus') === '1') setDarkFocus(true); } catch {}
+  }, []);
+  const toggleDarkFocus = useCallback(() => {
+    setDarkFocus(d => { try { localStorage.setItem('exam_dark_focus', d ? '0' : '1'); } catch {} return !d; });
+  }, []);
 
   // ----- Timer hook: countdown -----
   const timer = useTimer({
@@ -297,7 +348,19 @@ export default function ExamenPage({ onBack = null }) {
     }
     setQuestions(qs);
     setAnswers(new Array(qs.length).fill(null));
+    setFlags(new Array(qs.length).fill(false));
+    questionTimesRef.current = new Array(qs.length).fill(0);
+    lastSwitchRef.current = Date.now();
+    currentQRef.current = 0;
+    setShowGrid(false);
     setCurrentQ(0);
+    timer.reset();
+    setView('ready'); // écran « Prêt ? » avant de lancer le chrono
+  }, [timer]);
+
+  // Démarre réellement l'épreuve (chrono) depuis l'écran « Prêt ? »
+  const beginExam = useCallback(() => {
+    lastSwitchRef.current = Date.now();
     setStartTime(Date.now());
     timer.reset();
     setTimeout(() => timer.start(), 50);
@@ -387,28 +450,62 @@ export default function ExamenPage({ onBack = null }) {
     });
   }, [customText, launchExam]);
 
+  // ----- Helpers réponses (mono ou multi) -----
+  const isAnswered = (a) => Array.isArray(a) ? a.length > 0 : a !== null;
+  const answerLabel = (a) => !isAnswered(a) ? '—' : (Array.isArray(a) ? [...a].sort((x, y) => x - y).map(i => String.fromCharCode(65 + i)).join('') : String.fromCharCode(65 + a));
+  const isAnswerCorrect = (q, a) => {
+    const correctIdx = q.options.map((o, i) => o.correct ? i : -1).filter(i => i >= 0);
+    if (q.multi) {
+      if (!Array.isArray(a) || a.length === 0) return false;
+      const sel = [...a].sort().join(',');
+      return sel === correctIdx.sort().join(',');
+    }
+    return a === correctIdx[0];
+  };
+
   // ----- Exam interactions (NO instant feedback) -----
   const selectOption = useCallback((optionIndex) => {
+    const q = questions[currentQ];
     const newAnswers = [...answers];
-    newAnswers[currentQ] = optionIndex;
+    if (q?.multi) {
+      const cur = Array.isArray(newAnswers[currentQ]) ? newAnswers[currentQ] : [];
+      newAnswers[currentQ] = cur.includes(optionIndex) ? cur.filter(i => i !== optionIndex) : [...cur, optionIndex];
+    } else {
+      newAnswers[currentQ] = optionIndex;
+    }
     setAnswers(newAnswers);
-  }, [answers, currentQ]);
+  }, [answers, currentQ, questions]);
 
-  const goToQuestion = useCallback((index) => {
+  // Créditer le temps passé sur la question courante avant d'en changer
+  const switchQuestion = useCallback((index) => {
+    const prev = currentQRef.current;
+    if (questionTimesRef.current[prev] != null) {
+      questionTimesRef.current[prev] += Math.round((Date.now() - lastSwitchRef.current) / 1000);
+    }
+    lastSwitchRef.current = Date.now();
+    currentQRef.current = index;
     setCurrentQ(index);
   }, []);
 
+  const goToQuestion = useCallback((index) => {
+    switchQuestion(index);
+  }, [switchQuestion]);
+
   const prevQuestion = useCallback(() => {
-    if (currentQ > 0) setCurrentQ(currentQ - 1);
-  }, [currentQ]);
+    if (currentQ > 0) switchQuestion(currentQ - 1);
+  }, [currentQ, switchQuestion]);
 
   const nextQuestion = useCallback(() => {
-    if (currentQ < questions.length - 1) setCurrentQ(currentQ + 1);
-  }, [currentQ, questions.length]);
+    if (currentQ < questions.length - 1) switchQuestion(currentQ + 1);
+  }, [currentQ, questions.length, switchQuestion]);
+
+  const toggleFlag = useCallback(() => {
+    setFlags(f => f.map((v, i) => i === currentQ ? !v : v));
+  }, [currentQ]);
 
   // ----- Confirm finish -----
   const confirmFinish = useCallback(() => {
-    const unanswered = answers.filter(a => a === null).length;
+    const unanswered = answers.filter(a => !(Array.isArray(a) ? a.length > 0 : a !== null)).length;
     if (unanswered > 0) {
       setShowFinishModal(true);
     } else {
@@ -438,11 +535,7 @@ export default function ExamenPage({ onBack = null }) {
 
     let correct = 0;
     questions.forEach((q, i) => {
-      const sel = answers[i];
-      if (sel !== null) {
-        const correctIdx = q.options.findIndex(o => o.correct);
-        if (sel === correctIdx) correct++;
-      }
+      if (isAnswerCorrect(q, answers[i])) correct++;
     });
 
     const pct = Math.round((correct / questions.length) * 100);
@@ -650,90 +743,75 @@ export default function ExamenPage({ onBack = null }) {
   // ===== MODE CHOICE VIEW =====
   if (view === 'modeChoice') {
     return (
-      <section className={`bg-slate-50 ${onBack ? 'h-full flex flex-col justify-center py-6' : 'pt-24 pb-16 md:pt-28 md:pb-20 min-h-screen'}`}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          {!onBack && (
-            <button onClick={() => setView('hero')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
+      <section className={`bg-slate-50 ${onBack ? 'h-full flex flex-col' : 'pt-24 pb-16 md:pt-28 md:pb-20 min-h-screen'}`}>
+        {!onBack && (
+          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <button onClick={() => setView('hero')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
               Retour
             </button>
-          )}
-          <div className={`text-center ${onBack ? 'mb-6' : 'mb-10'}`}>
-            <div className="inline-flex items-center gap-2 bg-primary-50 px-4 py-2 rounded-full border border-primary-200 mb-5">
-              <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
-              <span className="text-sm font-semibold text-primary-700">Nouvelle &eacute;preuve</span>
-            </div>
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-3">Comment souhaitez-vous r&eacute;viser ?</h2>
-            <p className="text-gray-500 text-base max-w-lg mx-auto">Choisissez votre mode de r&eacute;vision pour commencer.</p>
           </div>
-          <div className={`grid md:grid-cols-2 gap-5 ${onBack ? '' : 'mb-8'}`}>
-            {/* Fiches-based */}
-            <button onClick={() => setView('fichesSelection')} className={`group bg-white rounded-2xl border-2 border-gray-200 text-left hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 transition-all hover:-translate-y-0.5 ${onBack ? 'p-5' : 'p-6'}`}>
-              <div className={`bg-amber-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${onBack ? 'w-10 h-10 mb-3' : 'w-12 h-12 mb-4'}`}>
-                <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
+        )}
+        <div className={`max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 ${onBack ? 'flex-1 flex flex-col justify-center pb-6' : 'mt-6'}`}>
+          <div className={`text-center ${onBack ? 'mb-6' : 'mb-8'}`}>
+            <div className="inline-flex items-center gap-1.5 text-primary-600 mb-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
+              <span className="text-xs font-bold uppercase tracking-wider">Nouvelle &eacute;preuve</span>
+            </div>
+            <h2 className="text-2xl md:text-[28px] font-black text-gray-900 tracking-tight">Quelle &eacute;preuve veux-tu passer&nbsp;?</h2>
+          </div>
+
+          {/* HERO : Examen complet (le mode phare) */}
+          <button onClick={() => setShowMixedModal(true)} className="group w-full text-left rounded-2xl border border-emerald-200 p-5 mb-4 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/10 hover:border-emerald-400" style={{ background: 'linear-gradient(135deg, #ecfdf5 0%, #ffffff 58%)' }}>
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-emerald-600/30 group-hover:scale-105 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" /></svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">&Agrave; partir de nos fiches</h3>
-              <p className="text-sm text-gray-500 leading-relaxed mb-4">G&eacute;n&eacute;rez une &eacute;preuve &agrave; partir de nos fiches de r&eacute;vision et de nos cours, class&eacute;s par mati&egrave;re.</p>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 bg-primary-50 px-3 py-1.5 rounded-lg">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
-                    {fichesCount} fiches
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <h3 className="text-lg font-black text-gray-900 tracking-tight">Examen complet</h3>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white uppercase tracking-wide">Concours</span>
+                  {!isPremiumPlus && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wide">Premium+</span>}
+                </div>
+                <p className="text-[13px] text-gray-600 leading-relaxed mb-3">40 questions m&eacute;lang&eacute;es sur tout le tronc commun, en conditions proches du concours.</p>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-white/70 border border-emerald-100 px-2.5 py-1 rounded-lg">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                    20 questions &middot; 30 min
+                    40 questions &middot; 60 min
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-700 group-hover:gap-2.5 transition-all">
+                    Commencer
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
                   </span>
                 </div>
-                <svg className="w-5 h-5 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+              </div>
+            </div>
+          </button>
+
+          {/* Modes ciblés (secondaires) */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            {/* Fiches-based */}
+            <button onClick={() => setView('fichesSelection')} className="group bg-white rounded-2xl border border-gray-200 p-5 text-left hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10 transition-all hover:-translate-y-0.5 flex flex-col">
+              <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform">
+                <svg className="w-5.5 h-5.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
+              </div>
+              <h3 className="text-base font-bold text-gray-900 mb-1.5">&Agrave; partir des fiches</h3>
+              <p className="text-[13px] text-gray-500 leading-relaxed mb-4 flex-1">Une &eacute;preuve cibl&eacute;e g&eacute;n&eacute;r&eacute;e depuis une fiche de r&eacute;vision.</p>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg">{fichesCount} fiches</span>
+                <span className="text-[11px] text-gray-400 font-medium">20 q &middot; 30 min</span>
               </div>
             </button>
             {/* Custom */}
-            <button onClick={() => setView('customSelection')} className={`group bg-white rounded-2xl border-2 border-gray-200 text-left hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 transition-all hover:-translate-y-0.5 ${onBack ? 'p-5' : 'p-6'}`}>
-              <div className={`bg-violet-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${onBack ? 'w-10 h-10 mb-3' : 'w-12 h-12 mb-4'}`}>
-                <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+            <button onClick={() => setView('customSelection')} className="group bg-white rounded-2xl border border-gray-200 p-5 text-left hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 transition-all hover:-translate-y-0.5 flex flex-col">
+              <div className="w-11 h-11 bg-violet-100 rounded-xl flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform">
+                <svg className="w-5.5 h-5.5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Sujet personnalis&eacute;</h3>
-              <p className="text-sm text-gray-500 leading-relaxed mb-4">Choisissez une mati&egrave;re pour une &eacute;preuve de 20 questions en 30 min.</p>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 bg-violet-50 px-3 py-1.5 rounded-lg">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
-                    Th&egrave;me libre
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                    20 questions &middot; 30 min
-                  </span>
-                </div>
-                <svg className="w-5 h-5 text-gray-300 group-hover:text-violet-500 group-hover:translate-x-1 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-              </div>
-            </button>
-          </div>
-          {/* Mixed exam full-width */}
-          <div className="mb-8">
-            <button onClick={() => setShowMixedModal(true)} className="group bg-white rounded-2xl border-2 border-gray-200 p-6 text-left hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-500/10 transition-all w-full hover:-translate-y-0.5">
-              <div className="flex items-start gap-5">
-                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-bold text-gray-900">Examen complet</h3>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wide">Concours</span>
-                    {!isPremiumPlus && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wide">Premium+</span>}
-                  </div>
-                  <p className="text-sm text-gray-500 leading-relaxed mb-3">&Eacute;preuve de 40 questions m&eacute;lang&eacute;es sur l&apos;ensemble des mati&egrave;res du tronc commun. Conditions proches du concours.</p>
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                      40 questions &middot; 60 min
-                    </span>
-                    <svg className="w-5 h-5 text-gray-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                  </div>
-                </div>
+              <h3 className="text-base font-bold text-gray-900 mb-1.5">Sujet personnalis&eacute;</h3>
+              <p className="text-[13px] text-gray-500 leading-relaxed mb-4 flex-1">Choisis une mati&egrave;re ou un th&egrave;me pr&eacute;cis pour ton &eacute;preuve.</p>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-700 bg-violet-50 px-2.5 py-1 rounded-lg">Th&egrave;me libre</span>
+                <span className="text-[11px] text-gray-400 font-medium">20 q &middot; 30 min</span>
               </div>
             </button>
           </div>
@@ -756,7 +834,7 @@ export default function ExamenPage({ onBack = null }) {
     return (
       <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => onBack ? onBack() : setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
+          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
             Retour
           </button>
@@ -875,7 +953,7 @@ export default function ExamenPage({ onBack = null }) {
     return (
       <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => onBack ? onBack() : setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
+          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
             Retour
           </button>
@@ -975,12 +1053,59 @@ export default function ExamenPage({ onBack = null }) {
     );
   }
 
+  // ===== ÉCRAN « PRÊT ? » (avant de lancer le chrono) =====
+  if (view === 'ready') {
+    const mins = examDuration;
+    return (
+      <div className={`flex items-center justify-center ${onBack ? 'min-h-[60vh]' : 'min-h-screen pt-16'} ${darkFocus ? 'bg-[#0f1020]' : 'bg-slate-50'}`}>
+        <div className="max-w-md mx-auto px-4 text-center w-full">
+          <div className={`rounded-2xl border-2 p-8 shadow-sm ${darkFocus ? 'bg-[#1a1b2e] border-[#2a2c44]' : 'bg-white border-gray-200'}`}>
+            <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-5 ${darkFocus ? 'bg-violet-500/20' : 'bg-primary-50 border-2 border-primary-100'}`}>
+              <svg className={`w-8 h-8 ${darkFocus ? 'text-violet-300' : 'text-primary-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            </div>
+            <h2 className={`text-xl font-black mb-2 ${darkFocus ? 'text-white' : 'text-gray-900'}`}>Prêt pour l'épreuve ?</h2>
+            <p className={`text-sm mb-1 ${darkFocus ? 'text-gray-300' : 'text-gray-500'}`}><strong className={darkFocus ? 'text-white' : 'text-gray-800'}>{questions.length} questions · {mins} minutes</strong></p>
+            <p className={`text-xs mb-6 ${darkFocus ? 'text-gray-400' : 'text-gray-500'}`}>Conditions réelles : le chrono ne s'arrête pas, la correction arrive à la fin. Le chrono démarre quand tu cliques.</p>
+
+            <button onClick={beginExam} className="w-full py-3.5 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center gap-2">
+              Commencer l'épreuve
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+            </button>
+            <button onClick={toggleDarkFocus} className={`mt-4 text-xs font-medium transition-colors ${darkFocus ? 'text-violet-300 hover:text-violet-200' : 'text-gray-400 hover:text-gray-600'}`}>
+              {darkFocus ? '☀️ Désactiver le mode focus' : '🌙 Activer le mode focus sombre'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ===== ÉCRAN « COPIE RENDUE » (transition avant la correction) =====
+  if (finishing) {
+    const elapsed = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
+    const em = Math.floor(elapsed / 60), es = elapsed % 60;
+    const nbAnswered = answers.filter(isAnswered).length;
+    return (
+      <div className={`flex items-center justify-center ${onBack ? 'min-h-[60vh]' : 'min-h-screen'} ${darkFocus ? 'bg-[#0f1020]' : 'bg-slate-50'}`}>
+        <div className="text-center px-4 question-in">
+          <div className="text-5xl mb-3 flame-pop">✍️</div>
+          <h2 className={`text-2xl font-black mb-1 ${darkFocus ? 'text-white' : 'text-gray-900'}`}>Copie rendue !</h2>
+          <p className={`text-sm ${darkFocus ? 'text-gray-400' : 'text-gray-500'}`}>{nbAnswered} réponse{nbAnswered > 1 ? 's' : ''} enregistrée{nbAnswered > 1 ? 's' : ''} en {em} min {String(es).padStart(2, '0')} s</p>
+          <div className={`mt-5 inline-flex items-center gap-2 text-xs font-medium ${darkFocus ? 'text-violet-300' : 'text-primary-600'}`}>
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+            Préparation de ta correction…
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ===== EXAM VIEW (NO INSTANT FEEDBACK) =====
   if (view === 'exam') {
     const q = questions[currentQ];
     if (!q) return null;
     const total = questions.length;
-    const answered = answers.filter(a => a !== null).length;
+    const answered = answers.filter(isAnswered).length;
     const isTimeLow = timer.seconds <= 300;
 
     let badgeText = '';
@@ -993,50 +1118,85 @@ export default function ExamenPage({ onBack = null }) {
       badgeText = q.subject || 'Examen complet';
     }
 
+    const dk = darkFocus;
+    const th = {
+      chip: dk ? 'bg-[#1a1b2e] border-[#2a2c44] text-gray-200 hover:border-violet-500' : 'bg-white border-gray-200 text-gray-600 hover:border-primary-300',
+      pillIdle: dk ? 'bg-[#23243a] text-gray-500' : 'bg-gray-100 text-gray-400',
+      pillDone: dk ? 'bg-violet-500/25 text-violet-200' : 'bg-primary-100 text-primary-700',
+    };
     return (
-      <div className={`bg-slate-50 pb-8 ${onBack ? 'pt-6' : 'min-h-screen pt-20'}`}>
+      <div className={`pb-8 ${onBack ? 'pt-6' : 'min-h-screen pt-20'} ${dk ? 'bg-[#0f1020]' : 'bg-slate-50'}`}>
         <div className="max-w-3xl mx-auto px-4">
           {/* Top bar */}
           <div className="flex items-center justify-between mb-4">
-            <button onClick={() => setShowQuitModal(true)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 font-medium">
+            <button onClick={() => setShowQuitModal(true)} className={`text-sm flex items-center gap-1 font-medium ${dk ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
               Quitter
             </button>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
-                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                <span className={`text-sm font-mono font-bold ${isTimeLow ? 'text-red-600 animate-pulse' : 'text-gray-700'}`}>{timer.formatted}</span>
-              </div>
-              <span className="text-sm font-semibold text-gray-500">{answered}/{total}</span>
+              <button onClick={toggleDarkFocus} title={dk ? 'Mode clair' : 'Mode focus sombre'} className={`w-9 h-9 flex items-center justify-center rounded-lg border transition-colors ${th.chip}`}>
+                {dk ? '☀️' : '🌙'}
+              </button>
+              <button onClick={() => setShowGrid(true)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-semibold transition-colors ${th.chip}`}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg>
+                <span className="hidden sm:inline">Grille</span>
+              </button>
+              <span className={`text-sm font-semibold ${dk ? 'text-gray-400' : 'text-gray-500'}`}>{answered}/{total}</span>
+              <ExamTimerRing seconds={timer.seconds} totalSeconds={examDuration * 60} dark={dk} />
             </div>
           </div>
 
           {/* Question pills -- horizontal scroll */}
           <div ref={pillsRef} className="flex gap-1.5 mb-5 overflow-x-auto scrollbar-hide snap-x pb-1">
             {questions.map((_, i) => {
-              let cls = 'bg-gray-100 text-gray-400'; // unanswered
+              let cls = th.pillIdle; // unanswered
               if (i === currentQ) cls = 'bg-primary-600 text-white shadow-md shadow-primary-500/40';
-              else if (answers[i] !== null) cls = 'bg-primary-100 text-primary-700';
+              else if (isAnswered(answers[i])) cls = th.pillDone;
               return (
-                <button key={i} onClick={() => goToQuestion(i)} className={`w-8 h-8 rounded-lg text-xs font-bold transition-all shrink-0 snap-center ${cls}`}>{i + 1}</button>
+                <button key={i} onClick={() => goToQuestion(i)} className={`w-8 h-8 rounded-lg text-xs font-bold transition-all shrink-0 snap-center relative ${cls}`}>
+                  {i + 1}
+                  {flags[i] && <span className="absolute -top-1 -right-1 text-[9px]">🚩</span>}
+                </button>
               );
             })}
           </div>
 
           {/* Question card */}
-          <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 md:p-8 shadow-sm">
+          <div className={`question-in rounded-2xl border-2 p-6 md:p-8 shadow-sm ${dk ? 'bg-[#1a1b2e] border-[#2a2c44]' : 'bg-white border-gray-200'}`} key={currentQ}>
             <div className="flex items-center justify-between mb-5">
-              <span className="text-sm font-medium text-gray-500">Question {currentQ + 1}/{total}</span>
-              <span className="px-3 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full">{badgeText}</span>
+              <span className={`text-sm font-medium ${dk ? 'text-gray-400' : 'text-gray-500'}`}>Question {currentQ + 1}/{total}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleFlag}
+                  title={flags[currentQ] ? 'Retirer le marquage' : 'Marquer pour y revenir'}
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold border transition-colors ${flags[currentQ] ? 'bg-amber-50 border-amber-300 text-amber-700' : 'bg-white border-gray-200 text-gray-400 hover:border-amber-300 hover:text-amber-600'}`}
+                >
+                  🚩 {flags[currentQ] ? 'Marquée' : 'À revoir'}
+                </button>
+                <span className="px-3 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full">{badgeText}</span>
+              </div>
             </div>
-            <p className="text-lg md:text-xl font-bold text-gray-900 mb-6 leading-relaxed">{q.question}</p>
+            <p className={`text-lg md:text-xl font-bold mb-2 leading-relaxed ${dk ? 'text-white' : 'text-gray-900'}`}>{q.question}</p>
+            {q.multi && (
+              <p className={`text-xs font-semibold mb-4 flex items-center gap-1.5 ${dk ? 'text-violet-300' : 'text-primary-600'}`}>
+                <span className={`inline-block rounded px-1.5 py-0.5 text-[9px] font-bold ${dk ? 'bg-violet-500/25 text-violet-200' : 'bg-primary-100 text-primary-700'}`}>RÉPONSES MULTIPLES</span>
+                Cochez toutes les propositions exactes
+              </p>
+            )}
 
             <div className="space-y-3 mb-6">
               {q.options.map((opt, i) => {
-                const isSelected = answers[currentQ] === i;
+                const cur = answers[currentQ];
+                const isSelected = q.multi ? (Array.isArray(cur) && cur.includes(i)) : cur === i;
+                const optCls = isSelected
+                  ? (dk ? 'border-violet-500 bg-violet-500/20 text-white' : 'border-primary-500 bg-primary-50 text-primary-800')
+                  : (dk ? 'border-[#2a2c44] text-gray-200 hover:border-violet-500 hover:bg-violet-500/10' : 'border-gray-200 text-gray-700 hover:border-primary-400 hover:bg-primary-50/50');
+                const badgeCls = isSelected ? 'bg-primary-600 text-white' : (dk ? 'bg-[#23243a] text-gray-400' : 'bg-gray-100 text-gray-500');
                 return (
-                  <button key={i} onClick={() => selectOption(i)} className={`w-full text-left px-5 py-4 rounded-xl border-2 text-sm md:text-base font-medium flex items-center gap-3 transition-all ${isSelected ? 'border-primary-500 bg-primary-50 text-primary-800' : 'border-gray-200 text-gray-700 hover:border-primary-400 hover:bg-primary-50/50'}`}>
-                    <span className={`w-8 h-8 rounded-lg ${isSelected ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-500'} flex items-center justify-center text-sm font-bold shrink-0`}>{String.fromCharCode(65 + i)}</span>
+                  <button key={i} onClick={() => selectOption(i)} className={`w-full text-left px-5 py-4 rounded-xl border-2 text-sm md:text-base font-medium flex items-center gap-3 transition-all ${optCls}`}>
+                    <span className={`w-8 h-8 ${q.multi ? 'rounded-md' : 'rounded-lg'} ${badgeCls} flex items-center justify-center text-sm font-bold shrink-0`}>
+                      {q.multi ? (isSelected ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> : String.fromCharCode(65 + i)) : String.fromCharCode(65 + i)}
+                    </span>
                     <span className="flex-1">{opt.text}</span>
                   </button>
                 );
@@ -1045,7 +1205,7 @@ export default function ExamenPage({ onBack = null }) {
 
             {/* Nav buttons */}
             <div className="flex items-center justify-between gap-3">
-              <button onClick={prevQuestion} className={`px-5 py-3 bg-white text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-colors text-sm ${currentQ === 0 ? 'invisible' : ''}`} disabled={currentQ === 0}>
+              <button onClick={prevQuestion} className={`px-5 py-3 font-bold rounded-xl border-2 transition-colors text-sm ${currentQ === 0 ? 'invisible' : ''} ${dk ? 'bg-[#23243a] text-gray-200 border-[#2a2c44] hover:border-[#3a3c5a]' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'}`} disabled={currentQ === 0}>
                 Pr&eacute;c&eacute;dent
               </button>
               {currentQ === total - 1 ? (
@@ -1054,7 +1214,7 @@ export default function ExamenPage({ onBack = null }) {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                 </button>
               ) : (
-                <button onClick={nextQuestion} className="px-5 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors text-sm flex items-center gap-2">
+                <button onClick={nextQuestion} className={`px-5 py-3 text-white font-bold rounded-xl transition-colors text-sm flex items-center gap-2 ${dk ? 'bg-violet-600 hover:bg-violet-500' : 'bg-gray-900 hover:bg-gray-800'}`}>
                   Suivante
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
                 </button>
@@ -1062,6 +1222,44 @@ export default function ExamenPage({ onBack = null }) {
             </div>
           </div>
         </div>
+
+        {/* Grille de réponses — vue d'ensemble type concours */}
+        {showGrid && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-label="Grille de réponses">
+            <div className="absolute inset-0 bg-gray-900/50" onClick={() => setShowGrid(false)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
+              <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                <div>
+                  <h3 className="text-base font-black text-gray-900">Grille de réponses</h3>
+                  <p className="text-xs text-gray-500">{answered}/{total} répondues · {flags.filter(Boolean).length} marquée{flags.filter(Boolean).length > 1 ? 's' : ''} 🚩</p>
+                </div>
+                <button onClick={() => setShowGrid(false)} className="p-1.5 text-gray-400 hover:text-gray-600" aria-label="Fermer la grille">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <div className="px-5 overflow-y-auto grid grid-cols-4 sm:grid-cols-5 gap-2 pb-3">
+                {questions.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setShowGrid(false); goToQuestion(i); }}
+                    className={`relative rounded-xl border-2 py-2 text-center transition-colors ${i === currentQ ? 'border-primary-500 bg-primary-50' : isAnswered(answers[i]) ? 'border-gray-200 bg-gray-50 hover:border-primary-300' : 'border-dashed border-gray-300 hover:border-primary-300'}`}
+                  >
+                    <div className="text-[10px] text-gray-400 font-semibold">Q{i + 1}</div>
+                    <div className={`text-sm font-black ${isAnswered(answers[i]) ? 'text-gray-900' : 'text-gray-300'}`}>
+                      {answerLabel(answers[i])}
+                    </div>
+                    {flags[i] && <span className="absolute -top-1.5 -right-1 text-[10px]">🚩</span>}
+                  </button>
+                ))}
+              </div>
+              <div className="px-5 py-4 border-t border-gray-100">
+                <button onClick={() => { setShowGrid(false); confirmFinish(); }} className="w-full py-3 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-colors">
+                  Rendre la copie
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showQuitModal && (
           <QuitModal
@@ -1074,7 +1272,7 @@ export default function ExamenPage({ onBack = null }) {
         )}
         {showFinishModal && (
           <FinishModal
-            unanswered={answers.filter(a => a === null).length}
+            unanswered={answers.filter(a => !(Array.isArray(a) ? a.length > 0 : a !== null)).length}
             onConfirm={doFinish}
             onCancel={() => setShowFinishModal(false)}
           />
@@ -1095,9 +1293,8 @@ export default function ExamenPage({ onBack = null }) {
     // Score calculation
     const details = questions.map((q, i) => {
       const sel = answers[i];
-      const correctIdx = q.options.findIndex(o => o.correct);
-      const isCorrect = sel === correctIdx;
-      return { question: q, selected: sel, correctIndex: correctIdx, isCorrect };
+      const correctIndices = q.options.map((o, j) => o.correct ? j : -1).filter(j => j >= 0);
+      return { question: q, selected: sel, correctIndex: correctIndices[0], correctIndices, isCorrect: isAnswerCorrect(q, sel) };
     });
 
     const correct = details.filter(d => d.isCorrect).length;
@@ -1190,15 +1387,29 @@ export default function ExamenPage({ onBack = null }) {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-gray-900">Q{i + 1}. {d.question.question}</p>
-                        {d.selected !== null ? (
-                          <p className={`text-xs mt-1 ${d.isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-                            Votre r&eacute;ponse : <strong>{d.question.options[d.selected].text}</strong>
-                            {!d.isCorrect && <> &mdash; Bonne r&eacute;ponse : <strong>{d.question.options[d.correctIndex].text}</strong></>}
-                          </p>
-                        ) : (
-                          <p className="text-xs mt-1 text-gray-500">Non r&eacute;pondue &mdash; Bonne r&eacute;ponse : <strong>{d.question.options[d.correctIndex].text}</strong></p>
-                        )}
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-bold text-gray-900">Q{i + 1}. {d.question.question}</p>
+                          {questionTimesRef.current[i] != null && (
+                            <span className="shrink-0 text-[10px] font-bold text-gray-400 bg-white border border-gray-200 rounded-full px-2 py-0.5" title="Temps passé sur cette question">
+                              ⏱ {questionTimesRef.current[i] >= 60 ? `${Math.floor(questionTimesRef.current[i] / 60)}m${String(questionTimesRef.current[i] % 60).padStart(2, '0')}` : `${questionTimesRef.current[i]}s`}
+                            </span>
+                          )}
+                        </div>
+                        {(() => {
+                          const goodTxt = d.correctIndices.map(j => d.question.options[j].text).join(' + ');
+                          const yourTxt = Array.isArray(d.selected)
+                            ? (d.selected.length ? d.selected.map(j => d.question.options[j].text).join(' + ') : null)
+                            : (d.selected != null ? d.question.options[d.selected].text : null);
+                          return yourTxt != null ? (
+                            <p className={`text-xs mt-1 ${d.isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+                              {d.question.multi && <span className="inline-block bg-white border border-current rounded px-1.5 py-0.5 text-[9px] font-bold mr-1 align-middle">RÉPONSES MULTIPLES</span>}
+                              Votre r&eacute;ponse : <strong>{yourTxt}</strong>
+                              {!d.isCorrect && <> &mdash; Bonne r&eacute;ponse : <strong>{goodTxt}</strong></>}
+                            </p>
+                          ) : (
+                            <p className="text-xs mt-1 text-gray-500">Non r&eacute;pondue &mdash; Bonne r&eacute;ponse : <strong>{goodTxt}</strong></p>
+                          );
+                        })()}
                         <p className="text-xs text-gray-600 mt-2 leading-relaxed">{d.question.explanation}</p>
                       </div>
                     </div>

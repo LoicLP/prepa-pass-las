@@ -154,7 +154,7 @@ export default function CoursContent() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-black text-gray-900 mb-3">Contenu réservé aux membres Essentiel</h1>
+          <h1 className="text-2xl font-black text-gray-900 mb-3">Contenu réservé aux membres Premium</h1>
           <p className="text-gray-500 mb-8">Les cours détaillés sont accessibles à partir de la formule Essentiel. Profitez d&apos;explications approfondies pour chaque sujet.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/tarifs" className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors">

@@ -40,6 +40,30 @@ RÈGLES STRICTES :
 - Pas de markdown, pas de commentaires, JUSTE le tableau JSON
 `;
 
+// Format examen : autorise les questions à réponses multiples (le vrai format concours PASS/LAS)
+const EXAMEN_FORMAT_INSTRUCTIONS = `
+Tu dois répondre UNIQUEMENT avec un tableau JSON valide, sans aucun texte avant ou après.
+Chaque élément du tableau doit respecter EXACTEMENT ce format :
+{
+  "question": "L'énoncé de la question",
+  "options": [
+    { "text": "Proposition A", "correct": false },
+    { "text": "Proposition B", "correct": true },
+    { "text": "Proposition C", "correct": true },
+    { "text": "Proposition D", "correct": false }
+  ],
+  "explanation": "Explication détaillée : pourquoi chaque proposition est vraie ou fausse (2-4 phrases)"
+}
+
+RÈGLES STRICTES :
+- Exactement 4 options par question
+- Format CONCOURS PASS/LAS : environ 1 question sur 3 a PLUSIEURS propositions exactes (2 ou 3 vraies) ; les autres n'ont qu'UNE seule proposition exacte. Au moins une proposition fausse par question.
+- Pour les questions à plusieurs bonnes réponses, commence l'énoncé par « Cochez la ou les propositions exactes : » (ou une formulation équivalente)
+- Varie aléatoirement la position et le nombre de bonnes réponses
+- Les explications justifient chaque proposition (vraie comme fausse)
+- Pas de markdown, pas de commentaires, JUSTE le tableau JSON
+`;
+
 function stripHtml(html) {
   if (!html) return '';
   // Remove HTML tags and decode basic entities
@@ -149,6 +173,12 @@ Génère exactement ${count} questions.`;
 }
 
 export function buildExamenPrompt(subject, subjectName, count, ficheTopic = null, ficheContent = null) {
+  // L'examen suit le format concours : on injecte le format multi-réponses partout
+  return buildExamenPromptRaw(subject, subjectName, count, ficheTopic, ficheContent)
+    .split(JSON_FORMAT_INSTRUCTIONS).join(EXAMEN_FORMAT_INSTRUCTIONS);
+}
+
+function buildExamenPromptRaw(subject, subjectName, count, ficheTopic = null, ficheContent = null) {
   // When fiche content is available, build a focused prompt from the actual course notes
   if (ficheTopic && ficheContent) {
     const cleanContent = stripHtml(ficheContent).slice(0, 8000); // limit tokens

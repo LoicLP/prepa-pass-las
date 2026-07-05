@@ -39,8 +39,19 @@ export function PremiumProvider({ children }) {
     loadProfile();
   }, [user]);
 
-  const isEssentiel = tier === 'essentiel' || tier === 'premium+';
-  const isPremiumPlus = tier === 'premium+';
+  // Essai Premium offert : 48 h de toutes les fonctionnalités à compter de la création du compte.
+  // Basé sur user.created_at → aucune écriture en base, impossible à « réactiver ».
+  const TRIAL_HOURS = 48;
+  const trialEndsAt = user?.created_at
+    ? new Date(new Date(user.created_at).getTime() + TRIAL_HOURS * 3600 * 1000)
+    : null;
+  const trialActive = tier === 'gratuit' && !!trialEndsAt && trialEndsAt > new Date();
+
+  // Un seul Premium : tout tier payant (historique « essentiel » inclus) débloque tout ;
+  // l'essai de bienvenue donne le même accès complet.
+  const isPaid = tier === 'essentiel' || tier === 'premium+';
+  const isEssentiel = isPaid || trialActive;
+  const isPremiumPlus = isPaid || trialActive;
   const isPremium = isPremiumPlus;
 
   const setSubscription = async (newTier) => {
@@ -59,7 +70,7 @@ export function PremiumProvider({ children }) {
   };
 
   return (
-    <PremiumContext.Provider value={{ tier, isEssentiel, isPremiumPlus, isPremium, setSubscription, togglePremium, isLoaded }}>
+    <PremiumContext.Provider value={{ tier, isEssentiel, isPremiumPlus, isPremium, trialActive, trialEndsAt, setSubscription, togglePremium, isLoaded }}>
       {children}
     </PremiumContext.Provider>
   );
