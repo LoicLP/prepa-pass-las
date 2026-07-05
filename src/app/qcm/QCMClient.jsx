@@ -1004,6 +1004,8 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
             </div>
           </div>
         </div>
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier="essentiel" onClose={() => setShowUpgradeModal(false)} />}
       </section>
     );
   }
@@ -1081,6 +1083,8 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
             </button>
           </div>
         </div>
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier="essentiel" onClose={() => setShowUpgradeModal(false)} />}
       </section>
     );
   }
@@ -1132,6 +1136,8 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
             </button>
           </div>
         </div>
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier="essentiel" onClose={() => setShowUpgradeModal(false)} />}
       </section>
     );
   }
@@ -1430,6 +1436,8 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
             <button onClick={() => { onBack ? onBack() : setView('hero'); }} className="mt-4 text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors">Annuler</button>
           </div>
         </div>
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier="essentiel" onClose={() => setShowUpgradeModal(false)} />}
       </div>
     );
   }
