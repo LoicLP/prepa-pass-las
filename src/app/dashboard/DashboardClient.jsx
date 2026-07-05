@@ -569,58 +569,114 @@ export default function DashboardPage() {
       {mobileMenuOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 150, display: 'flex' }}>
           {/* Backdrop */}
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,16,32,0.4)' }} onClick={() => setMobileMenuOpen(false)} />
+          <div className="drawer-backdrop" style={{ position: 'absolute', inset: 0, background: 'rgba(15,16,32,0.45)', backdropFilter: 'blur(2px)', animation: 'drawerBackdropIn .2s ease-out' }} onClick={() => setMobileMenuOpen(false)} />
           {/* Drawer */}
-          <div style={{ position: 'relative', width: 280, background: '#fff', height: '100%', overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', zIndex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#8a8ea8', letterSpacing: 1.2, textTransform: 'uppercase' }}>Navigation</div>
-              <button onClick={() => setMobileMenuOpen(false)} style={{ padding: 6, borderRadius: 8, background: '#f5f5f8', border: 'none', cursor: 'pointer', color: '#5f6280', display: 'flex' }}>
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <div className="drawer-panel" style={{ position: 'relative', width: 300, maxWidth: '85vw', background: '#fff', height: '100%', overflowY: 'auto', padding: '16px 14px calc(16px + env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', zIndex: 1, borderRadius: '0 20px 20px 0', animation: 'drawerSlideIn .22s cubic-bezier(0.16,1,0.3,1)' }}>
+
+            {/* En-tête : identité + gamification (tap → Mon compte) */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14 }}>
+              <button
+                onClick={() => { setActiveSection('account'); setMobileMenuOpen(false); }}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 11, padding: '10px 11px', borderRadius: 14, background: 'linear-gradient(135deg, #f2f0fe, #faf9ff)', border: '1px solid #e8e6f5', cursor: 'pointer', textAlign: 'left', minWidth: 0 }}
+              >
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#4f46e5', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 15, flexShrink: 0 }}>
+                  {(user.displayName?.[0] || user.email?.[0] || '?').toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13.5, fontWeight: 700, color: '#0f1020', margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{user.displayName || user.email}</p>
+                  {data.hasAnySessions ? (
+                    <p style={{ fontSize: 11, color: '#5f6280', margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>{gam.grade.emoji} {gam.grade.name}</span>
+                      <span style={{ color: '#c9cbdd' }}>·</span>
+                      <span>🔥 {gam.streakInfo.streak}</span>
+                    </p>
+                  ) : (
+                    <p style={{ fontSize: 11, color: '#8a8ea8', margin: '3px 0 0' }}>{tier === 'gratuit' ? 'Compte gratuit' : 'Premium'} · Mon compte</p>
+                  )}
+                </div>
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#8a8ea8" strokeWidth="2" style={{ flexShrink: 0 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+              <button onClick={() => setMobileMenuOpen(false)} aria-label="Fermer le menu" style={{ padding: 8, borderRadius: 10, background: '#f5f5f8', border: 'none', cursor: 'pointer', color: '#5f6280', display: 'flex', marginTop: 2 }}>
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            {[
-              { id: 'overview', label: "Vue d'ensemble", icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg> },
-              { id: 'fiches', label: 'Fiches & Cours', icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2V5zM19 18v3H6" /></svg> },
-              { id: 'historique', label: 'Historique', icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg> },
-              { id: 'progression', label: 'Progression', locked: !isPremiumPlus, icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg> },
-              { id: 'objectifs', label: 'Objectifs', locked: !isPremiumPlus, icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" /></svg> },
-              { id: 'classement', label: 'Classement', locked: !isPremiumPlus, icon: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172" /></svg> },
-            ].map(item => {
-              const isAct = item.id === 'fiches' ? activeSection === 'fiches' : activeSection === item.id;
-              return (
-                <button key={item.id}
-                  onClick={() => {
-                    if (item.id === 'fiches') { setActiveFicheSubject(null); setActiveSection('fiches'); }
-                    else { setActiveSection(item.id); }
-                    setMobileMenuOpen(false);
-                  }}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 12, marginBottom: 4, background: isAct ? '#4f46e5' : 'transparent', color: isAct ? '#fff' : '#2a2c44', fontSize: 14.5, fontWeight: isAct ? 600 : 500, border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                  className={isAct ? '' : 'hover:bg-gray-50 transition-colors'}
+
+            {/* Actions rapides : grille de tuiles colorées */}
+            <div style={{ fontSize: 10.5, letterSpacing: 1.2, fontWeight: 700, color: '#8a8ea8', textTransform: 'uppercase', marginBottom: 8 }}>Actions rapides</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+              {[
+                { label: 'QCM', sub: 'Entraînement', bg: '#ece9ff', color: '#4f46e5',
+                  icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />,
+                  onClick: () => { setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' }); setMobileMenuOpen(false); } },
+                { label: 'Examen blanc', sub: 'Conditions réelles', bg: '#fdeaef', color: '#e45770',
+                  icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />,
+                  onClick: () => { setActiveExamen(true); setMobileMenuOpen(false); } },
+                { label: 'Session éclair', sub: '8 questions · 5 min', bg: '#fdf3e0', color: '#e8a948',
+                  icon: <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />,
+                  onClick: () => { const s = todaySubject || SUBJECTS[1]; setActiveQCM({ type: 'custom', subject: s.id, subjectName: s.name, title: s.name, count: 8, flash: true }); setMobileMenuOpen(false); } },
+                { label: 'À consolider', sub: reviewDue.length > 0 ? `${reviewDue.length} question${reviewDue.length > 1 ? 's' : ''}` : 'Tout est à jour', bg: '#e0f3eb', color: '#3eb489', disabled: reviewDue.length === 0, badge: reviewDue.length || null,
+                  icon: <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />,
+                  onClick: () => { launchReview(); setMobileMenuOpen(false); } },
+              ].map(a => (
+                <button
+                  key={a.label}
+                  onClick={a.disabled ? undefined : a.onClick}
+                  disabled={a.disabled}
+                  style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 7, padding: '11px 12px', borderRadius: 14, background: a.bg, border: 'none', cursor: a.disabled ? 'default' : 'pointer', textAlign: 'left', opacity: a.disabled ? 0.55 : 1 }}
                 >
-                  {item.icon}
-                  <span className="flex-1">{item.label}</span>
-                  {item.locked && <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>}
+                  <span style={{ width: 28, height: 28, borderRadius: 9, background: a.color, color: '#fff', display: 'grid', placeItems: 'center' }}>
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">{a.icon}</svg>
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0f1020', lineHeight: 1.2 }}>{a.label}</span>
+                    <span style={{ display: 'block', fontSize: 10.5, color: '#5f6280', marginTop: 2 }}>{a.sub}</span>
+                  </span>
+                  {a.badge && (
+                    <span style={{ position: 'absolute', top: 9, right: 10, fontSize: 10, fontWeight: 800, color: '#fff', background: a.color, borderRadius: 20, padding: '2px 7px' }}>{a.badge}</span>
+                  )}
                 </button>
-              );
-            })}
-            {/* Quick actions */}
-            <div style={{ margin: '12px 0 8px', paddingTop: 12, borderTop: '1px solid #eef0f7', fontSize: 11, letterSpacing: 1.2, fontWeight: 700, color: '#8a8ea8', textTransform: 'uppercase' }}>Actions rapides</div>
-            <button onClick={() => { setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' }); setMobileMenuOpen(false); }}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 12, marginBottom: 4, background: 'transparent', color: '#2a2c44', fontSize: 14.5, fontWeight: 500, border: 'none', cursor: 'pointer', textAlign: 'left' }}
-              className="hover:bg-gray-50 transition-colors"
-            >
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-              Lancer un QCM
-            </button>
-            <button onClick={() => { setActiveExamen(true); setMobileMenuOpen(false); }}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 12, marginBottom: 4, background: 'transparent', color: '#2a2c44', fontSize: 14.5, fontWeight: 500, border: 'none', cursor: 'pointer', textAlign: 'left' }}
-              className="hover:bg-gray-50 transition-colors"
-            >
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg>
-              Mode Examen
-            </button>
+              ))}
+            </div>
+            {[
+              { group: 'Réviser', items: [
+                { id: 'overview', label: "Vue d'ensemble", accent: '#4f46e5', accentBg: '#f2f0fe', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /> },
+                { id: 'fiches', label: 'Fiches & Cours', accent: '#7c3aed', accentBg: '#f3edff', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2V5zM19 18v3H6" /> },
+              ]},
+              { group: 'Progresser', items: [
+                { id: 'historique', label: 'Historique', accent: '#3eb489', accentBg: '#e5f6ee', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /> },
+                { id: 'progression', label: 'Progression', locked: !isPremiumPlus, accent: '#4f8ff7', accentBg: '#e4edff', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /> },
+                { id: 'objectifs', label: 'Objectifs', locked: !isPremiumPlus, accent: '#7c3aed', accentBg: '#f3edff', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" /> },
+                { id: 'classement', label: 'Classement', locked: !isPremiumPlus, accent: '#e8a948', accentBg: '#fdf4e2', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172" /> },
+              ]},
+            ].map(section => (
+              <Fragment key={section.group}>
+                <div style={{ fontSize: 10.5, letterSpacing: 1.2, fontWeight: 700, color: '#8a8ea8', textTransform: 'uppercase', margin: '4px 0 6px' }}>{section.group}</div>
+                {section.items.map(item => {
+                  const isAct = item.id === 'fiches' ? activeSection === 'fiches' : activeSection === item.id;
+                  return (
+                    <button key={item.id}
+                      onClick={() => {
+                        if (item.id === 'fiches') { setActiveFicheSubject(null); setActiveSection('fiches'); }
+                        else { setActiveSection(item.id); }
+                        setMobileMenuOpen(false);
+                      }}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '8px 9px', borderRadius: 12, marginBottom: 3, background: isAct ? item.accentBg : 'transparent', color: isAct ? item.accent : '#2a2c44', fontSize: 14, fontWeight: isAct ? 700 : 500, border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                      className={isAct ? '' : 'hover:bg-gray-50 transition-colors'}
+                    >
+                      <span style={{ width: 30, height: 30, borderRadius: 9, background: isAct ? item.accent : item.accentBg, color: isAct ? '#fff' : item.accent, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">{item.icon}</svg>
+                      </span>
+                      <span className="flex-1">{item.label}</span>
+                      {item.locked && <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#8a8ea8" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>}
+                    </button>
+                  );
+                })}
+              </Fragment>
+            ))}
             {/* Upgrade premium (mobile) */}
             {!isPremiumPlus && (
               <Link
@@ -643,26 +699,8 @@ export default function DashboardPage() {
               </Link>
             )}
 
-            {/* User + logout */}
-            <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid #eef0f7' }}>
-              {user && (
-                <button
-                  onClick={() => { setActiveSection('account'); setMobileMenuOpen(false); }}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', marginBottom: 8, borderRadius: 12, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-                    {(user.displayName?.[0] || user.email?.[0] || '?').toUpperCase()}
-                  </div>
-                  <div style={{ flex: 1, overflow: 'hidden' }}>
-                    <p style={{ fontSize: 13.5, fontWeight: 600, color: '#0f1020', margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{user.displayName || user.email}</p>
-                    <p style={{ fontSize: 11.5, color: '#8a8ea8', margin: 0 }}>{tier === 'gratuit' ? 'Compte gratuit' : 'Premium'} · Mon compte</p>
-                  </div>
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#8a8ea8" strokeWidth="2" style={{ flexShrink: 0 }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                  </svg>
-                </button>
-              )}
+            {/* Déconnexion */}
+            <div style={{ marginTop: 'auto', paddingTop: 14, borderTop: '1px solid #eef0f7' }}>
               <button
                 onClick={async () => { try { await logOut(); router.push('/'); } catch (e) { console.error(e); } }}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: 'transparent', border: 'none', color: '#e45770', fontSize: 14, fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}
@@ -1575,6 +1613,9 @@ function ConcoursPath({ examDate, onSetDate = null }) {
 function ActionHub({ todaySubject, reviewDue = [], subjects = [], onLaunchQCM, onLaunchExamen, onOpenFiches, onLaunchReview, quests = [], showQuests = false }) {
   const [flashMenu, setFlashMenu] = useState(false);
   const hasReview = reviewDue.length > 0;
+  // Sans recommandation calculée (compte neuf), on retombe sur une matière par défaut
+  // pour que la session éclair reste toujours accessible.
+  const flashSubject = todaySubject || subjects[0] || null;
   const launchFlash = (subj) => { setFlashMenu(false); onLaunchQCM({ type: 'custom', subject: subj.id, subjectName: subj.name, title: subj.name, count: 8, flash: true }); };
 
   const primaryBtn = { background: '#7c3aed', color: '#fff', fontSize: 13, fontWeight: 700, padding: '9px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' };
@@ -1677,12 +1718,13 @@ function ActionHub({ todaySubject, reviewDue = [], subjects = [], onLaunchQCM, o
             <BentoRow icon="refresh" bg="#e0f3eb" solid="#3eb489" titleColor="#1d6b47" subColor="#5f9e81" title="À consolider" subtitle="Rien à revoir — tout est à jour !" disabled />
           )}
 
-        {todaySubject && (
+        {/* Session éclair : toujours visible, même sans recommandation calculée (nouveau compte) */}
+        {flashSubject && (
           <div style={{ position: 'relative', display: 'flex' }}>
             <BentoRow
               icon="bolt" bg="#fdf3e0" solid="#e8a948" titleColor="#7a5410" subColor="#bd8f45"
-              title="Session éclair" subtitle={`8 questions · 5 min · ${todaySubject.name}`}
-              onClick={() => launchFlash(todaySubject)}
+              title="Session éclair" subtitle={`8 questions · 5 min · ${flashSubject.name}`}
+              onClick={() => launchFlash(flashSubject)}
               rightSlot={
                 <span
                   role="button"
@@ -1704,7 +1746,7 @@ function ActionHub({ todaySubject, reviewDue = [], subjects = [], onLaunchQCM, o
                 <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 41, background: '#fff', border: '1px solid #e8e6f5', borderRadius: 12, boxShadow: '0 12px 32px rgba(79,70,229,0.16)', padding: 6 }}>
                   <div style={{ fontSize: 10.5, letterSpacing: 1, fontWeight: 700, color: '#8a8ea8', textTransform: 'uppercase', padding: '6px 10px 4px' }}>Matière éclair</div>
                   {subjects.map(subj => {
-                    const isWeak = subj.id === todaySubject.id;
+                    const isWeak = !!todaySubject && subj.id === todaySubject.id;
                     return (
                       <button
                         key={subj.id}
