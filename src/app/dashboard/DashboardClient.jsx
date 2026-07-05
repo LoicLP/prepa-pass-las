@@ -715,27 +715,50 @@ export default function DashboardPage() {
       )}
 
       {/* ===== BARRE DE NAVIGATION MOBILE BASSE ===== */}
-      <div className="md:hidden flex items-stretch" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderTop: '1px solid #eef0f7', height: 64 }}>
+      <div className="md:hidden flex items-stretch" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(14px)', borderTop: '1px solid #eef0f7', height: 'calc(62px + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)', boxShadow: '0 -6px 20px rgba(15,16,32,0.05)' }}>
         {[
-          { id: 'overview', label: 'Accueil', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg> },
-          { id: 'fiches', label: 'Fiches', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2V5zM19 18v3H6" /></svg> },
-          { id: 'qcm', label: 'QCM', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg> },
-          { id: 'historique', label: 'Historique', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg> },
-          { id: 'menu', label: 'Menu', icon: <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg> },
+          { id: 'overview', label: 'Accueil', icon: <svg width="21" height="21" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg> },
+          { id: 'fiches', label: 'Fiches', icon: <svg width="21" height="21" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2V5zM19 18v3H6" /></svg> },
+          { id: 'qcm', label: 'QCM', fab: true },
+          { id: 'historique', label: 'Historique', icon: <svg width="21" height="21" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg> },
+          { id: 'menu', label: 'Menu', badge: reviewDue.length || null, icon: <svg width="21" height="21" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg> },
         ].map(item => {
-          const isAct = item.id === 'menu' ? false : (item.id === 'fiches' ? activeSection === 'fiches' : activeSection === item.id);
+          const isAct = item.id === 'menu' || item.fab ? false : (item.id === 'fiches' ? activeSection === 'fiches' : activeSection === item.id);
+          const onTap = () => {
+            if (item.id === 'menu') { setMobileMenuOpen(true); return; }
+            if (item.id === 'qcm') { setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' }); return; }
+            if (item.id === 'fiches') { setActiveFicheSubject(null); setActiveSection('fiches'); return; }
+            setActiveSection(item.id);
+          };
+
+          {/* Bouton central QCM : FAB surélevé en dégradé */}
+          if (item.fab) {
+            return (
+              <button key={item.id} onClick={onTap} aria-label="Lancer un QCM"
+                style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 7, background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                <span style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', boxShadow: '0 8px 20px rgba(79,70,229,0.38), 0 0 0 4px #fff', display: 'grid', placeItems: 'center', color: '#fff' }}
+                  className="active:scale-95 transition-transform"
+                >
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                </span>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.2, color: '#4f46e5' }}>{item.label}</span>
+              </button>
+            );
+          }
+
           return (
-            <button key={item.id}
-              onClick={() => {
-                if (item.id === 'menu') { setMobileMenuOpen(true); return; }
-                if (item.id === 'qcm') { setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' }); return; }
-                if (item.id === 'fiches') { setActiveFicheSubject(null); setActiveSection('fiches'); return; }
-                setActiveSection(item.id);
-              }}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: isAct ? '#4f46e5' : '#8a8ea8', padding: '4px 0 6px', transition: 'color .15s', position: 'relative' }}
+            <button key={item.id} onClick={onTap}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', color: isAct ? '#4f46e5' : '#8a8ea8', padding: '5px 0 7px', transition: 'color .15s' }}
             >
-              {isAct && <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 28, height: 2.5, background: '#4f46e5', borderRadius: '0 0 3px 3px' }} />}
-              {item.icon}
+              <span style={{ position: 'relative', width: 44, height: 27, borderRadius: 14, background: isAct ? '#ece9ff' : 'transparent', display: 'grid', placeItems: 'center', transition: 'background .15s' }}>
+                {item.icon}
+                {item.badge && (
+                  <span style={{ position: 'absolute', top: -3, right: 2, minWidth: 15, height: 15, borderRadius: 8, background: '#4f46e5', color: '#fff', fontSize: 9, fontWeight: 800, display: 'grid', placeItems: 'center', padding: '0 3px', boxShadow: '0 0 0 2px #fff' }}>
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                )}
+              </span>
               <span style={{ fontSize: 10, fontWeight: isAct ? 700 : 500, letterSpacing: 0.2 }}>{item.label}</span>
             </button>
           );
