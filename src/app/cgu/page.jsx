@@ -38,7 +38,7 @@ export default function CGUPage() {
                 <p>
                   Les pr&eacute;sentes Conditions G&eacute;n&eacute;rales d&rsquo;Utilisation (ci-apr&egrave;s &laquo; CGU &raquo;)
                   ont pour objet de d&eacute;finir les modalit&eacute;s et conditions d&rsquo;acc&egrave;s et d&rsquo;utilisation
-                  de la plateforme <strong className="text-gray-900">prepa-pass-las.fr</strong> (ci-apr&egrave;s &laquo; la Plateforme &raquo;),
+                  de la plateforme <strong className="text-gray-900">prepa-pass-las.fr</strong>{' '}(ci-apr&egrave;s &laquo; la Plateforme &raquo;),
                   &eacute;dit&eacute;e par :
                 </p>
                 <p className="pl-4 border-l-2 border-primary-200">

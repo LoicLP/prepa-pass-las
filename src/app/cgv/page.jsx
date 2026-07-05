@@ -19,7 +19,7 @@ export default function CGVPage() {
             </span>
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
-            Derni&egrave;re mise &agrave; jour : 16 mars 2026
+            Derni&egrave;re mise &agrave; jour : 5 juillet 2026
           </p>
         </div>
       </section>
@@ -45,7 +45,7 @@ export default function CGVPage() {
                 </p>
                 <p>
                   Et toute personne physique ou morale (ci-apr&egrave;s &laquo; l&rsquo;Utilisateur &raquo;) acc&eacute;dant au site
-                  {' '}<strong className="text-gray-900">prepa-pass-las.fr</strong> (ci-apr&egrave;s &laquo; la Plateforme &raquo;),
+                  {' '}<strong className="text-gray-900">prepa-pass-las.fr</strong>{' '}(ci-apr&egrave;s &laquo; la Plateforme &raquo;),
                   plateforme en ligne de pr&eacute;paration aux concours PASS et LAS (acc&egrave;s sant&eacute;).
                 </p>
                 <p>
@@ -81,31 +81,32 @@ export default function CGVPage() {
                 Article 3 &ndash; Description des services
               </h2>
               <div className="text-sm text-gray-600 leading-relaxed space-y-3">
-                <p>La Plateforme propose trois formules d&rsquo;acc&egrave;s :</p>
+                <p>La Plateforme propose deux formules d&rsquo;acc&egrave;s :</p>
 
                 <div className="bg-gray-50 rounded-xl p-4 space-y-3">
                   <div className="flex items-start gap-3">
                     <span className="w-6 h-6 rounded-lg bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0 mt-0.5">1</span>
                     <div>
                       <p className="font-bold text-gray-900">D&eacute;couverte (Gratuit)</p>
-                      <p>Acc&egrave;s limit&eacute; &agrave; 1 QCM par jour, fiches accessibles, corrections d&eacute;taill&eacute;es.</p>
+                      <p>Acc&egrave;s limit&eacute; &agrave; 1 QCM par jour avec corrections d&eacute;taill&eacute;es, consultation des fiches de r&eacute;vision, tableau de bord et fonctionnalit&eacute;s de suivi (s&eacute;rie, XP).</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center text-xs font-bold text-primary-700 shrink-0 mt-0.5">2</span>
+                    <span className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center text-xs font-bold text-violet-700 shrink-0 mt-0.5">2</span>
                     <div>
-                      <p className="font-bold text-gray-900">Essentiel &ndash; 19,90 &euro; / mois</p>
-                      <p>QCM illimit&eacute;s, fiches t&eacute;l&eacute;chargeables en PDF, acc&egrave;s aux cours d&eacute;taill&eacute;s, mode Examen chronom&eacute;tr&eacute;, corrections d&eacute;taill&eacute;es.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center text-xs font-bold text-violet-700 shrink-0 mt-0.5">3</span>
-                    <div>
-                      <p className="font-bold text-gray-900">Premium+ &ndash; 39,90 &euro; / mois</p>
-                      <p>Tout Essentiel + mode Examen complet, suivi de progression avanc&eacute;, objectifs personnalis&eacute;s, classement et comparaison.</p>
+                      <p className="font-bold text-gray-900">Premium &ndash; 24,99 &euro; / mois ou 149,99 &euro; / an</p>
+                      <p>QCM illimit&eacute;s g&eacute;n&eacute;r&eacute;s par intelligence artificielle, r&eacute;visions espac&eacute;es («&nbsp;&Agrave; consolider&nbsp;»), examens blancs format concours, cours complets et fiches t&eacute;l&eacute;chargeables en PDF, suivi de progression avanc&eacute;, objectifs personnalis&eacute;s, classement.</p>
                     </div>
                   </div>
                 </div>
+
+                <p>
+                  &Agrave; la cr&eacute;ation de son compte, tout nouvel Utilisateur b&eacute;n&eacute;ficie d&rsquo;une{' '}
+                  <strong className="text-gray-900">p&eacute;riode d&rsquo;essai gratuite de 48 heures</strong>{' '}
+                  donnant acc&egrave;s &agrave; l&rsquo;ensemble des fonctionnalit&eacute;s Premium. Cet essai est accord&eacute;
+                  automatiquement, sans communication de coordonn&eacute;es bancaires, et prend fin automatiquement
+                  sans facturation ni engagement : le compte bascule alors sur la formule D&eacute;couverte.
+                </p>
 
                 <p>
                   Le contenu p&eacute;dagogique (questions, fiches, cours) est fourni &agrave; titre indicatif et ne saurait
@@ -151,11 +152,22 @@ export default function CGVPage() {
                   uniquement aux nouvelles souscriptions ou aux renouvellements.
                 </p>
                 <p>
-                  Le paiement s&rsquo;effectue en ligne par carte bancaire ou tout autre moyen de paiement accept&eacute; sur la Plateforme.
-                  L&rsquo;abonnement est factur&eacute; mensuellement, sans engagement de dur&eacute;e minimale.
+                  Le paiement s&rsquo;effectue en ligne par carte bancaire ou tout autre moyen de paiement accept&eacute;
+                  sur la Plateforme, via le prestataire de paiement s&eacute;curis&eacute; Stripe.
+                  L&rsquo;abonnement Premium est factur&eacute;, au choix de l&rsquo;Utilisateur,{' '}
+                  <strong className="text-gray-900">mensuellement (24,99 &euro; TTC)</strong> ou{' '}
+                  <strong className="text-gray-900">annuellement (149,99 &euro; TTC)</strong>, sans engagement
+                  de dur&eacute;e minimale. L&rsquo;abonnement est reconduit tacitement &agrave; chaque &eacute;ch&eacute;ance
+                  (mensuelle ou annuelle) jusqu&rsquo;&agrave; r&eacute;siliation.
                 </p>
                 <p>
-                  En cas de changement de formule, un ajustement au prorata temporis est appliqu&eacute;.
+                  En cas de changement de p&eacute;riodicit&eacute; (mensuel vers annuel ou inversement), un ajustement
+                  au prorata temporis est appliqu&eacute;.
+                </p>
+                <p>
+                  La p&eacute;riode d&rsquo;essai de 48 heures mentionn&eacute;e &agrave; l&rsquo;article 3 est enti&egrave;rement
+                  gratuite&nbsp;: aucune coordonn&eacute;e bancaire n&rsquo;est demand&eacute;e et aucun montant n&rsquo;est
+                  pr&eacute;lev&eacute; &agrave; son issue.
                 </p>
               </div>
             </article>
@@ -169,7 +181,7 @@ export default function CGVPage() {
               <div className="text-sm text-gray-600 leading-relaxed space-y-2">
                 <p>
                   Conform&eacute;ment aux articles L221-18 et suivants du Code de la consommation, l&rsquo;Utilisateur
-                  dispose d&rsquo;un d&eacute;lai de <strong className="text-gray-900">quatorze (14) jours</strong> &agrave; compter
+                  dispose d&rsquo;un d&eacute;lai de <strong className="text-gray-900">quatorze (14) jours</strong>{' '}&agrave; compter
                   de la souscription pour exercer son droit de r&eacute;tractation, sans avoir &agrave; justifier de motif.
                 </p>
                 <p>
