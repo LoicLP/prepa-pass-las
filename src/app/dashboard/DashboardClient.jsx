@@ -190,6 +190,16 @@ export default function DashboardPage() {
 
   const { isPremiumPlus, tier, trialActive, trialEndsAt } = usePremium();
 
+  // Bandeau « essai terminé » : visible pendant 5 jours après l'expiration, refermable.
+  // Initialisé masqué puis révélé après lecture du localStorage (évite le flash si déjà fermé).
+  const [trialEndDismissed, setTrialEndDismissed] = useState(true);
+  useEffect(() => {
+    setTrialEndDismissed(localStorage.getItem('ppl-trial-ended-dismissed') === '1');
+  }, []);
+  const trialEndedRecently = tier === 'gratuit' && trialEndsAt && !trialActive
+    && Date.now() > trialEndsAt.getTime()
+    && Date.now() < trialEndsAt.getTime() + 5 * 24 * 3600 * 1000;
+
   // ---- Tag sessions with type ----
   const allSessions = useMemo(() => [
     ...qcmStats.sessions.map(s => ({ ...s, _type: 'QCM' })),
@@ -862,6 +872,29 @@ export default function DashboardPage() {
                   </div>
                 );
               })()}
+              {/* Bandeau essai terminé (fenêtre de 5 jours, refermable) */}
+              {trialEndedRecently && !trialEndDismissed && (
+                <div style={{ background: 'linear-gradient(135deg, #312e81, #6d28d9)', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 18 }}>🔓</span>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#fff' }}>Ton essai Premium est terminé</div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.78)' }}>
+                      Tes XP, ta série 🔥 et tes stats sont conservés. Repasse Premium pour retrouver les QCM illimités et ta progression.
+                    </div>
+                  </div>
+                  <Link href="/tarifs" style={{ flexShrink: 0, background: '#fff', color: '#6d28d9', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, textDecoration: 'none' }} className="hover:bg-indigo-50 transition-colors">
+                    Repasser Premium — 12,50 €/mois
+                  </Link>
+                  <button
+                    onClick={() => { localStorage.setItem('ppl-trial-ended-dismissed', '1'); setTrialEndDismissed(true); }}
+                    aria-label="Fermer"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', padding: 3, display: 'flex', flexShrink: 0 }}
+                    className="hover:text-white"
+                  >
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              )}
               {resumeState && (() => {
                 const done = resumeState.answers.filter(a => a != null).length;
                 const tot = resumeState.questions.length;
