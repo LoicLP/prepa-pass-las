@@ -463,6 +463,9 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     } else if (initialConfig.type === 'resume' && initialConfig.resumeState) {
       // Reprise d'une session interrompue
       resumeQuiz(initialConfig.resumeState);
+    } else if (initialConfig.welcome) {
+      // Premier QCM de bienvenue (nouvel inscrit) : écran d'intro dédié
+      setView('welcomeIntro');
     } else if (initialConfig.flash) {
       // Session éclair : on affiche d'abord l'écran d'intro
       setFlashConfig(initialConfig);
@@ -494,6 +497,14 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     // Pas de génération IA ni de limite quotidienne : on rejoue des questions déjà vues
     launchReviewWith(entries, null);
   }, [user, launchReviewWith]);
+
+  // ----- Premier QCM de bienvenue (nouvel inscrit) -----
+  // 5 questions statiques → démarrage instantané, session réelle (stats + série lancées).
+  const launchWelcome = useCallback(() => {
+    setSelectedTopic({ type: 'custom', subject: null, subjectName: 'Bienvenue', title: 'Tes 5 premières questions' });
+    setAiGenerated(false);
+    launchWithQuestions(shuffleArray([...QUESTIONS]).slice(0, 5));
+  }, [launchWithQuestions]);
 
   // ----- Démo découverte (page publique, sans compte) -----
   // 5 questions de la banque statique, aucune sauvegarde ni limite : un avant-goût avant inscription.
@@ -1006,6 +1017,51 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
         </div>
         {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
         {showUpgradeModal && <UpgradeModal requiredTier="essentiel" onClose={() => setShowUpgradeModal(false)} />}
+      </section>
+    );
+  }
+
+  // ===== WELCOME INTRO VIEW (premier QCM d'un nouvel inscrit) =====
+  if (view === 'welcomeIntro') {
+    return (
+      <section className={`pb-16 bg-slate-50 flex items-center justify-center ${onBack ? 'pt-8 min-h-[70vh]' : 'pt-24 min-h-screen'}`}>
+        <div className="w-full max-w-lg px-4 sm:px-6">
+          <div className="bg-white rounded-3xl border border-indigo-100 shadow-xl shadow-indigo-500/10 p-8 text-center relative overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' }}></div>
+            <div className="w-20 h-20 mx-auto rounded-full bg-violet-100 flex items-center justify-center text-5xl mb-4 pricing-float">🦉</div>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Bienvenue&nbsp;! On y va&nbsp;?</h2>
+            <p className="text-sm text-gray-500 leading-relaxed mb-6">
+              On commence par <strong className="text-gray-900">5 questions rapides</strong>{' '}
+              — deux minutes, pas plus.
+            </p>
+            <div className="space-y-2.5 mb-7 text-left max-w-xs mx-auto">
+              {[
+                ['🔥', <>Ta <strong>série de révisions</strong> démarre aujourd&apos;hui</>],
+                ['🦉', <>Pico <strong>calibre tes recommandations</strong></>],
+                ['✨', <>Tes premiers <strong>XP</strong> t&apos;attendent</>],
+              ].map(([e, t], i) => (
+                <div key={i} className="flex items-center gap-3 bg-slate-50 border border-gray-100 rounded-xl px-3.5 py-2.5">
+                  <span className="text-lg leading-none">{e}</span>
+                  <span className="text-[13px] text-gray-700">{t}</span>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={launchWelcome}
+              className="w-full py-4 rounded-2xl text-white font-bold text-lg hover:opacity-90 transition-opacity shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
+            >
+              C&apos;est parti
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+            </button>
+            <button
+              onClick={() => { onBack ? onBack() : setView('hero'); }}
+              className="mt-3 text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors"
+            >
+              Plus tard
+            </button>
+          </div>
+        </div>
       </section>
     );
   }

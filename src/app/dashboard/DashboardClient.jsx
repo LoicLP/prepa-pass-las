@@ -436,6 +436,17 @@ export default function DashboardPage() {
   }, [allSessions, chartMode, isPremiumPlus, progSubject]);
 
   // Dynamic subtitle
+  // Premier QCM de bienvenue : à la toute première visite d'un compte sans aucune session,
+  // on ouvre automatiquement l'écran « Tes 5 premières questions » (une seule fois, flag localStorage).
+  useEffect(() => {
+    if (!qcmLoaded || !examLoaded || data.hasAnySessions) return;
+    if (activeQCM || activeExamen) return;
+    if (localStorage.getItem('ppl-welcome-qcm-shown') === '1') return;
+    localStorage.setItem('ppl-welcome-qcm-shown', '1');
+    setActiveQCM({ welcome: true, subjectName: 'Bienvenue', title: 'Bienvenue' });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qcmLoaded, examLoaded, data.hasAnySessions]);
+
   const heroSubtitle = !data.hasAnySessions
     ? 'Commencez votre premiere session pour suivre votre progression !'
     : data.currentStreak > 0
