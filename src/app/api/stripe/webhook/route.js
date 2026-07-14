@@ -52,8 +52,24 @@ export async function POST(request) {
         const subscriptionId = session.subscription;
 
         if (userId && plan) {
+          // Récupérer l'éventuel abonnement précédent AVANT de le remplacer
+          const { data: profile } = await supabaseAdmin
+            .from('user_profiles').select('stripe_subscription_id').eq('id', userId).single();
+          const previousSub = profile?.stripe_subscription_id;
+
           await updateUserTier(userId, plan, subscriptionId, period);
           console.log(`[Stripe] Abonnement activé: user=${userId} plan=${plan} period=${period}`);
+
+          // Changement de formule : annuler l'ancien abonnement pour éviter la double facturation.
+          // (Son événement `deleted` sera ignoré car il n'est plus l'abonnement courant.)
+          if (previousSub && previousSub !== subscriptionId) {
+            try {
+              await getStripe().subscriptions.cancel(previousSub);
+              console.log(`[Stripe] Ancien abonnement annulé: ${previousSub} (remplacé par ${subscriptionId})`);
+            } catch (e) {
+              console.warn(`[Stripe] Annulation de l'ancien abonnement ${previousSub} impossible: ${e.message}`);
+            }
+          }
         }
         break;
       }
@@ -82,14 +98,25 @@ export async function POST(request) {
         break;
       }
 
-      // Abonnement annulé ou expiré → rétrograder vers gratuit
+      // Abonnement annulé ou expiré → rétrograder vers gratuit,
+      // UNIQUEMENT si c'est bien l'abonnement courant de l'utilisateur.
+      // (Sinon, l'annulation d'un ancien abonnement après un changement de formule
+      //  écraserait le nouveau — c'est le bug qui a rétrogradé un client Premium+.)
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
         const userId = subscription.metadata?.user_id;
 
         if (userId) {
-          await updateUserTier(userId, 'gratuit', null, null);
-          console.log(`[Stripe] Abonnement annulé: user=${userId} → gratuit`);
+          const { data: profile } = await supabaseAdmin
+            .from('user_profiles').select('stripe_subscription_id').eq('id', userId).single();
+          const current = profile?.stripe_subscription_id;
+
+          if (!current || current === subscription.id) {
+            await updateUserTier(userId, 'gratuit', null, null);
+            console.log(`[Stripe] Abonnement annulé: user=${userId} → gratuit`);
+          } else {
+            console.log(`[Stripe] deleted ignoré: ${subscription.id} n'est pas l'abonnement courant (${current}) de user=${userId}`);
+          }
         }
         break;
       }
@@ -102,8 +129,17 @@ export async function POST(request) {
         const period = subscription.metadata?.billing_period;
 
         if (userId && plan && subscription.status === 'active') {
-          await updateUserTier(userId, plan, subscription.id, period);
-          console.log(`[Stripe] Abonnement mis à jour: user=${userId} plan=${plan}`);
+          // N'appliquer que si c'est l'abonnement courant (ou qu'aucun n'est enregistré)
+          const { data: profile } = await supabaseAdmin
+            .from('user_profiles').select('stripe_subscription_id').eq('id', userId).single();
+          const current = profile?.stripe_subscription_id;
+
+          if (!current || current === subscription.id) {
+            await updateUserTier(userId, plan, subscription.id, period);
+            console.log(`[Stripe] Abonnement mis à jour: user=${userId} plan=${plan}`);
+          } else {
+            console.log(`[Stripe] updated ignoré: ${subscription.id} n'est pas l'abonnement courant (${current}) de user=${userId}`);
+          }
         }
         break;
       }
