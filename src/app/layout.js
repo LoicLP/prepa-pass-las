@@ -67,6 +67,12 @@ export default function RootLayout({ children }) {
             }),
           }}
         />
+        {/* Analytics Hub (interne) */}
+        <Script
+          src="https://analytics-hub-gamma.vercel.app/tracker.js"
+          data-site="prj_5V23yjjOJnMsQJLw97CmpxibBNgR"
+          strategy="afterInteractive"
+        />
         {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-LW72RE8MR7"
