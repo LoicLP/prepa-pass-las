@@ -39,10 +39,17 @@ export function AuthProvider({ children }) {
 
     // Écouter les changements d'état auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setUser(normalizeUser(session?.user ?? null));
         setAccessToken(session?.access_token ?? null);
         setLoading(false);
+        // Analytics Hub : identifier l'utilisateur connecté
+        if (event === 'SIGNED_IN' && session?.user && window.ahub) {
+          window.ahub.identify({
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name,
+          });
+        }
       }
     );
 
