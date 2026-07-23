@@ -112,8 +112,26 @@ export async function POST(request) {
           const current = profile?.stripe_subscription_id;
 
           if (!current || current === subscription.id) {
-            await updateUserTier(userId, 'gratuit', null, null);
-            console.log(`[Stripe] Abonnement annulé: user=${userId} → gratuit`);
+            // Dernier filet : le client a-t-il un AUTRE abonnement encore vivant ?
+            // (changement de formule, manipulations dans le dashboard Stripe…)
+            // Si oui, on l'adopte au lieu de couper l'accès à un client qui paie.
+            let adopted = null;
+            try {
+              const subs = await getStripe().subscriptions.list({ customer: subscription.customer, status: 'all', limit: 10 });
+              adopted = subs.data.find(s => s.id !== subscription.id && ['active', 'trialing'].includes(s.status)) || null;
+            } catch (e) {
+              console.warn(`[Stripe] deleted: liste des abonnements impossible (${e.message})`);
+            }
+
+            if (adopted) {
+              const plan = adopted.metadata?.plan || 'essentiel';
+              const period = adopted.metadata?.billing_period || null;
+              await updateUserTier(userId, plan, adopted.id, period);
+              console.log(`[Stripe] deleted: adoption de l'abonnement vivant ${adopted.id} (plan=${plan}) pour user=${userId}`);
+            } else {
+              await updateUserTier(userId, 'gratuit', null, null);
+              console.log(`[Stripe] Abonnement annulé: user=${userId} → gratuit`);
+            }
           } else {
             console.log(`[Stripe] deleted ignoré: ${subscription.id} n'est pas l'abonnement courant (${current}) de user=${userId}`);
           }
