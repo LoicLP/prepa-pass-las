@@ -105,6 +105,20 @@ export default function DashboardPage() {
   const [examStats, , examLoaded] = useSupabaseStats(user?.id, 'examen_stats', statsRefresh);
 
   const closeQCM = () => { setActiveQCM(null); setQcmView(null); setStatsRefresh(k => k + 1); };
+
+  // Ouvre un module d'entraînement. Deux pièges évités ici :
+  //  - QCMClient ne lit initialConfig qu'au montage → une nouvelle clé force le remontage,
+  //    sinon changer de mode alors qu'un QCM est déjà ouvert ne produisait aucun effet ;
+  //  - les deux overlays partagent le même z-index → on ferme systématiquement l'autre.
+  const [qcmKey, setQcmKey] = useState(0);
+  const openQCM = (cfg) => {
+    setActiveExamen(false); setExamenView(null);
+    setQcmView(null); setActiveQCM(cfg); setQcmKey(k => k + 1);
+  };
+  const openExamen = () => {
+    setActiveQCM(null); setQcmView(null);
+    setExamenView(null); setActiveExamen(true);
+  };
   // Vues de « sélection » du QCM où l'on garde la sidebar visible ; les autres (quiz/loading/résultats) passent en immersion
   const QCM_SELECTION_VIEWS = ['hero', 'modeChoice', 'subjectSelection', 'fichesSelection', 'customSelection', 'reviewCount', 'countChoice', 'flashIntro'];
   const effectiveQcmView = qcmView || activeQCM?.initialView || 'quiz';
@@ -118,8 +132,8 @@ export default function DashboardPage() {
   useEffect(() => {
     const open = new URLSearchParams(window.location.search).get('open');
     if (!open) return;
-    if (open === 'qcm') setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' });
-    else if (open === 'examen') setActiveExamen(true);
+    if (open === 'qcm') openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' });
+    else if (open === 'examen') openExamen();
     else if (open === 'fiches') setActiveSection('fiches');
     window.history.replaceState(null, '', '/dashboard');
   }, []);
@@ -179,10 +193,10 @@ export default function DashboardPage() {
     } catch { setResumeState(null); }
   }, [activeQCM, activeExamen, statsRefresh]);
 
-  const resumeQcmSession = () => { setResumeState(null); setActiveQCM({ type: 'resume', resumeState }); };
+  const resumeQcmSession = () => { setResumeState(null); openQCM({ type: 'resume', resumeState }); };
   const dismissResume = () => { try { localStorage.removeItem('qcm_resume'); } catch {}; setResumeState(null); };
 
-  const launchReview = () => setActiveQCM({
+  const launchReview = () => openQCM({
     type: 'review',
     reviewQuestions: reviewDue,
     subjectName: 'À consolider',
@@ -449,7 +463,7 @@ export default function DashboardPage() {
     if (activeQCM || activeExamen) return;
     if (localStorage.getItem('ppl-welcome-qcm-shown') === '1') return;
     localStorage.setItem('ppl-welcome-qcm-shown', '1');
-    setActiveQCM({ welcome: true, subjectName: 'Bienvenue', title: 'Bienvenue' });
+    openQCM({ welcome: true, subjectName: 'Bienvenue', title: 'Bienvenue' });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qcmLoaded, examLoaded, data.hasAnySessions]);
 
@@ -501,7 +515,7 @@ export default function DashboardPage() {
       id: 'calibrage', label: 'Passe ton QCM de calibrage',
       desc: '20 questions sur les 6 matières — active tes recommandations et ton focus du jour',
       done: data.totalSessions >= 1,
-      cta: () => setActiveQCM({ type: 'custom', subject: null, subjectName: 'Calibrage', title: '', count: 20 }), ctaLabel: 'Go (~10 min)',
+      cta: () => openQCM({ type: 'custom', subject: null, subjectName: 'Calibrage', title: '', count: 20 }), ctaLabel: 'Go (~10 min)',
     },
     {
       id: 'fiches', label: 'Explore les Fiches & Cours',
@@ -513,7 +527,7 @@ export default function DashboardPage() {
       id: 'flash', label: 'Lance une session éclair',
       desc: '8 questions chrono en 5 minutes — parfait entre deux cours',
       done: allSessions.some(s => s.flash),
-      cta: () => { const s = todaySubject || SUBJECTS[1]; setActiveQCM({ type: 'custom', subject: s.id, subjectName: s.name, title: s.name, count: 8, flash: true }); }, ctaLabel: '⚡ 5 min',
+      cta: () => { const s = todaySubject || SUBJECTS[1]; openQCM({ type: 'custom', subject: s.id, subjectName: s.name, title: s.name, count: 8, flash: true }); }, ctaLabel: '⚡ 5 min',
     },
   ] : [];
   const onboardVisible = onboardOn && !onboardSteps.every(s => s.done);
@@ -564,7 +578,7 @@ export default function DashboardPage() {
           {/* QCM embarqué */}
           <div style={{ flex: 1 }}>
             <Suspense fallback={null}>
-              <QCMPage initialConfig={activeQCM} onBack={closeQCM} onViewChange={setQcmView} />
+              <QCMPage key={qcmKey} initialConfig={activeQCM} onBack={closeQCM} onViewChange={setQcmView} />
             </Suspense>
           </div>
         </div>
@@ -638,13 +652,13 @@ export default function DashboardPage() {
               {[
                 { label: 'QCM', sub: 'Entraînement', bg: '#ece9ff', color: '#4f46e5',
                   icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />,
-                  onClick: () => { setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' }); setMobileMenuOpen(false); } },
+                  onClick: () => { openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' }); setMobileMenuOpen(false); } },
                 { label: 'Examen blanc', sub: 'Conditions réelles', bg: '#fdeaef', color: '#e45770',
                   icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />,
-                  onClick: () => { setActiveExamen(true); setMobileMenuOpen(false); } },
+                  onClick: () => { openExamen(); setMobileMenuOpen(false); } },
                 { label: 'Session éclair', sub: '8 questions · 5 min', bg: '#fdf3e0', color: '#e8a948',
                   icon: <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />,
-                  onClick: () => { const s = todaySubject || SUBJECTS[1]; setActiveQCM({ type: 'custom', subject: s.id, subjectName: s.name, title: s.name, count: 8, flash: true }); setMobileMenuOpen(false); } },
+                  onClick: () => { const s = todaySubject || SUBJECTS[1]; openQCM({ type: 'custom', subject: s.id, subjectName: s.name, title: s.name, count: 8, flash: true }); setMobileMenuOpen(false); } },
                 { label: 'À consolider', sub: reviewDue.length > 0 ? `${reviewDue.length} question${reviewDue.length > 1 ? 's' : ''}` : 'Tout est à jour', bg: '#e0f3eb', color: '#3eb489', disabled: reviewDue.length === 0, badge: reviewDue.length || null,
                   icon: <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />,
                   onClick: () => { launchReview(); setMobileMenuOpen(false); } },
@@ -753,7 +767,7 @@ export default function DashboardPage() {
           const isAct = item.id === 'menu' || item.fab ? false : (item.id === 'fiches' ? activeSection === 'fiches' : activeSection === item.id);
           const onTap = () => {
             if (item.id === 'menu') { setMobileMenuOpen(true); return; }
-            if (item.id === 'qcm') { setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' }); return; }
+            if (item.id === 'qcm') { openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' }); return; }
             if (item.id === 'fiches') { setActiveFicheSubject(null); setActiveSection('fiches'); return; }
             setActiveSection(item.id);
           };
@@ -800,10 +814,10 @@ export default function DashboardPage() {
           setActiveSection={(s) => { if (activeQCM) closeQCM(); if (activeExamen) closeExamen(); setActiveSection(s); }}
           isPremiumPlus={isPremiumPlus}
           tier={tier}
-          onLaunchQCM={() => setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })}
-          onLaunchExamen={() => setActiveExamen(true)}
+          onLaunchQCM={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })}
+          onLaunchExamen={() => openExamen()}
           onOpenFiches={(subjectId) => { if (activeQCM) closeQCM(); if (activeExamen) closeExamen(); setActiveFicheSubject(subjectId || null); setActiveSection('fiches'); }}
-          onLaunchFlash={todaySubject ? () => setActiveQCM({ type: 'custom', subject: todaySubject.id, subjectName: todaySubject.name, title: todaySubject.name, count: 8, flash: true }) : null}
+          onLaunchFlash={todaySubject ? () => openQCM({ type: 'custom', subject: todaySubject.id, subjectName: todaySubject.name, title: todaySubject.name, count: 8, flash: true }) : null}
           onLaunchReview={launchReview}
           reviewCount={reviewDue.length}
           gam={data.hasAnySessions ? gam : null}
@@ -957,7 +971,7 @@ export default function DashboardPage() {
                 reviewDue={reviewDue}
                 subjects={SUBJECTS}
                 onLaunchQCM={setActiveQCM}
-                onLaunchExamen={() => setActiveExamen(true)}
+                onLaunchExamen={() => openExamen()}
                 onOpenFiches={() => { setActiveFicheSubject(null); setActiveSection('fiches'); }}
                 onLaunchReview={launchReview}
                 quests={gam.quests}
@@ -1017,7 +1031,7 @@ export default function DashboardPage() {
                 </div>
                 {filteredHistory.length === 0 ? (
                   <div className="px-6 pb-6">
-                    <EmptyState title="Aucune session" description="Aucune session trouv\u00e9e pour ce filtre." onCta={() => setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
+                    <EmptyState title="Aucune session" description="Aucune session trouv\u00e9e pour ce filtre." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
                   </div>
                 ) : (
                   <>
@@ -1097,7 +1111,7 @@ export default function DashboardPage() {
                 description="Visualisez votre courbe de progression, vos points forts et axes d'amélioration."
               >
               {!data.hasAnySessions || data.last20.length < 2 ? (
-                  <EmptyState title="Pas assez de donn&eacute;es" description="Effectuez plusieurs sessions pour voir votre progression." onCta={() => setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
+                  <EmptyState title="Pas assez de donn&eacute;es" description="Effectuez plusieurs sessions pour voir votre progression." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
                 ) : (() => {
                   const w = data.weaknesses[0];
                   const delta = (data.last5Avg != null && data.prev5Avg != null) ? data.last5Avg - data.prev5Avg : null;
@@ -1118,7 +1132,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       {w && (
-                        <button onClick={() => setActiveQCM({ type: 'custom', subject: w.id, subjectName: w.name, title: w.name, count: 10 })} className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 px-3.5 py-2 rounded-lg transition-colors shrink-0">
+                        <button onClick={() => openQCM({ type: 'custom', subject: w.id, subjectName: w.name, title: w.name, count: 10 })} className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 px-3.5 py-2 rounded-lg transition-colors shrink-0">
                           Travailler {w.name}
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
                         </button>
@@ -1189,7 +1203,7 @@ export default function DashboardPage() {
                         {data.weaknesses.length > 0 && (
                           <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
                             <span className="text-[13px] text-gray-500">&Agrave; renforcer en priorit&eacute; : <strong className="text-gray-800">{data.weaknesses[0].name}</strong> <span className="tabular-nums">({data.weaknesses[0].avg}%)</span></span>
-                            <button onClick={() => setActiveQCM({ type: 'custom', subject: data.weaknesses[0].id, subjectName: data.weaknesses[0].name, title: data.weaknesses[0].name, count: 10 })} className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 px-3 py-1.5 rounded-lg transition-colors">
+                            <button onClick={() => openQCM({ type: 'custom', subject: data.weaknesses[0].id, subjectName: data.weaknesses[0].name, title: data.weaknesses[0].name, count: 10 })} className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 px-3 py-1.5 rounded-lg transition-colors">
                               Travailler {data.weaknesses[0].name}
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
                             </button>
@@ -1211,7 +1225,7 @@ export default function DashboardPage() {
                 description="Suivez vos objectifs hebdomadaires et visualisez la répartition de vos sessions."
               >
               {!data.hasAnySessions ? (
-                <EmptyState title="Aucune donn&eacute;e" description="Effectuez des sessions pour voir vos objectifs." onCta={() => setActiveQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
+                <EmptyState title="Aucune donn&eacute;e" description="Effectuez des sessions pour voir vos objectifs." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
               ) : (() => {
                 const streak = gam.streakInfo.streak;
                 const record = Math.max(data.bestStreak || 0, streak);
