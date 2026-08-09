@@ -76,7 +76,7 @@ export async function POST(request) {
     } catch { /* colonne pas encore créée */ }
 
     // Créer le customer Stripe si besoin
-    if (!customerId) {
+    const createCustomer = async () => {
       const customer = await stripeRequest('/customers', {
         email: user.email,
         name: user.user_metadata?.full_name || user.email,
@@ -84,12 +84,27 @@ export async function POST(request) {
         'metadata[site_name]': SITE_METADATA.site_name,
         'metadata[user_id]': user.id,
       });
-      customerId = customer.id;
       try {
         await supabaseAdmin.from('user_profiles').upsert({
-          id: user.id, stripe_customer_id: customerId, updated_at: new Date().toISOString(),
+          id: user.id, stripe_customer_id: customer.id, updated_at: new Date().toISOString(),
         });
       } catch { /* best effort */ }
+      return customer.id;
+    };
+
+    if (!customerId) {
+      customerId = await createCustomer();
+    } else {
+      // Le customer enregistré peut avoir disparu (suppression, bascule test/live) :
+      // sans ce contrôle, l'utilisateur serait définitivement bloqué au paiement.
+      const check = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+      });
+      const checkData = await check.json().catch(() => ({}));
+      if (!check.ok || checkData?.deleted) {
+        console.warn(`[Stripe] Customer ${customerId} introuvable → recréation pour user=${user.id}`);
+        customerId = await createCustomer();
+      }
     }
 
     const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://prepa-pass-las.fr').trim();
