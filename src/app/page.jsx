@@ -4,6 +4,8 @@ import { PROGRAMME_DATA } from '@/data/programme';
 import QuestionDuJour from '@/components/home/QuestionDuJour';
 import FaqSection from '@/components/home/FaqSection';
 import ConcoursBanner from '@/components/ConcoursBanner';
+import PromoBanner from '@/components/PromoBanner';
+import PromoPriceLine from '@/components/PromoPriceLine';
 
 export const metadata = {
   title: {
@@ -181,9 +183,7 @@ export default function Home() {
                   Voir la méthode ↓
                 </Link>
               </div>
-              <p className="text-xs text-gray-400 -mt-4 mb-8">
-                Gratuit · sans carte bancaire · <strong className="text-violet-600">2 jours de Premium offerts</strong>{' '}à l&apos;inscription
-              </p>
+              <PromoPriceLine />
 
               {/* Stats row */}
               <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-8">
@@ -404,6 +404,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ==================== BANDEAU OFFRE DE RENTRÉE ==================== */}
+      <PromoBanner />
 
       {/* ==================== QUESTION DU JOUR ==================== */}
       <section
@@ -1058,10 +1061,13 @@ export default function Home() {
           <h2 className="text-3xl md:text-4xl font-black mb-4">
             Découvrez nos formules d&apos;accompagnement
           </h2>
-          <p className="text-primary-200 text-lg max-w-xl mx-auto mb-8">
+          <p className="text-primary-200 text-lg max-w-xl mx-auto mb-4">
             Sans engagement ou jusqu&apos;au concours, trouvez le rythme qui correspond à votre
             objectif en santé.
           </p>
+          <div className="mb-8">
+            <PromoPriceLine variant="dark" />
+          </div>
           <Link
             href="/tarifs"
             className="inline-flex items-center gap-2 px-8 py-4 text-white text-base font-bold rounded-2xl hover:opacity-90 transition-opacity shadow-xl shadow-primary-600/30"

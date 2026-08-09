@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { PROMO, isPromoActive, promoDaysLeft } from '@/lib/promo';
 
 function FaqItem({ question, answer }) {
   const [open, setOpen] = useState(false);
@@ -44,16 +45,24 @@ const BILLING_PERIODS = [
   { id: 'yearly', label: 'Annuel', badge: '-50%' },
 ];
 
-// Un seul plan Premium : 24,99 €/mois ou 149,99 €/an (soit 12,50 €/mois)
+// Tarifs normaux (hors offre de rentrée)
 const PREMIUM_PRICING = {
   monthly: { display: '24,99', suffix: '/mois', note: 'sans engagement, annulable à tout moment' },
   yearly: { display: '12,50', suffix: '/mois', note: 'facturé 149,99 € par an', strike: '24,99', badge: '-150 €/an' },
+};
+
+// Tarifs pendant l'offre de rentrée (-50 % conservés tant que l'abonnement reste actif)
+const PROMO_PRICING = {
+  monthly: { display: '12,49', suffix: '/mois', strike: '24,99', badge: '-50 % à vie', note: 'à vie · sans engagement, annulable à tout moment' },
+  yearly: { display: '6,25', suffix: '/mois', strike: '12,50', badge: '-75 % au total', note: 'facturé 74,99 € par an (au lieu de 149,99 €), à vie' },
 };
 
 export default function TarifsPage() {
   const { tier, isLoaded } = usePremium();
   const { user, accessToken } = useAuth();
   const [billing, setBilling] = useState('yearly');
+  const [promo, setPromo] = useState(null);
+  useEffect(() => { if (isPromoActive()) setPromo({ days: promoDaysLeft() }); }, []);
   const [loadingPlan, setLoadingPlan] = useState(null);
 
   const handleSubscribe = async (plan) => {
@@ -101,7 +110,7 @@ export default function TarifsPage() {
       setLoadingPlan(null);
     }
   };
-  const pricing = PREMIUM_PRICING[billing];
+  const pricing = (promo ? PROMO_PRICING : PREMIUM_PRICING)[billing];
   const isPaidTier = tier === 'essentiel' || tier === 'premium+';
 
   return (
@@ -123,6 +132,24 @@ export default function TarifsPage() {
             <strong className="text-gray-900">2 jours de Premium offerts</strong>{' '}
             &agrave; l&apos;inscription, sans carte bancaire.
           </p>
+
+          {/* Bandeau offre de rentrée */}
+          {promo && (
+            <div
+              className="mt-6 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl px-5 py-3.5 text-white shadow-xl shadow-indigo-500/25"
+              style={{ background: 'linear-gradient(135deg, #1e1b4b, #4f46e5 60%, #7c3aed)' }}
+            >
+              <span className="inline-flex items-center gap-1.5 bg-amber-300 text-indigo-950 rounded-full px-3 py-1 text-xs font-black">
+                🎓 {PROMO.discountLabel}{' '}&Agrave; VIE
+              </span>
+              <span className="text-sm font-semibold">
+                Offre de rentr&eacute;e — la remise est conserv&eacute;e tant que tu restes abonn&eacute;
+              </span>
+              <span className="text-xs font-bold text-amber-200">
+                Jusqu&apos;au {PROMO.endsAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} · J-{promo.days}
+              </span>
+            </div>
+          )}
         </div>
       </section>
 
@@ -342,7 +369,10 @@ export default function TarifsPage() {
               <strong className="text-gray-900">2 000 &agrave; 6 000 &euro; l&apos;ann&eacute;e</strong>.
               Ton QG de r&eacute;vision complet — QCM illimit&eacute;s, examens blancs, coach de
               progression — c&apos;est{' '}
-              <strong className="text-indigo-600">149,99 &euro; l&apos;ann&eacute;e</strong>.
+              <strong className="text-indigo-600">
+                {promo ? '74,99 € l’année' : '149,99 € l’année'}
+              </strong>
+              {promo ? ' pendant l’offre de rentrée.' : '.'}
             </p>
           </div>
 
