@@ -16,6 +16,7 @@ import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
 import { computeXP, gradeForXP, computeStreakWithJokers, questStatus, GRADES, PICO_OUTFITS } from '@/lib/gamification';
+import { PROMO, isPromoActive, promoDaysLeft } from '@/lib/promo';
 
 /* ========== HELPERS ========== */
 function getSubjectBadgeColors(subjectId) {
@@ -196,6 +197,11 @@ export default function DashboardPage() {
   useEffect(() => {
     setTrialEndDismissed(localStorage.getItem('ppl-trial-ended-dismissed') === '1');
   }, []);
+  // Offre de rentrée (affichée aux comptes gratuits)
+  const [promoInfo] = useState(() => isPromoActive()
+    ? { days: promoDaysLeft(), deadline: PROMO.endsAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) }
+    : null);
+
   const trialEndedRecently = tier === 'gratuit' && trialEndsAt && !trialActive
     && Date.now() > trialEndsAt.getTime()
     && Date.now() < trialEndsAt.getTime() + 5 * 24 * 3600 * 1000;
@@ -904,6 +910,26 @@ export default function DashboardPage() {
                   >
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                   </button>
+                </div>
+              )}
+              {/* Offre de rentrée — comptes gratuits uniquement (masqué pendant l'essai,
+                  qui a déjà son propre bandeau) */}
+              {promoInfo && tier === 'gratuit' && !trialActive && (
+                <div style={{ background: 'linear-gradient(135deg, #1e1b4b, #4f46e5 55%, #7c3aed)', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <span style={{ background: '#fcd34d', color: '#1e1b4b', borderRadius: 999, padding: '4px 11px', fontSize: 12, fontWeight: 900, flexShrink: 0 }}>
+                    🎓 -50 % À VIE
+                  </span>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#fff' }}>
+                      Offre de rentrée — Premium à 12,49 €/mois au lieu de 24,99 €
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.78)' }}>
+                      La remise est conservée tant que tu restes abonné · jusqu&apos;au {promoInfo.deadline} (J-{promoInfo.days})
+                    </div>
+                  </div>
+                  <Link href="/tarifs" style={{ flexShrink: 0, background: '#fff', color: '#4f46e5', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, textDecoration: 'none' }} className="hover:bg-indigo-50 transition-colors">
+                    J&apos;en profite →
+                  </Link>
                 </div>
               )}
               {resumeState && (() => {

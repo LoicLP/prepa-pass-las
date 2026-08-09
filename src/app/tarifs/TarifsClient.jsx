@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -61,8 +61,8 @@ export default function TarifsPage() {
   const { tier, isLoaded } = usePremium();
   const { user, accessToken } = useAuth();
   const [billing, setBilling] = useState('yearly');
-  const [promo, setPromo] = useState(null);
-  useEffect(() => { if (isPromoActive()) setPromo({ days: promoDaysLeft() }); }, []);
+  // Évalué dès le rendu : évite d'afficher un instant le prix plein avant le prix promo
+  const [promo] = useState(() => (isPromoActive() ? { days: promoDaysLeft() } : null));
   const [loadingPlan, setLoadingPlan] = useState(null);
 
   const handleSubscribe = async (plan) => {

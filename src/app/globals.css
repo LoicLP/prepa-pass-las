@@ -598,3 +598,9 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   .drawer-panel, .drawer-backdrop { animation: none !important; }
 }
+
+/* ===== BANDEAU PROMO (au-dessus du hero) =====
+   Le header est fixe (h-16 / md:h-18) : le bandeau porte la compensation,
+   le hero qui le suit n'a donc plus à la porter. */
+.promo-banner + section#accueil { padding-top: 2.5rem; }
+@media (min-width: 768px) { .promo-banner + section#accueil { padding-top: 3.5rem; } }

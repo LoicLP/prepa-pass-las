@@ -7,6 +7,9 @@ import ConcoursBanner from '@/components/ConcoursBanner';
 import PromoBanner from '@/components/PromoBanner';
 import PromoPriceLine from '@/components/PromoPriceLine';
 
+// Régénération horaire : le bandeau promo disparaît de lui-même après l'échéance
+export const revalidate = 3600;
+
 export const metadata = {
   title: {
     absolute: 'Prépa PASS/LAS - Réussissez votre première année de médecine',
@@ -121,6 +124,9 @@ const METHODE_LOOP = ["S'entraîner", 'Consolider', 'Valider', 'Progresser'];
 export default function Home() {
   return (
     <>
+      {/* ==================== BANDEAU OFFRE DE RENTRÉE ==================== */}
+      <PromoBanner />
+
       {/* ==================== HERO SECTION ==================== */}
       <section
         id="accueil"
@@ -404,9 +410,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* ==================== BANDEAU OFFRE DE RENTRÉE ==================== */}
-      <PromoBanner />
 
       {/* ==================== QUESTION DU JOUR ==================== */}
       <section
