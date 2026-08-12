@@ -169,6 +169,13 @@ export default function CGVPage() {
                   gratuite&nbsp;: aucune coordonn&eacute;e bancaire n&rsquo;est demand&eacute;e et aucun montant n&rsquo;est
                   pr&eacute;lev&eacute; &agrave; son issue.
                 </p>
+                <p>
+                  LP Labs peut proposer des <strong className="text-gray-900">offres promotionnelles</strong>{' '}
+                  temporaires (remise sur le tarif en vigueur). Les conditions et la dur&eacute;e de chaque offre
+                  sont pr&eacute;cis&eacute;es sur la page Tarifs au moment de la souscription&nbsp;; le tarif
+                  remis&eacute; obtenu est maintenu aux &eacute;ch&eacute;ances suivantes tant que l&rsquo;abonnement
+                  demeure actif et sans interruption.
+                </p>
               </div>
             </article>
 

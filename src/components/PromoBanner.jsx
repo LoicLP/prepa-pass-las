@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { PROMO, isPromoActive, promoDaysLeft } from '@/lib/promo';
+import { PROMO, HEADLINE, isPromoActive, promoDaysLeft } from '@/lib/promo';
 
 /**
  * Bandeau « Offre de rentrée -50 % » affiché tout en haut des pages publiques.
@@ -27,8 +27,9 @@ export default function PromoBanner() {
           </span>
           <p className="text-sm text-indigo-100 font-medium">
             <strong className="text-white">Offre de rentr&eacute;e</strong> — Premium &agrave;{' '}
-            <strong className="text-white">12,49 &euro;/mois</strong>{' '}au lieu de 24,99 &euro;, tant que
-            tu restes abonn&eacute;. Jusqu&apos;au {deadline}{' '}
+            <strong className="text-white">{HEADLINE.perMonth} &euro;/mois</strong>{' '}en annuel
+            ({HEADLINE.yearTotal} &euro;/an au lieu de {HEADLINE.yearFull}{' '}&euro;), tant que tu restes
+            abonn&eacute;. Jusqu&apos;au {deadline}{' '}
             <span className="text-amber-200 font-bold">(J-{days})</span>.
           </p>
           <Link

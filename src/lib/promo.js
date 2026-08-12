@@ -21,6 +21,19 @@ export function promoDaysLeft(now = new Date()) {
   return Math.max(0, Math.ceil((PROMO.endsAt - now) / 86400000));
 }
 
+/**
+ * Accroche commerciale : on met en avant l'offre annuelle, la plus attractive.
+ * 74,99 € / 12 mois = 6,25 €/mois. Toujours accompagner le prix mensualisé
+ * du montant réellement facturé (obligation d'information + clarté).
+ */
+export const HEADLINE = {
+  perMonth: '6,25',      // équivalent mensuel de l'annuel promo
+  yearTotal: '74,99',    // montant réellement facturé
+  yearFull: '149,99',    // prix annuel hors offre
+  monthlyPromo: '12,49', // prix du mensuel avec l'offre
+  monthlyFull: '24,99',  // prix du mensuel hors offre
+};
+
 /** Tarifs affichés — `full` = prix normal, `promo` = prix avec l'offre. */
 export const PRICING = {
   monthly: {

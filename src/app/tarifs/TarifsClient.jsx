@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { PROMO, isPromoActive, promoDaysLeft } from '@/lib/promo';
+import { PROMO, HEADLINE, isPromoActive, promoDaysLeft } from '@/lib/promo';
 
 function FaqItem({ question, answer }) {
   const [open, setOpen] = useState(false);
@@ -143,7 +143,8 @@ export default function TarifsPage() {
                 🎓 {PROMO.discountLabel}{' '}&Agrave; VIE
               </span>
               <span className="text-sm font-semibold">
-                Offre de rentr&eacute;e — la remise est conserv&eacute;e tant que tu restes abonn&eacute;
+                Offre de rentr&eacute;e — d&egrave;s {HEADLINE.perMonth} &euro;/mois en annuel, remise
+                conserv&eacute;e tant que tu restes abonn&eacute;
               </span>
               <span className="text-xs font-bold text-amber-200">
                 Jusqu&apos;au {PROMO.endsAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} · J-{promo.days}

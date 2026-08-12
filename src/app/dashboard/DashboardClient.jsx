@@ -16,7 +16,7 @@ import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
 import { computeXP, gradeForXP, computeStreakWithJokers, questStatus, GRADES, PICO_OUTFITS } from '@/lib/gamification';
-import { PROMO, isPromoActive, promoDaysLeft } from '@/lib/promo';
+import { PROMO, HEADLINE, isPromoActive, promoDaysLeft } from '@/lib/promo';
 
 /* ========== HELPERS ========== */
 function getSubjectBadgeColors(subjectId) {
@@ -935,10 +935,10 @@ export default function DashboardPage() {
                   </span>
                   <div style={{ flex: 1, minWidth: 220 }}>
                     <div style={{ fontSize: 13.5, fontWeight: 800, color: '#fff' }}>
-                      Offre de rentrée — Premium à 12,49 €/mois au lieu de 24,99 €
+                      Offre de rentrée — Premium dès {HEADLINE.perMonth} €/mois en annuel
                     </div>
                     <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.78)' }}>
-                      La remise est conservée tant que tu restes abonné · jusqu&apos;au {promoInfo.deadline} (J-{promoInfo.days})
+                      {HEADLINE.yearTotal} €/an au lieu de {HEADLINE.yearFull} €, conservé tant que tu restes abonné · jusqu&apos;au {promoInfo.deadline} (J-{promoInfo.days})
                     </div>
                   </div>
                   <Link href="/tarifs" style={{ flexShrink: 0, background: '#fff', color: '#4f46e5', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, textDecoration: 'none' }} className="hover:bg-indigo-50 transition-colors">
