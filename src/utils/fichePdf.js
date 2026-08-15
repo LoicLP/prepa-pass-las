@@ -112,7 +112,7 @@ function waitForLayout() {
 }
 
 /** Découpe le rendu d'une fiche en pages A4 et les ajoute au PDF. */
-function addCanvasPages(pdf, canvas, isFirstFiche) {
+function addCanvasPages(pdf, canvas) {
   const contentW = PAGE_W - 2 * MARGIN_X;
   const contentH = PAGE_H - 2 * MARGIN_Y;
   const pxPerMm = canvas.width / contentW;
@@ -130,8 +130,7 @@ function addCanvasPages(pdf, canvas, isFirstFiche) {
     ctx.fillRect(0, 0, slice.width, slice.height);
     ctx.drawImage(canvas, 0, offset, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
 
-    // Chaque fiche démarre sur une nouvelle page.
-    if (!isFirstFiche || !firstPage) pdf.addPage();
+    if (!firstPage) pdf.addPage();
     pdf.addImage(slice.toDataURL('image/jpeg', 0.95), 'JPEG', MARGIN_X, MARGIN_Y, contentW, sliceH / pxPerMm);
 
     firstPage = false;
@@ -140,63 +139,46 @@ function addCanvasPages(pdf, canvas, isFirstFiche) {
 }
 
 /**
- * Génère et télécharge un PDF.
+ * Génère et télécharge le PDF d'une fiche.
  *
- * @param {Array<{fiche: object, subject: object}>} items  une entrée par fiche
- * @param {string} filename  nom du fichier produit
- * @param {(done: number, total: number) => void} [onProgress]
+ * @param {object} fiche
+ * @param {object} subject  la matière de la fiche (couleur et intitulé)
  */
-export async function downloadFichesPdf(items, filename, onProgress) {
-  const list = (items || []).filter((it) => it?.fiche);
-  if (!list.length) return;
+export async function downloadFichePdf(fiche, subject) {
+  if (!fiche) return;
 
   const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
     import('html2canvas-pro'),
     import('jspdf'),
   ]);
 
-  // Au-delà de quelques fiches on baisse la résolution : sans cela un export
-  // complet (150 fiches) sature la mémoire du navigateur.
-  const scale = list.length > 12 ? 1.5 : 2;
-
-  // Conteneur hors écran qui recevra chaque fiche à tour de rôle.
+  // Conteneur hors écran : la page affichée n'est jamais modifiée.
   const holder = document.createElement('div');
   holder.setAttribute('data-pdf-holder', '');
   holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:700px;background:#fff;z-index:-1;';
+  holder.innerHTML = ficheMarkup(fiche, subject);
   document.body.appendChild(holder);
 
-  const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-
   try {
-    for (let i = 0; i < list.length; i++) {
-      const { fiche, subject } = list[i];
-      holder.innerHTML = ficheMarkup(fiche, subject);
+    // Laisse le navigateur calculer la mise en page avant la capture.
+    await waitForLayout();
 
-      // Laisse le navigateur calculer la mise en page avant la capture.
-      await waitForLayout();
+    const el = holder.firstElementChild;
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+      width: el.scrollWidth,
+      height: el.scrollHeight,
+    });
 
-      const el = holder.firstElementChild;
-      const canvas = await html2canvas(el, {
-        scale,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        logging: false,
-        width: el.scrollWidth,
-        height: el.scrollHeight,
-      });
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    addCanvasPages(pdf, canvas);
 
-      addCanvasPages(pdf, canvas, i === 0);
-      if (onProgress) onProgress(i + 1, list.length);
-    }
-
-    pdf.save(filename);
+    const slug = String(fiche.id || 'fiche').replace(/[^a-z0-9-]/gi, '-');
+    pdf.save(`fiche-${slug}.pdf`);
   } finally {
     holder.remove();
   }
-}
-
-/** Raccourci : une seule fiche. */
-export function downloadFichePdf(fiche, subject) {
-  const slug = String(fiche?.id || 'fiche').replace(/[^a-z0-9-]/gi, '-');
-  return downloadFichesPdf([{ fiche, subject }], `fiche-${slug}.pdf`);
 }

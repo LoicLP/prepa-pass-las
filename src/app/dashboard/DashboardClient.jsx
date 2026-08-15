@@ -12,7 +12,7 @@ import { formatDate, formatDuration, scoreClass, scoreBarClass } from '@/utils/f
 import QCMPage from '@/app/qcm/QCMClient';
 import ExamenPage from '@/app/examen/ExamenClient';
 import { FICHES_DATA } from '@/data/fiches';
-import { downloadFichePdf, downloadFichesPdf } from '@/utils/fichePdf';
+import { downloadFichePdf } from '@/utils/fichePdf';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
@@ -2769,8 +2769,6 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
 
   // Téléchargement PDF (réservé Premium)
   const [downloadingId, setDownloadingId] = useState(null);
-  const [bulkDownloading, setBulkDownloading] = useState(false);
-  const [bulkProgress, setBulkProgress] = useState(null);
   const [pdfGate, setPdfGate] = useState(false);
 
   const handleCardDownload = async (fiche) => {
@@ -2786,22 +2784,6 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
     }
   };
 
-  const handleBulkDownload = async (fiches) => {
-    if (!isEssentiel) { setPdfGate(true); return; }
-    if (bulkDownloading || !fiches.length) return;
-    setBulkDownloading(true);
-    try {
-      const items = fiches.map(f => ({ fiche: f, subject: SUBJECTS.find(sb => sb.id === f.subject) }));
-      const scope = currentSubject === 'all' ? 'toutes-matieres' : currentSubject;
-      setBulkProgress({ done: 0, total: items.length });
-      await downloadFichesPdf(items, `fiches-${scope}.pdf`, (done, total) => setBulkProgress({ done, total }));
-    } catch (err) {
-      console.error('PDF generation error:', err);
-    } finally {
-      setBulkDownloading(false);
-      setBulkProgress(null);
-    }
-  };
 
   // Sync subject filter when prop changes (e.g. clicking different UEs in sidebar)
   useEffect(() => {
@@ -2863,9 +2845,8 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
           <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f1020', margin: 0, letterSpacing: -0.4 }}>Fiches &amp; Cours</h2>
           <p style={{ fontSize: 13, color: '#5f6280', margin: '4px 0 0' }}>{filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''}{currentSubject !== 'all' && activeSubjectObj ? ` · ${activeSubjectObj.name}` : ' · toutes les matières'}</p>
         </div>
-        {/* Recherche + export PDF */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ position: 'relative' }}>
+        {/* Search */}
+        <div style={{ position: 'relative' }}>
           <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8a8ea8' }} width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
@@ -2877,26 +2858,6 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
             className="w-full sm:w-[220px]"
             style={{ paddingLeft: 34, paddingRight: 12, paddingTop: 8, paddingBottom: 8, fontSize: 13, border: '1px solid #eef0f7', borderRadius: 10, outline: 'none', background: '#fff', color: '#2a2c44' }}
           />
-          </div>
-          {/* Télécharger toutes les fiches affichées */}
-          <button
-            onClick={() => handleBulkDownload(filteredFiches)}
-            disabled={bulkDownloading || filteredFiches.length === 0}
-            title={isEssentiel ? 'Télécharger toutes les fiches affichées en un seul PDF' : 'Téléchargement PDF réservé aux membres Premium'}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, background: isEssentiel ? '#ece9ff' : '#f4f5f9', color: isEssentiel ? '#4f46e5' : '#8a8ea8', border: 'none', cursor: bulkDownloading ? 'wait' : 'pointer', whiteSpace: 'nowrap', opacity: filteredFiches.length === 0 ? 0.5 : 1 }}
-            className="hover:brightness-95 transition-all"
-          >
-            {bulkDownloading ? (
-              <span style={{ width: 14, height: 14, border: '2px solid #cfcbf5', borderTopColor: '#4f46e5', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
-            ) : isEssentiel ? (
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-            ) : (
-              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
-            )}
-            {bulkDownloading
-              ? (bulkProgress ? `${bulkProgress.done}/${bulkProgress.total} fiches…` : 'Création du PDF…')
-              : 'Tout télécharger'}
-          </button>
         </div>
       </div>
 
