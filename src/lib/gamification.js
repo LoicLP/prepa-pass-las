@@ -35,6 +35,9 @@ export function xpForSession(s) {
 /* ---------- Défis du jour ----------
    3 quêtes déterministes par jour (seed = date), complétion dérivée
    des sessions du jour. ctx = { weakId, weakName } (matière faible). */
+// Date d'arrêt de l'attribution d'XP par les défis du jour (format AAAA-MM-JJ).
+export const QUESTS_XP_END = '2026-08-15';
+
 export const QUEST_POOL = [
   { id: 'flash',      xp: 20, label: () => 'Termine 1 session éclair',
     test: (day) => day.some(s => s.flash) },
@@ -94,7 +97,12 @@ export function computeXP(sessions, ctx, todayKey) {
   let today = 0;
   for (const [k, day] of Object.entries(byDay)) {
     const sessionXP = Math.min(XP_DAILY_CAP, day.reduce((a, s) => a + xpForSession(s), 0));
-    const questXP = dailyQuests(k, ctx).reduce((a, q) => a + (q.test(day, ctx) ? q.xp : 0), 0);
+    // Les défis du jour ont été retirés de l'interface : ils ne rapportent plus d'XP
+    // à partir de cette date. Les jours antérieurs restent comptés, sinon les totaux
+    // (et donc les grades déjà obtenus) baisseraient rétroactivement.
+    const questXP = k < QUESTS_XP_END
+      ? dailyQuests(k, ctx).reduce((a, q) => a + (q.test(day, ctx) ? q.xp : 0), 0)
+      : 0;
     const dayXP = sessionXP + questXP;
     total += dayXP;
     if (k === todayKey) today = dayXP;

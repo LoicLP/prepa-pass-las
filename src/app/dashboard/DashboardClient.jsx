@@ -12,6 +12,7 @@ import { formatDate, formatDuration, scoreClass, scoreBarClass } from '@/utils/f
 import QCMPage from '@/app/qcm/QCMClient';
 import ExamenPage from '@/app/examen/ExamenClient';
 import { FICHES_DATA } from '@/data/fiches';
+import { downloadFichePdf, downloadFichesPdf } from '@/utils/fichePdf';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
@@ -2766,6 +2767,42 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
   const { isEssentiel } = usePremium();
   const { user } = useAuth();
 
+  // Téléchargement PDF (réservé Premium)
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [bulkDownloading, setBulkDownloading] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(null);
+  const [pdfGate, setPdfGate] = useState(false);
+
+  const handleCardDownload = async (fiche) => {
+    if (!isEssentiel) { setPdfGate(true); return; }
+    if (downloadingId) return;
+    setDownloadingId(fiche.id);
+    try {
+      await downloadFichePdf(fiche, SUBJECTS.find(sb => sb.id === fiche.subject));
+    } catch (err) {
+      console.error('PDF generation error:', err);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleBulkDownload = async (fiches) => {
+    if (!isEssentiel) { setPdfGate(true); return; }
+    if (bulkDownloading || !fiches.length) return;
+    setBulkDownloading(true);
+    try {
+      const items = fiches.map(f => ({ fiche: f, subject: SUBJECTS.find(sb => sb.id === f.subject) }));
+      const scope = currentSubject === 'all' ? 'toutes-matieres' : currentSubject;
+      setBulkProgress({ done: 0, total: items.length });
+      await downloadFichesPdf(items, `fiches-${scope}.pdf`, (done, total) => setBulkProgress({ done, total }));
+    } catch (err) {
+      console.error('PDF generation error:', err);
+    } finally {
+      setBulkDownloading(false);
+      setBulkProgress(null);
+    }
+  };
+
   // Sync subject filter when prop changes (e.g. clicking different UEs in sidebar)
   useEffect(() => {
     setCurrentSubject(initialSubject || 'all');
@@ -2826,8 +2863,9 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
           <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f1020', margin: 0, letterSpacing: -0.4 }}>Fiches &amp; Cours</h2>
           <p style={{ fontSize: 13, color: '#5f6280', margin: '4px 0 0' }}>{filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''}{currentSubject !== 'all' && activeSubjectObj ? ` · ${activeSubjectObj.name}` : ' · toutes les matières'}</p>
         </div>
-        {/* Search */}
-        <div style={{ position: 'relative' }}>
+        {/* Recherche + export PDF */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ position: 'relative' }}>
           <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8a8ea8' }} width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
@@ -2839,6 +2877,26 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
             className="w-full sm:w-[220px]"
             style={{ paddingLeft: 34, paddingRight: 12, paddingTop: 8, paddingBottom: 8, fontSize: 13, border: '1px solid #eef0f7', borderRadius: 10, outline: 'none', background: '#fff', color: '#2a2c44' }}
           />
+          </div>
+          {/* Télécharger toutes les fiches affichées */}
+          <button
+            onClick={() => handleBulkDownload(filteredFiches)}
+            disabled={bulkDownloading || filteredFiches.length === 0}
+            title={isEssentiel ? 'Télécharger toutes les fiches affichées en un seul PDF' : 'Téléchargement PDF réservé aux membres Premium'}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, background: isEssentiel ? '#ece9ff' : '#f4f5f9', color: isEssentiel ? '#4f46e5' : '#8a8ea8', border: 'none', cursor: bulkDownloading ? 'wait' : 'pointer', whiteSpace: 'nowrap', opacity: filteredFiches.length === 0 ? 0.5 : 1 }}
+            className="hover:brightness-95 transition-all"
+          >
+            {bulkDownloading ? (
+              <span style={{ width: 14, height: 14, border: '2px solid #cfcbf5', borderTopColor: '#4f46e5', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
+            ) : isEssentiel ? (
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+            ) : (
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+            )}
+            {bulkDownloading
+              ? (bulkProgress ? `${bulkProgress.done}/${bulkProgress.total} fiches…` : 'Création du PDF…')
+              : 'Tout télécharger'}
+          </button>
         </div>
       </div>
 
@@ -2908,9 +2966,12 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
           const isRead = readIds.has(fiche.id);
           const mins = ficheReadingTime(fiche.content);
           return (
-            <button
+            <div
               key={fiche.id}
+              role="button"
+              tabIndex={0}
               onClick={() => { markRead(fiche.id); setSelectedFiche(fiche); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); markRead(fiche.id); setSelectedFiche(fiche); } }}
               style={{ position: 'relative', background: '#fff', borderRadius: 16, border: '1px solid #e5e7f0', overflow: 'hidden', cursor: 'pointer', textAlign: 'left', padding: 0, transition: 'all .2s', display: 'flex', flexDirection: 'column' }}
               className="hover:shadow-lg hover:border-gray-300 transition-all group"
             >
@@ -2937,10 +2998,27 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
                     {isRead ? 'Relire' : 'Lire la fiche'}
                     <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
                   </span>
-                  <span style={{ fontSize: 11, color: '#9ca3af' }}>⏱ {mins} min</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, color: '#9ca3af' }}>⏱ {mins} min</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleCardDownload(fiche); }}
+                      title={isEssentiel ? 'Télécharger cette fiche en PDF' : 'Téléchargement PDF réservé aux membres Premium'}
+                      aria-label={`Télécharger la fiche ${fiche.title} en PDF`}
+                      style={{ display: 'inline-flex', padding: 5, borderRadius: 7, background: '#f4f5f9', border: 'none', cursor: 'pointer', color: isEssentiel ? '#5f6280' : '#b6bacb' }}
+                      className="hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                    >
+                      {downloadingId === fiche.id ? (
+                        <span style={{ width: 13, height: 13, border: '2px solid #d7d9e6', borderTopColor: '#4f46e5', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
+                      ) : isEssentiel ? (
+                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                      ) : (
+                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+                      )}
+                    </button>
+                  </span>
                 </div>
               </div>
-            </button>
+            </div>
           );
         };
 
@@ -2992,6 +3070,37 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
           onLaunchQCM={onLaunchQCM}
           onOpenCours={(fiche) => { setActiveCours(fiche); setSelectedFiche(null); }}
         />
+      )}
+
+      {/* Incitation Premium : téléchargement PDF */}
+      {pdfGate && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,16,32,0.45)', backdropFilter: 'blur(4px)' }} onClick={() => setPdfGate(false)} />
+          <div style={{ position: 'relative', width: '100%', maxWidth: 400, background: '#fff', borderRadius: 20, padding: '28px 26px', boxShadow: '0 32px 80px rgba(15,16,32,0.22)', textAlign: 'center' }}>
+            <div style={{ width: 52, height: 52, borderRadius: 16, background: '#ece9ff', display: 'grid', placeItems: 'center', margin: '0 auto 14px' }}>
+              <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#4f46e5" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+            </div>
+            <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0f1020', margin: '0 0 8px' }}>Emporte tes fiches partout</h3>
+            <p style={{ fontSize: 13.5, color: '#5f6280', lineHeight: 1.55, margin: '0 0 18px' }}>
+              Le téléchargement des fiches en PDF fait partie du Premium :{' '}
+              <strong style={{ color: '#2a2c44' }}>révise hors ligne, imprime, annote</strong>{' '}
+              — avec en plus les cours complets et les QCM illimités.
+            </p>
+            <Link
+              href="/tarifs"
+              style={{ display: 'block', padding: '12px 18px', borderRadius: 12, background: '#4f46e5', color: '#fff', fontSize: 13.5, fontWeight: 700, textDecoration: 'none', marginBottom: 10 }}
+              className="hover:bg-indigo-700 transition-colors"
+            >
+              Voir les offres — dès 6,25 €/mois
+            </Link>
+            <button
+              onClick={() => setPdfGate(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#8a8ea8', fontWeight: 600 }}
+            >
+              Plus tard
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Cours full-screen overlay */}
@@ -3053,6 +3162,19 @@ function FicheDetailModal({ fiche, fiches = [], isRead = false, onNavigate = nul
     setActiveH(cur);
   };
 
+  const [downloading, setDownloading] = useState(false);
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await downloadFichePdf(fiche, sub);
+    } catch (err) {
+      console.error('PDF generation error:', err);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const scrollToHeading = (id) => {
     const h = contentRef.current?.querySelector(`#${id}`);
     if (h && scrollRef.current) scrollRef.current.scrollTo({ top: h.offsetTop - 12, behavior: 'smooth' });
@@ -3077,6 +3199,33 @@ function FicheDetailModal({ fiche, fiches = [], isRead = false, onNavigate = nul
             <span style={{ fontSize: 11.5, color: '#9ca3af' }}>· ⏱ {mins} min</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Télécharger la fiche en PDF (Premium) */}
+            {isEssentiel ? (
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                title="Télécharger la fiche en PDF"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: '#f1f5f9', color: '#475569', border: 'none', cursor: downloading ? 'wait' : 'pointer', opacity: downloading ? 0.65 : 1 }}
+                className="hover:bg-slate-200 transition-colors"
+              >
+                {downloading ? (
+                  <span style={{ width: 14, height: 14, border: '2px solid #cbd5e1', borderTopColor: '#475569', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
+                ) : (
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                )}
+                <span className="hidden sm:inline">{downloading ? 'Création…' : 'PDF'}</span>
+              </button>
+            ) : (
+              <Link
+                href="/tarifs"
+                title="Le téléchargement PDF est réservé aux membres Premium"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: '#f8fafc', color: '#94a3b8', border: '1px dashed #cbd5e1', textDecoration: 'none' }}
+                className="hover:bg-slate-100 transition-colors"
+              >
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+                <span className="hidden sm:inline">PDF</span>
+              </Link>
+            )}
             {/* Launch QCM on this subject */}
             <button
               onClick={() => { onLaunchQCM({ type: 'custom', subject: fiche.subject, subjectName: sub?.name || '', title: sub?.name || '' }); onClose(); }}
