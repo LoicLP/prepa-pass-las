@@ -7,6 +7,7 @@ import { useTimer } from '@/hooks/useTimer';
 import { SUBJECTS } from '@/data/subjects';
 import { FICHES_DATA } from '@/data/fiches';
 import { QUESTIONS } from '@/data/questions';
+import { shuffleAllOptions } from '@/utils/shuffle';
 import { SUBJECT_COLORS, SUBJECT_ICONS, getSubjectName } from '@/data/constants';
 import { useGeminiQuestions } from '@/hooks/useGeminiQuestions';
 import { useAuth } from '@/contexts/AuthContext';
@@ -270,7 +271,9 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
       setView('hero');
       return;
     }
-    setQuestions(qs);
+    // Les propositions sont mélangées à chaque session : dans la banque statique
+    // la bonne réponse est presque toujours en 2e/3e position.
+    setQuestions(shuffleAllOptions(qs));
     setCurrentIndex(0);
     setScore(0);
     setAnswers(new Array(qs.length).fill(null));

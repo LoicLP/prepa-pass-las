@@ -7,6 +7,7 @@ import { useSupabaseStats } from '@/hooks/useSupabaseStats';
 import { SUBJECTS } from '@/data/subjects';
 import { FICHES_DATA } from '@/data/fiches';
 import { QUESTIONS } from '@/data/questions';
+import { shuffleAllOptions } from '@/utils/shuffle';
 import { SUBJECT_COLORS, SUBJECT_ICONS, getSubjectName } from '@/data/constants';
 import { useGeminiQuestions } from '@/hooks/useGeminiQuestions';
 import { useAuth } from '@/contexts/AuthContext';
@@ -346,7 +347,8 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
       setView('hero');
       return;
     }
-    setQuestions(qs);
+    // Propositions mélangées (voir utils/shuffle)
+    setQuestions(shuffleAllOptions(qs));
     setAnswers(new Array(qs.length).fill(null));
     setFlags(new Array(qs.length).fill(false));
     questionTimesRef.current = new Array(qs.length).fill(0);

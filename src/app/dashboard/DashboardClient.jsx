@@ -523,12 +523,6 @@ export default function DashboardPage() {
       done: fichesSeen,
       cta: () => { setActiveFicheSubject(null); setActiveSection('fiches'); }, ctaLabel: 'Explorer',
     },
-    {
-      id: 'flash', label: 'Lance une session éclair',
-      desc: '8 questions chrono en 5 minutes — parfait entre deux cours',
-      done: allSessions.some(s => s.flash),
-      cta: () => { const s = todaySubject || SUBJECTS[1]; openQCM({ type: 'custom', subject: s.id, subjectName: s.name, title: s.name, count: 8, flash: true }); }, ctaLabel: '⚡ 5 min',
-    },
   ] : [];
   const onboardVisible = onboardOn && !onboardSteps.every(s => s.done);
 
@@ -1731,61 +1725,6 @@ function ActionHub({ todaySubject, reviewDue = [], subjects = [], onLaunchQCM, o
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-      {/* Bande de focus du jour — carte claire tintée */}
-      <div style={{ background: '#f4f1fe', border: '1px solid #e4ddfb', borderRadius: 14, padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
-        {todaySubject ? (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 11, background: '#ede9fe', color: '#7c3aed', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                <HubIcon name="sparkles" size={19} />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#7c3aed', marginBottom: 2 }}>Focus du jour</div>
-                <div className="font-jakarta" style={{ fontSize: 15, fontWeight: 800, color: '#0f1020', letterSpacing: -0.2 }}>On reprend {/^[aeiouyàâäéèêëîïôöùûü]/i.test(todaySubject.name.trim()) ? <>l&apos;{todaySubject.name}</> : <>la {todaySubject.name}</>}</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-              <button onClick={() => onLaunchQCM({ type: 'custom', subject: todaySubject.id, subjectName: todaySubject.name, title: todaySubject.name })} style={primaryBtn} className="hover:bg-violet-700 transition-colors">Réviser 30 min</button>
-              <button onClick={() => launchFlash(todaySubject)} style={ghostBtn} className="hover:bg-violet-50 transition-colors"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg> Éclair 5 min</button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 11, background: '#ede9fe', color: '#7c3aed', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                <HubIcon name="sparkles" size={19} />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#7c3aed', marginBottom: 2 }}>Bienvenue</div>
-                <div className="font-jakarta" style={{ fontSize: 15, fontWeight: 800, color: '#0f1020', letterSpacing: -0.2 }}>Commence ton entraînement</div>
-              </div>
-            </div>
-            <button onClick={() => onLaunchQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} style={primaryBtn} className="hover:bg-violet-700 transition-colors">Commencer un QCM</button>
-          </>
-        )}
-      </div>
-
-      {/* Défis du jour */}
-      {showQuests && quests.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #eef0f7', borderRadius: 12, padding: '11px 15px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
-            <span style={{ fontSize: 13 }}>🎯</span>
-            <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#5f6280' }}>Défis du jour</span>
-            <span style={{ fontSize: 10.5, fontWeight: 700, color: quests.every(q => q.done) ? '#3eb489' : '#8a8ea8' }}>
-              {quests.filter(q => q.done).length}/{quests.length}
-            </span>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flex: 1 }}>
-            {quests.map(q => (
-              <span key={q.id} title={q.done ? 'Défi validé !' : `+${q.xp} XP à gagner`}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 500, padding: '4px 11px', borderRadius: 16, background: q.done ? '#e0f3eb' : '#f6f5fb', color: q.done ? '#1d7a4f' : '#5f6280', border: `1px solid ${q.done ? '#b5e3ca' : '#e8e6f5'}`, textDecoration: q.done ? 'line-through' : 'none' }}>
-                {q.done ? '✓' : '○'} {q.label}
-                <span style={{ fontSize: 10, fontWeight: 700, color: q.done ? '#3eb489' : '#e8a948' }}>+{q.xp}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div style={{ fontSize: 13, fontWeight: 600, color: '#5f6280', marginTop: 18 }}>Que veux-tu faire&nbsp;?</div>
 
