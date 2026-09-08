@@ -966,7 +966,9 @@ export default function DashboardPage() {
           )}
 
           {/* Sections non-overview */}
-          <div className={`${activeSection !== 'overview' ? 'space-y-6' : 'hidden'} md:flex-1 md:min-h-0`}>
+          {/* Hauteur naturelle (pas de flex-1/min-h-0) : sinon le contenu déborde de la boîte et
+              le padding bas de <main> tombe avant la fin des cartes. */}
+          <div className={activeSection !== 'overview' ? 'space-y-6 pb-10' : 'hidden'}>
 
             {/* ===== FICHES & COURS ===== */}
             {activeSection === 'fiches' && (
