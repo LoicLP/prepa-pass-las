@@ -3383,20 +3383,21 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
               );
             })}
 
-            {/* Passer Premium — tuile visible tant que l'abonnement n'est pas actif */}
+            {/* Devenir Premium — tuile dorée (même style que le rail CRFPA), visible tant que
+                l'abonnement n'est pas actif */}
             {!isPremiumPlus && (
               <Link
                 href="/tarifs"
-                title={tier === 'gratuit' ? 'Passer Premium' : 'Voir les offres'}
+                title={tier === 'gratuit' ? 'Devenir Premium' : 'Voir les offres'}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '12px 4px 10px', borderRadius: 14, textDecoration: 'none', marginTop: 4 }}
-                className="hover:bg-indigo-50 transition-colors"
+                className="hover:bg-amber-50 transition-colors"
               >
-                <span style={{ width: 40, height: 40, background: 'linear-gradient(135deg, #4f46e5, #8257f9)', borderRadius: 12, display: 'grid', placeItems: 'center', boxShadow: '0 4px 10px rgba(79,70,229,0.3)' }}>
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="1.9">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                <span style={{ width: 40, height: 40, background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', borderRadius: 12, display: 'grid', placeItems: 'center', boxShadow: '0 4px 10px rgba(245,158,11,0.3)' }}>
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#78350f" strokeWidth="1.9">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
                   </svg>
                 </span>
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#4f46e5', textAlign: 'center', lineHeight: 1.2 }}>Passer<br />Premium</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#d97706', textAlign: 'center', lineHeight: 1.2 }}>Devenir<br />Premium</span>
               </Link>
             )}
           </div>
