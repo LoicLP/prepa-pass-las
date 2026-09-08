@@ -974,220 +974,355 @@ export default function DashboardPage() {
             )}
 
             {/* ===== HISTORIQUE ===== */}
+            {/* ===== HISTORIQUE ===== */}
             {activeSection === 'historique' && (() => {
               const pctOf = (s) => Number.isFinite(s.percentage) ? s.percentage : (s.total > 0 ? Math.round((s.correct / s.total) * 100) : null);
               const valid = filteredHistory.map(pctOf).filter(x => x != null);
               const avg = valid.length ? Math.round(valid.reduce((a, b) => a + b, 0) / valid.length) : 0;
-              const best = valid.length ? Math.max(...valid) : 0;
               const totalSec = filteredHistory.reduce((a, s) => a + (s.duration || 0), 0);
-              const fmtTot = (sec) => { if (!sec) return '\u2014'; const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60); return h ? `${h}h${m ? ` ${m}min` : ''}` : `${m}min`; };
-              const relDate = (iso) => { if (!iso) return '\u2014'; const d = new Date(iso), now = new Date(); const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate()), nn = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const diff = Math.round((nn - dd) / 864e5); if (diff === 0) return "Aujourd'hui"; if (diff === 1) return 'Hier'; return formatDate(iso); };
+              const fmtTot = (sec) => { if (!sec) return null; const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60); return h ? `${h}h${m ? String(m).padStart(2, '0') : ''}` : `${m} min`; };
+              const relDate = (iso) => { if (!iso) return '—'; const d = new Date(iso), now = new Date(); const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate()), nn = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const diff = Math.round((nn - dd) / 86400000); if (diff === 0) return "Aujourd'hui"; if (diff === 1) return 'Hier'; if (diff < 7) return d.toLocaleDateString('fr-FR', { weekday: 'long' }); return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); };
               const timeOf = (iso) => { try { return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
-              const stats = [
-                { label: 'Sessions', value: String(filteredHistory.length), cls: 'text-gray-900' },
-                { label: 'Score moyen', value: `${avg}%`, cls: scoreClass(avg) },
-                { label: 'Meilleur score', value: `${best}%`, cls: 'text-emerald-600' },
-                { label: 'Temps total', value: fmtTot(totalSec), cls: 'text-gray-900' },
-              ];
               return (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="p-6 pb-4">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500"></span>Historique des sessions</h3>
-                  <div className="flex gap-2 flex-wrap">
-                    {[
-                      { key: 'all', label: 'Tout', count: allSessions.length },
-                      { key: 'qcm', label: 'QCM', count: data.qcmCount },
-                      { key: 'examen', label: 'Examens', count: data.examCount },
-                    ].map(f => (
-                      <button key={f.key} onClick={() => setHistoryFilter(f.key)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${historyFilter === f.key ? 'bg-primary-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                      >
-                        {f.label} ({f.count})
-                      </button>
-                    ))}
+              <div>
+                <SectionHeader
+                  lead="Ton" word="historique"
+                  chips={[
+                    { label: `${allSessions.length} session${allSessions.length > 1 ? 's' : ''}` },
+                    valid.length > 0 && { label: `${avg}% de moyenne` },
+                    fmtTot(totalSec) && { label: `${fmtTot(totalSec)} d'entraînement`, tone: 'amber' },
+                  ]}
+                />
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" style={{ borderTopWidth: 3, borderTopColor: '#4f46e5' }}>
+                  <div className="p-6 pb-4">
+                    <SegmentedPills
+                      value={historyFilter} onChange={setHistoryFilter}
+                      options={[
+                        { key: 'all', label: `Tout (${allSessions.length})` },
+                        { key: 'qcm', label: `QCM (${data.qcmCount})` },
+                        { key: 'examen', label: `Examens (${data.examCount})` },
+                      ]}
+                    />
                   </div>
-                </div>
-                {filteredHistory.length === 0 ? (
-                  <div className="px-6 pb-6">
-                    <EmptyState title="Aucune session" description="Aucune session trouv\u00e9e pour ce filtre." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
-                  </div>
-                ) : (
-                  <>
-                    {/* Bandeau de statistiques */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-100 border-y border-gray-100">
-                      {stats.map(st => (
-                        <div key={st.label} className="bg-white px-5 py-3.5">
-                          <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{st.label}</div>
-                          <div className={`text-xl font-black tabular-nums ${st.cls}`}>{st.value}</div>
-                        </div>
-                      ))}
+                  {filteredHistory.length === 0 ? (
+                    <div className="px-6 pb-6">
+                      <EmptyState title="Aucune session" description="Aucune session trouvée pour ce filtre." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-gray-50/60 border-b border-gray-100">
-                            <th className="text-left py-2.5 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Date</th>
-                            <th className="text-left py-2.5 px-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Type</th>
-                            <th className="text-left py-2.5 px-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Session</th>
-                            <th className="text-left py-2.5 px-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Score</th>
-                            <th className="text-right py-2.5 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Durée</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredHistory.slice(0, visibleCount).map((s, i) => {
-                            const colors = getSubjectBadgeColors(s.subject);
-                            const pct = pctOf(s);
-                            const name = s.subjectName || getSubjectName(s.subject);
-                            const hasTopic = s.topic && s.topic !== name;
-                            return (
-                              <tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
-                                <td className="py-3 px-5 whitespace-nowrap">
-                                  <div className="text-sm font-medium text-gray-700">{relDate(s.date)}</div>
-                                  <div className="text-[11px] text-gray-400 tabular-nums">{timeOf(s.date)}</div>
-                                </td>
-                                <td className="py-3 px-4"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${TYPE_BADGE[s._type] || TYPE_BADGE.QCM}`}>{s._type}</span></td>
-                                <td className="py-3 px-4">
-                                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${colors.badge}`}>{name}</span>
-                                  {hasTopic && <div className="text-[11px] text-gray-400 mt-1 truncate max-w-[220px]">{s.topic}</div>}
-                                </td>
-                                <td className="py-3 px-4">
-                                  {pct == null ? (
-                                    <span className="text-sm text-gray-300">&mdash;</span>
-                                  ) : (
-                                    <div className="flex items-center gap-2.5">
-                                      <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden shrink-0"><div className={`h-full rounded-full ${scoreBarClass(pct)}`} style={{ width: `${pct}%` }} /></div>
-                                      <span className={`text-sm font-bold tabular-nums ${scoreClass(pct)}`}>{pct}%</span>
-                                      {s.total > 0 && <span className="text-[11px] text-gray-400 tabular-nums hidden sm:inline">{s.correct}/{s.total}</span>}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="py-3 px-5 text-sm text-gray-500 text-right whitespace-nowrap tabular-nums">{formatDuration(s.duration)}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    {visibleCount < filteredHistory.length && (
-                      <div className="p-4 text-center border-t border-gray-100">
-                        <button onClick={() => setVisibleCount(v => v + 10)} className="px-5 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-colors">
-                          Voir plus ({Math.min(visibleCount + 10, filteredHistory.length)} / {filteredHistory.length})
-                        </button>
+                  ) : (
+                    <>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="bg-gray-50/80 border-b border-gray-100">
+                              {['Date', 'Type', 'Session', 'Score'].map(h => <th key={h} className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">{h}</th>)}
+                              <th className="text-right py-3 px-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Durée</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredHistory.slice(0, visibleCount).map((s, i) => {
+                              const colors = getSubjectBadgeColors(s.subject);
+                              const pct = pctOf(s);
+                              const name = s.subjectName || getSubjectName(s.subject);
+                              const hasTopic = s.topic && s.topic !== name;
+                              return (
+                                <tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-indigo-50/40 transition-colors">
+                                  <td className="py-3 px-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-700">{relDate(s.date)}</div>
+                                    <div className="text-[11px] text-gray-400 tabular-nums">{timeOf(s.date)}</div>
+                                  </td>
+                                  <td className="py-3 px-4"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${TYPE_BADGE[s._type] || TYPE_BADGE.QCM}`}>{s._type}</span></td>
+                                  <td className="py-3 px-4">
+                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${colors.badge}`}>{name}</span>
+                                    {hasTopic && <div className="text-[11px] text-gray-400 mt-1 truncate max-w-[220px]">{s.topic}</div>}
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    {pct == null ? <span className="text-sm text-gray-300">&mdash;</span> : (
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden shrink-0"><div className={`h-full rounded-full ${scoreBarClass(pct)}`} style={{ width: `${pct}%` }} /></div>
+                                        <span className={`text-sm font-bold tabular-nums ${scoreClass(pct)}`}>{pct}%</span>
+                                        {s.total > 0 && <span className="text-[11px] text-gray-400 tabular-nums hidden sm:inline">{s.correct}/{s.total}</span>}
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="py-3 px-5 text-sm text-gray-500 text-right whitespace-nowrap tabular-nums">{formatDuration(s.duration)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
-                    )}
-                  </>
-                )}
+                      {visibleCount < filteredHistory.length && (
+                        <div className="p-4 text-center border-t border-gray-100">
+                          <button onClick={() => setVisibleCount(v => v + 10)} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-full hover:border-indigo-200 hover:text-indigo-600 transition-colors">
+                            Voir plus ({Math.min(visibleCount + 10, filteredHistory.length)} / {filteredHistory.length})
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
               );
             })()}
 
             {/* ===== PROGRESSION (Premium) ===== */}
             {activeSection === 'progression' && (
-              <PremiumBlurGate
-                locked={!isPremiumPlus}
-                title="Progression détaillée"
-                description="Visualisez votre courbe de progression, vos points forts et axes d'amélioration."
-              >
-              {!data.hasAnySessions || data.last20.length < 2 ? (
-                  <EmptyState title="Pas assez de donn&eacute;es" description="Effectuez plusieurs sessions pour voir votre progression." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
-                ) : (() => {
-                  const w = data.weaknesses[0];
-                  const delta = (data.last5Avg != null && data.prev5Avg != null) ? data.last5Avg - data.prev5Avg : null;
-                  const coachHead = data.trend === 'up' ? 'Belle dynamique, tu progresses' : data.trend === 'down' ? 'Petit coup de mou récemment' : 'Rythme régulier';
-                  const filterSubjects = Object.values(data.subjectStats).filter(s => s.count > 0).sort((a, b) => b.avg - a.avg);
-                  const chip = (on) => `px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${on ? 'bg-indigo-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
-                  return (
-                  <div className="space-y-5">
-                    {/* Bandeau coach */}
-                    <div className="rounded-2xl border border-violet-100 shadow-sm p-5 flex items-center gap-4" style={{ background: 'linear-gradient(135deg,#f4f1fe 0%,#ffffff 55%)' }}>
-                      <div className="w-11 h-11 rounded-full bg-violet-100 grid place-items-center text-2xl shrink-0">🦉</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[15px] font-black text-gray-900 tracking-tight">{coachHead}{delta != null && data.trend !== 'stable' ? ` (${delta >= 0 ? '+' : ''}${delta} pts)` : ''}</div>
-                        <div className="text-[12.5px] text-gray-600 mt-0.5">
-                          {w
-                            ? <>Moyenne de <strong>{data.avgScore}%</strong> sur {data.totalSessions} sessions. <strong>{w.name}</strong> reste ton point faible ({w.avg}%) — quelques QCM cibl&eacute;s et tu passes la barre.</>
-                            : <>Moyenne de <strong>{data.avgScore}%</strong> sur {data.totalSessions} sessions. Continue comme &ccedil;a&nbsp;!</>}
+              <PremiumBlurGate locked={!isPremiumPlus} title="Progression détaillée" description="Visualise ta courbe de progression, tes points forts et tes axes d'amélioration.">
+                <div>
+                  <SectionHeader
+                    lead="Ta" word="progression"
+                    chips={[
+                      { label: `${data.totalSessions} session${data.totalSessions > 1 ? 's' : ''}` },
+                      data.hasAnySessions && { label: `${data.avgScore}% de moyenne` },
+                      data.hasAnySessions && data.trend === 'up' && { label: '↑ En progression', tone: 'emerald' },
+                      data.hasAnySessions && data.trend === 'down' && { label: '↓ En baisse', tone: 'red' },
+                      data.hasAnySessions && data.trend === 'stable' && { label: '→ Stable', tone: 'amber' },
+                    ]}
+                  />
+                  {!data.hasAnySessions || data.last20.length < 2 ? (
+                    <EmptyState title="Pas assez de donn&eacute;es" description="Effectue plusieurs sessions pour voir ta progression." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
+                  ) : (() => {
+                    const filterSubjects = Object.values(data.subjectStats).filter(s => s.count > 0).sort((a, b) => b.avg - a.avg);
+                    // Deux colonnes disjointes : la moitié haute du classement en points forts,
+                    // la moitié basse (du plus faible au moins faible) à améliorer.
+                    const half = Math.ceil(filterSubjects.length / 2);
+                    const strengths = filterSubjects.slice(0, Math.min(3, half));
+                    const toImprove = filterSubjects.slice(half).reverse().slice(0, 3);
+                    const w = data.weaknesses[0];
+                    return (
+                    <div className="space-y-5">
+                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" style={{ borderTopWidth: 3, borderTopColor: '#4f46e5' }}>
+                        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                          <h3 className="font-jakarta text-base font-bold text-gray-900">&Eacute;volution des scores</h3>
+                          {filterSubjects.length > 1 && (
+                            <SegmentedPills value={progSubject} onChange={setProgSubject} options={[{ key: 'all', label: 'Toutes' }, ...filterSubjects.map(s => ({ key: s.id, label: s.name }))]} />
+                          )}
                         </div>
-                      </div>
-                      {w && (
-                        <button onClick={() => openQCM({ type: 'custom', subject: w.id, subjectName: w.name, title: w.name, count: 10 })} className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 px-3.5 py-2 rounded-lg transition-colors shrink-0">
-                          Travailler {w.name}
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Bandeau KPI */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-100">
-                        {[
-                          { label: 'Score moyen', value: `${data.avgScore}%`, cls: scoreClass(data.avgScore) },
-                          { label: 'Sessions', value: String(data.totalSessions), cls: 'text-gray-900' },
-                          { label: 'Meilleur score', value: `${data.bestSessionPct}%`, cls: 'text-emerald-600' },
-                          { label: 'Régularité', value: `${gam.streakInfo.streak} j`, cls: 'text-amber-600' },
-                        ].map(st => (
-                          <div key={st.label} className="bg-white px-5 py-3.5">
-                            <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{st.label}</div>
-                            <div className={`text-xl font-black tabular-nums ${st.cls}`}>{st.value}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Évolution des scores + filtre matière */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>&Eacute;volution des scores</h3>
-                        <div className="flex items-center gap-2">
-                          {data.trend === 'up' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>En progression</span>}
-                          {data.trend === 'down' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6 9 12.75l4.286-4.286a11.948 11.948 0 0 1 5.834 5.46l2.63 1.326m0 0 .311-6.228m-.311 6.228-5.94-2.281" /></svg>En baisse</span>}
-                          {data.trend === 'stable' && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Stable</span>}
-                        </div>
-                      </div>
-                      {filterSubjects.length > 1 && (
-                        <div className="flex gap-2 flex-wrap mb-3">
-                          <button onClick={() => setProgSubject('all')} className={chip(progSubject === 'all')}>Toutes</button>
-                          {filterSubjects.map(s => (
-                            <button key={s.id} onClick={() => setProgSubject(s.id)} className={chip(progSubject === s.id)}>{s.name}</button>
-                          ))}
-                        </div>
-                      )}
-                      <div className="mt-1">
+                        <p className="text-xs text-gray-400 mb-3">Un point par session, dans l&rsquo;ordre chronologique. Le trait horizontal marque ton objectif.</p>
                         <ScoreLineChart points={chartData} target={data.targetScore} />
-                      </div>
-                      {progSubject === 'all' && data.last5Avg !== null && data.prev5Avg !== null && (
-                        <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-gray-100">
-                          <div className="flex items-center gap-1.5 text-sm"><span className="text-gray-500">5 derni&egrave;res :</span><span className={`font-bold ${scoreClass(data.last5Avg)}`}>{data.last5Avg}%</span></div>
-                          <div className="flex items-center gap-1.5 text-sm"><span className="text-gray-500">5 pr&eacute;c&eacute;dentes :</span><span className={`font-bold ${scoreClass(data.prev5Avg)}`}>{data.prev5Avg}%</span></div>
-                          <span className={`inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${data.last5Avg >= data.prev5Avg ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>{data.last5Avg >= data.prev5Avg ? '+' : ''}{data.last5Avg - data.prev5Avg}%</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Performance par matière */}
-                    {data.hasMultipleSubjects && (
-                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                        <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-400"></span>Performance par mati&egrave;re</h3>
-                        <div className="space-y-3.5">
-                          {Object.values(data.subjectStats).filter(s => s.count > 0).sort((a, b) => b.avg - a.avg).map(s => (
-                            <div key={s.id} className="flex items-center gap-3">
-                              <div className="w-28 sm:w-40 shrink-0 text-[13px] font-semibold text-gray-800 truncate">{s.name}</div>
-                              <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${scoreBarClass(s.avg)}`} style={{ width: `${s.avg}%` }} /></div>
-                              <div className={`w-11 text-right text-sm font-bold tabular-nums ${scoreClass(s.avg)}`}>{s.avg}%</div>
-                              <div className="w-14 text-right text-[11px] text-gray-400 tabular-nums hidden sm:block">{s.count} sess.</div>
-                            </div>
-                          ))}
-                        </div>
-                        {data.weaknesses.length > 0 && (
-                          <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
-                            <span className="text-[13px] text-gray-500">&Agrave; renforcer en priorit&eacute; : <strong className="text-gray-800">{data.weaknesses[0].name}</strong> <span className="tabular-nums">({data.weaknesses[0].avg}%)</span></span>
-                            <button onClick={() => openQCM({ type: 'custom', subject: data.weaknesses[0].id, subjectName: data.weaknesses[0].name, title: data.weaknesses[0].name, count: 10 })} className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 px-3 py-1.5 rounded-lg transition-colors">
-                              Travailler {data.weaknesses[0].name}
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                            </button>
+                        {progSubject === 'all' && data.last5Avg !== null && data.prev5Avg !== null && (
+                          <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+                            <div className="flex items-center gap-1.5 text-sm"><span className="text-gray-500">5 derni&egrave;res :</span><span className={`font-bold ${scoreClass(data.last5Avg)}`}>{data.last5Avg}%</span></div>
+                            <div className="flex items-center gap-1.5 text-sm"><span className="text-gray-500">5 pr&eacute;c&eacute;dentes :</span><span className={`font-bold ${scoreClass(data.prev5Avg)}`}>{data.prev5Avg}%</span></div>
+                            <span className={`inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${data.last5Avg >= data.prev5Avg ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
+                              {data.last5Avg >= data.prev5Avg ? '+' : ''}{data.last5Avg - data.prev5Avg} pts
+                            </span>
                           </div>
                         )}
                       </div>
+
+                      {data.hasMultipleSubjects && (
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                          <h3 className="font-jakarta text-base font-bold text-gray-900 mb-4">Points forts &amp; axes d&rsquo;am&eacute;lioration</h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {[
+                              { title: '↑ Points forts', cls: 'text-emerald-600', items: strengths },
+                              { title: 'À améliorer', cls: 'text-amber-600', items: toImprove },
+                            ].map(col => (
+                              <div key={col.title}>
+                                <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${col.cls}`}>{col.title}</h4>
+                                <div className="space-y-3">
+                                  {col.items.map(s => (
+                                    <div key={s.id} className="p-3 rounded-xl border border-gray-100 bg-gray-50/60">
+                                      <div className="flex items-center justify-between mb-1.5">
+                                        <span className="text-[13px] font-semibold text-gray-800 truncate">{s.name}</span>
+                                        <span className={`text-sm font-bold tabular-nums ${scoreClass(s.avg)}`}>{s.avg}%</span>
+                                      </div>
+                                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${scoreBarClass(s.avg)}`} style={{ width: `${s.avg}%` }} /></div>
+                                      <div className="text-[11px] text-gray-400 mt-1 tabular-nums">{s.count} session{s.count > 1 ? 's' : ''}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {w && (
+                            <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
+                              <span className="text-[13px] text-gray-500">&Agrave; renforcer en priorit&eacute; : <strong className="text-gray-800">{w.name}</strong> <span className="tabular-nums">({w.avg}%)</span></span>
+                              <button onClick={() => openQCM({ type: 'custom', subject: w.id, subjectName: w.name, title: w.name, count: 10 })} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20">
+                                Travailler {w.name}
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    );
+                  })()}
+                </div>
+              </PremiumBlurGate>
+            )}
+
+            {/* ===== OBJECTIFS (Premium) ===== */}
+            {activeSection === 'objectifs' && (
+              <PremiumBlurGate locked={!isPremiumPlus} title="Objectifs & Statistiques" description="Suis tes objectifs hebdomadaires et visualise la répartition de tes sessions.">
+                {(() => {
+                  const streak = gam.streakInfo.streak;
+                  const record = Math.max(data.bestStreak || 0, streak);
+                  const weekMins = Math.round((data.thisWeekTime || 0) / 60);
+                  const lastWeekMins = Math.round((data.lastWeekTime || 0) / 60);
+                  const fmtMin = (m) => m >= 60 ? `${Math.floor(m / 60)}h${m % 60 > 0 ? String(m % 60).padStart(2, '0') : ''}` : `${m} min`;
+                  const subjects = Object.values(data.subjectStats).filter(s => s.count > 0).sort((a, b) => b.avg - a.avg);
+                  const goals = [
+                    { label: 'Sessions réalisées', color: '#4f46e5', bg: '#eef2ff', value: data.thisWeekSessions, target: weeklyGoals.sessions, display: `${data.thisWeekSessions}/${weeklyGoals.sessions}`,
+                      icon: <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /> },
+                    { label: "Temps d'étude", color: '#f59e0b', bg: '#fef3c7', value: weekMins, target: weeklyGoals.timeMin, display: `${fmtMin(weekMins)} / ${fmtMin(weeklyGoals.timeMin)}`,
+                      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /> },
+                    { label: 'Jours actifs', color: '#10b981', bg: '#d1fae5', value: data.thisWeekActiveDays, target: weeklyGoals.days, display: `${data.thisWeekActiveDays}/${weeklyGoals.days}`,
+                      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /> },
+                  ];
+                  return (
+                  <div>
+                    <SectionHeader
+                      lead="Tes" word="objectifs"
+                      chips={[
+                        { label: `${data.thisWeekSessions} session${data.thisWeekSessions > 1 ? 's' : ''} cette semaine` },
+                        streak > 0 && { label: `🔥 ${streak} jour${streak > 1 ? 's' : ''} d'affilée`, tone: 'amber' },
+                      ]}
+                    />
+                    {!data.hasAnySessions ? (
+                      <EmptyState title="Aucune donn&eacute;e" description="Effectue des sessions pour voir tes objectifs." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
+                    ) : (
+                    <div className="space-y-5">
+                      {/* Objectifs de la semaine */}
+                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" style={{ borderTopWidth: 3, borderTopColor: '#4f46e5' }}>
+                        <div className="flex items-center justify-between mb-5">
+                          <h3 className="font-jakarta text-base font-bold text-gray-900">Objectifs de la semaine</h3>
+                          {!editGoals && (
+                            <button onClick={openEditGoals} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-gray-200 text-gray-600 hover:border-indigo-200 hover:text-indigo-600 transition-colors">
+                              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" /></svg>
+                              Modifier
+                            </button>
+                          )}
+                        </div>
+                        {editGoals ? (
+                          <div className="space-y-2.5">
+                            {[
+                              { key: 'sessions', label: 'Sessions', min: 1, max: 50, step: 1, fmt: (v) => `${v}` },
+                              { key: 'timeMin', label: "Temps d'étude", min: 30, max: 600, step: 30, fmt: (v) => fmtMin(v) },
+                              { key: 'days', label: 'Jours actifs', min: 1, max: 7, step: 1, fmt: (v) => `${v}` },
+                            ].map(f => (
+                              <div key={f.key} className="flex items-center justify-between gap-3 py-1">
+                                <span className="text-[13px] text-gray-700 font-medium">{f.label} <span className="text-gray-400">/ semaine</span></span>
+                                <div className="flex items-center gap-2">
+                                  <button onClick={() => setGoalsDraft(d => ({ ...d, [f.key]: Math.max(f.min, (d[f.key] || f.min) - f.step) }))} className="w-8 h-8 rounded-full border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors font-bold">−</button>
+                                  <span className="w-16 text-center text-sm font-bold text-gray-900 tabular-nums">{f.fmt(goalsDraft[f.key])}</span>
+                                  <button onClick={() => setGoalsDraft(d => ({ ...d, [f.key]: Math.min(f.max, (d[f.key] || f.min) + f.step) }))} className="w-8 h-8 rounded-full border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors font-bold">+</button>
+                                </div>
+                              </div>
+                            ))}
+                            <div className="flex gap-2 pt-2">
+                              <button onClick={saveWeeklyGoals} disabled={goalsSaving} className="flex-1 py-2.5 rounded-full bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-60 transition-colors">{goalsSaving ? 'Enregistrement…' : 'Enregistrer'}</button>
+                              <button onClick={() => setEditGoals(false)} className="px-4 py-2.5 rounded-full border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-colors">Annuler</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-5">
+                            {goals.map(goal => {
+                              const pct = Math.min(100, Math.round((goal.value / goal.target) * 100));
+                              const done = pct >= 100;
+                              return (
+                                <div key={goal.label}>
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <div className="flex items-center gap-2.5">
+                                      <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: goal.bg, color: goal.color }}>
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">{goal.icon}</svg>
+                                      </span>
+                                      <span className="text-sm font-medium text-gray-700">{goal.label}</span>
+                                    </div>
+                                    <span className={`inline-flex items-center gap-1 text-sm font-bold ${done ? 'text-emerald-600' : 'text-gray-900'}`}>
+                                      {goal.display}
+                                      {done && <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
+                                    </span>
+                                  </div>
+                                  <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: done ? '#10b981' : `linear-gradient(90deg, ${goal.color}, ${goal.color}cc)` }} />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Régularité */}
+                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                        <h3 className="font-jakarta text-base font-bold text-gray-900 mb-4">R&eacute;gularit&eacute;</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="rounded-xl p-5 text-center" style={{ background: 'linear-gradient(150deg, #eef2ff, #e0e7ff)' }}>
+                            <p className="font-jakarta text-3xl font-black text-indigo-700">🔥 {streak}</p>
+                            <p className="text-xs font-semibold text-indigo-700 mt-1">Jour{streak > 1 ? 's' : ''} cons&eacute;cutif{streak > 1 ? 's' : ''}</p>
+                            <p className="text-xs text-indigo-400 mt-1">Record : {record} jour{record > 1 ? 's' : ''}</p>
+                          </div>
+                          <div className="rounded-xl p-5 text-center bg-amber-50/60 border border-amber-100/60">
+                            <p className="font-jakarta text-3xl font-black text-amber-600">{fmtMin(weekMins)}</p>
+                            <p className="text-xs font-semibold text-amber-700 mt-1">Cette semaine</p>
+                            <p className="text-xs text-amber-500/80 mt-1">
+                              {lastWeekMins > 0 ? (weekMins >= lastWeekMins ? `+${fmtMin(weekMins - lastWeekMins)} vs semaine dernière` : `${fmtMin(weekMins)} sur ${fmtMin(lastWeekMins)} la semaine dernière`) : 'Première semaine mesurée'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Objectif score + Répartition */}
+                      <div className="grid md:grid-cols-2 gap-5">
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                          <h3 className="font-jakarta text-base font-bold text-gray-900 mb-4">Objectif score</h3>
+                          <div className="flex items-center gap-6">
+                            <MiniProgressRing value={data.overallAvg} max={data.targetScore} color="#4f46e5" />
+                            <div className="flex-1">
+                              <p className="text-sm font-bold text-gray-900">Score moyen : {data.overallAvg}%</p>
+                              <p className="text-sm text-gray-500">Prochain palier : {data.targetScore}%</p>
+                              <p className="text-xs text-gray-400 mt-1.5">Le palier progresse avec toi : atteins-le pour en d&eacute;bloquer un nouveau.</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                          <h3 className="font-jakarta text-base font-bold text-gray-900 mb-4">R&eacute;partition des sessions</h3>
+                          <div className="flex items-center gap-6">
+                            <div className="relative w-24 h-24 shrink-0">
+                              <div className="w-full h-full rounded-full" style={{ background: totalTypeCount > 0 ? `conic-gradient(${conicStops})` : '#e5e7eb' }} />
+                              <div className="absolute inset-3 bg-white rounded-full flex items-center justify-center"><span className="font-jakarta text-lg font-black text-gray-900">{totalTypeCount}</span></div>
+                            </div>
+                            <div className="space-y-2">
+                              {segments.map(seg => (
+                                <div key={seg.label} className="flex items-center gap-2">
+                                  <div className="w-3 h-3 rounded-full shrink-0" style={{ background: seg.color }} />
+                                  <span className="text-sm text-gray-700">{seg.label}</span>
+                                  <span className="text-sm font-bold text-gray-900 tabular-nums">{seg.count}</span>
+                                  <span className="text-xs text-gray-400 tabular-nums">({totalTypeCount > 0 ? Math.round((seg.count / totalTypeCount) * 100) : 0}%)</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Maîtrise par matière */}
+                      {data.hasMultipleSubjects && (
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-jakarta text-base font-bold text-gray-900">Ma&icirc;trise par mati&egrave;re</h3>
+                            <span className="text-[11px] text-gray-400 flex items-center gap-1.5"><span className="w-3 h-0.5 bg-gray-300 inline-block"></span> seuil vis&eacute; 70%</span>
+                          </div>
+                          <div className="space-y-3.5">
+                            {subjects.map(s => (
+                              <div key={s.id} className="flex items-center gap-3">
+                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} />
+                                <span className="w-28 sm:w-36 shrink-0 text-[13px] font-semibold text-gray-800 truncate">{s.name}</span>
+                                <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden relative">
+                                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${s.avg}%`, background: s.color }} />
+                                  <div className="absolute top-0 h-full w-0.5 bg-gray-300" style={{ left: '70%' }} />
+                                </div>
+                                <span className={`w-11 text-right text-sm font-bold tabular-nums ${scoreClass(s.avg)}`}>{s.avg}%</span>
+                                <span className="w-20 text-right text-[11px] text-gray-400 tabular-nums hidden sm:block">record {s.bestScore}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     )}
                   </div>
                   );
@@ -1195,192 +1330,9 @@ export default function DashboardPage() {
               </PremiumBlurGate>
             )}
 
-            {/* ===== OBJECTIFS (Premium) ===== */}
-            {activeSection === 'objectifs' && (
-              <PremiumBlurGate
-                locked={!isPremiumPlus}
-                title="Objectifs & Statistiques"
-                description="Suivez vos objectifs hebdomadaires et visualisez la répartition de vos sessions."
-              >
-              {!data.hasAnySessions ? (
-                <EmptyState title="Aucune donn&eacute;e" description="Effectuez des sessions pour voir vos objectifs." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
-              ) : (() => {
-                const streak = gam.streakInfo.streak;
-                const record = Math.max(data.bestStreak || 0, streak);
-                const weekMins = Math.round((data.thisWeekTime || 0) / 60); // durées en secondes → minutes
-                const fmtMin = (m) => m >= 60 ? `${Math.floor(m / 60)}h${m % 60 > 0 ? String(m % 60).padStart(2, '0') : ''}` : `${m} min`;
-                const sessPct = Math.min(100, Math.round((data.thisWeekSessions / weeklyGoals.sessions) * 100));
-                const timePct = Math.min(100, Math.round((weekMins / weeklyGoals.timeMin) * 100));
-                const daysPct = Math.min(100, Math.round((data.thisWeekActiveDays / weeklyGoals.days) * 100));
-                const goalsMet = [sessPct >= 100, timePct >= 100, daysPct >= 100].filter(Boolean).length;
-                const weekOverall = Math.round((sessPct + timePct + daysPct) / 3);
-                const subjects = Object.values(data.subjectStats).filter(s => s.count > 0).sort((a, b) => b.avg - a.avg);
-                const friseN = Math.min(Math.max(record, 7), 12);
-                const scoreDelta = (data.last5Avg !== null && data.prev5Avg !== null) ? data.last5Avg - data.prev5Avg : null;
-                const goals = [
-                  { name: 'Sessions', val: `${data.thisWeekSessions} / ${weeklyGoals.sessions}`, pct: sessPct, color: '#7c3aed' },
-                  { name: 'Temps d’étude', val: `${fmtMin(weekMins)} / ${fmtMin(weeklyGoals.timeMin)}`, pct: timePct, color: '#4f46e5' },
-                  { name: 'Jours actifs', val: `${data.thisWeekActiveDays} / ${weeklyGoals.days}`, pct: daysPct, color: '#a855f7' },
-                ];
-                return (
-                <div className="space-y-5">
-                  {/* Objectif de la semaine + Régularité */}
-                  <div className="grid md:grid-cols-3 gap-5">
-                    <div className="md:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <div className="flex items-center justify-between mb-5">
-                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-violet-500"></span>Objectif de la semaine</h3>
-                        {editGoals ? (
-                          <span className="text-xs font-semibold text-gray-400">D&eacute;finis tes objectifs</span>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">{goalsMet}/3 atteints</span>
-                            <button onClick={openEditGoals} title="Modifier mes objectifs" className="text-gray-400 hover:text-violet-600 transition-colors p-1">
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      {editGoals ? (
-                        <div className="space-y-2.5">
-                          {[
-                            { key: 'sessions', label: 'Sessions', min: 1, max: 50, step: 1, fmt: (v) => `${v}` },
-                            { key: 'timeMin', label: 'Temps d’étude', min: 30, max: 600, step: 30, fmt: (v) => fmtMin(v) },
-                            { key: 'days', label: 'Jours actifs', min: 1, max: 7, step: 1, fmt: (v) => `${v}` },
-                          ].map(f => (
-                            <div key={f.key} className="flex items-center justify-between gap-3 py-1">
-                              <span className="text-[13px] text-gray-700 font-medium">{f.label} <span className="text-gray-400">/ semaine</span></span>
-                              <div className="flex items-center gap-2">
-                                <button onClick={() => setGoalsDraft(d => ({ ...d, [f.key]: Math.max(f.min, (d[f.key] || f.min) - f.step) }))} className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:border-violet-400 hover:text-violet-600 grid place-items-center text-lg font-bold transition-colors" aria-label="Diminuer">&minus;</button>
-                                <span className="w-16 text-center text-sm font-bold text-gray-900 tabular-nums">{f.fmt(goalsDraft[f.key])}</span>
-                                <button onClick={() => setGoalsDraft(d => ({ ...d, [f.key]: Math.min(f.max, (d[f.key] || f.min) + f.step) }))} className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:border-violet-400 hover:text-violet-600 grid place-items-center text-lg font-bold transition-colors" aria-label="Augmenter">+</button>
-                              </div>
-                            </div>
-                          ))}
-                          <div className="flex gap-2 pt-2">
-                            <button onClick={saveWeeklyGoals} disabled={goalsSaving} className="flex-1 py-2 rounded-lg bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 disabled:opacity-60 transition-colors">{goalsSaving ? 'Enregistrement…' : 'Enregistrer'}</button>
-                            <button onClick={() => setEditGoals(false)} className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-colors">Annuler</button>
-                          </div>
-                        </div>
-                      ) : (
-                      <div className="flex items-center gap-6">
-                        <div className="relative w-[104px] h-[104px] shrink-0">
-                          <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
-                            <circle cx="60" cy="60" r="50" fill="none" stroke="#eef0f6" strokeWidth="12" />
-                            <circle cx="60" cy="60" r="50" fill="none" stroke="#7c3aed" strokeWidth="12" strokeLinecap="round" strokeDasharray="314" strokeDashoffset={314 * (1 - weekOverall / 100)} style={{ transition: 'stroke-dashoffset .6s ease' }} />
-                          </svg>
-                          <div className="absolute inset-0 grid place-items-center text-center">
-                            <div><div className="text-2xl font-black text-gray-900 tabular-nums">{weekOverall}%</div><div className="text-[8px] font-bold text-gray-400 tracking-wider">SEMAINE</div></div>
-                          </div>
-                        </div>
-                        <div className="flex-1 space-y-3">
-                          {goals.map(g => (
-                            <div key={g.name}>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-[12.5px] text-gray-600 font-medium">{g.name}</span>
-                                <span className="text-[12.5px] font-bold text-gray-900 tabular-nums">{g.val} {g.pct >= 100 && <span className="text-emerald-500">&#10003;</span>}</span>
-                              </div>
-                              <div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all duration-500" style={{ width: `${g.pct}%`, background: g.color }} /></div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      )}
-                    </div>
-
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col" style={{ background: 'linear-gradient(135deg,#f4f1fe 0%,#ffffff 72%)' }}>
-                      <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-4"><span className="w-2 h-2 rounded-full bg-violet-500"></span>R&eacute;gularit&eacute;</h3>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-black text-violet-700 tabular-nums">&#128293; {streak}</span>
-                        <span className="text-[12.5px] text-gray-500 font-semibold">jours d&rsquo;affil&eacute;e</span>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">Record : {record} jours{streak >= record ? ' · record égalé !' : ` · encore ${record - streak} pour l'égaler`}</p>
-                      <div className="flex gap-1 mt-auto pt-4">
-                        {Array.from({ length: friseN }).map((_, i) => (
-                          <span key={i} className="flex-1 h-1.5 rounded-full" style={{ background: i < streak ? '#7c3aed' : '#e4ddfb' }} />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Objectif score + Répartition */}
-                  <div className="grid md:grid-cols-2 gap-5">
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-4"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Objectif score</h3>
-                      <div className="flex items-baseline gap-2">
-                        <span className={`text-3xl font-black tabular-nums ${scoreClass(data.overallAvg)}`}>{data.overallAvg}%</span>
-                        <span className="text-[12.5px] text-gray-400 font-semibold">&rarr; objectif {data.targetScore}%</span>
-                      </div>
-                      {scoreDelta !== null && (
-                        <span className={`inline-flex items-center gap-1 mt-2 text-[11px] font-bold px-2.5 py-0.5 rounded-full ${scoreDelta > 0 ? 'bg-emerald-100 text-emerald-700' : scoreDelta < 0 ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>
-                          {scoreDelta > 0 ? `▲ En progression (+${scoreDelta} pts)` : scoreDelta < 0 ? `▼ En baisse (${scoreDelta} pts)` : 'Score stable'}
-                        </span>
-                      )}
-                      <div className="mt-4">
-                        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden relative">
-                          <div className={`h-full rounded-full transition-all duration-500 ${scoreBarClass(data.overallAvg)}`} style={{ width: `${Math.min(100, data.overallAvg)}%` }} />
-                          <div className="absolute -top-1 h-4.5 w-0.5 bg-gray-500" style={{ left: `${data.targetScore}%` }} />
-                        </div>
-                        <div className="flex justify-between text-[10px] text-gray-400 font-semibold mt-1.5"><span>0</span><span>Objectif {data.targetScore}%</span><span>100</span></div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-4"><span className="w-2 h-2 rounded-full bg-indigo-500"></span>R&eacute;partition des sessions</h3>
-                      <div className="flex items-center gap-5">
-                        <div className="relative w-[88px] h-[88px] shrink-0">
-                          <div className="w-full h-full rounded-full" style={{ background: totalTypeCount > 0 ? `conic-gradient(${conicStops})` : '#e5e7eb' }} />
-                          <div className="absolute inset-[11px] bg-white rounded-full flex items-center justify-center"><span className="text-base font-black text-gray-900">{totalTypeCount}</span></div>
-                        </div>
-                        <div className="space-y-2">
-                          {segments.map(seg => (
-                            <div key={seg.label} className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full shrink-0" style={{ background: seg.color }} />
-                              <span className="text-[13px] text-gray-700">{seg.label}</span>
-                              <span className="text-[13px] font-bold text-gray-900 tabular-nums">{seg.count}</span>
-                              <span className="text-[11px] text-gray-400 tabular-nums">({totalTypeCount > 0 ? Math.round((seg.count / totalTypeCount) * 100) : 0}%)</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Maîtrise par matière */}
-                  {data.hasMultipleSubjects && (
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-400"></span>Ma&icirc;trise par mati&egrave;re</h3>
-                        <span className="text-[11px] text-gray-400 flex items-center gap-1.5"><span className="w-3 h-0.5 bg-gray-300 inline-block"></span> seuil vis&eacute; 70%</span>
-                      </div>
-                      <div className="space-y-3.5">
-                        {subjects.map(s => (
-                          <div key={s.id} className="flex items-center gap-3">
-                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} />
-                            <span className="w-28 sm:w-36 shrink-0 text-[13px] font-semibold text-gray-800 truncate">{s.name}</span>
-                            <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden relative">
-                              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${s.avg}%`, background: s.color }} />
-                              <div className="absolute top-0 h-full w-0.5 bg-gray-300" style={{ left: '70%' }} />
-                            </div>
-                            <span className={`w-11 text-right text-sm font-bold tabular-nums ${scoreClass(s.avg)}`}>{s.avg}%</span>
-                            <span className="w-20 text-right text-[11px] text-gray-400 tabular-nums hidden sm:block">record {s.bestScore}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                );
-              })()}
-              </PremiumBlurGate>
-            )}
-
             {/* ===== CLASSEMENT (Premium) ===== */}
             {activeSection === 'classement' && (
-              <PremiumBlurGate
-                locked={!isPremiumPlus}
-                title="Classement hebdomadaire"
-                description="Compare tes performances des 7 derniers jours avec les autres étudiants et grimpe dans le classement de la semaine."
-              >
+              <PremiumBlurGate locked={!isPremiumPlus} title="Classement hebdomadaire" description="Compare tes performances des 7 derniers jours avec les autres étudiants et grimpe dans le classement de la semaine.">
                 <ClassementSection allSessions={allSessions} userId={user?.id} accessToken={accessToken} />
               </PremiumBlurGate>
             )}
@@ -3964,6 +3916,47 @@ function OnboardingPickerCard({ onLaunchQCM }) {
 /* ============================================================
    STAT CARD
    ============================================================ */
+/* ============================================================
+   EN-TÊTE DE SECTION & CONTRÔLE SEGMENTÉ (langage du dashboard CRFPA)
+   ============================================================ */
+/* « Ta progression » : le mot-clé en dégradé, puis une rangée de pastilles.
+   `chips` accepte des entrées falsy pour simplifier les conditions à l'appel. */
+function SectionHeader({ lead, word, chips = [] }) {
+  const TONES = {
+    indigo: 'bg-indigo-50 text-indigo-700',
+    amber: 'bg-amber-100 text-amber-700',
+    emerald: 'bg-emerald-100 text-emerald-700',
+    red: 'bg-red-100 text-red-600',
+  };
+  const list = chips.filter(Boolean);
+  return (
+    <div className="mb-5">
+      <h2 className="font-jakarta text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+        {lead} <span className="home-gradient-text">{word}</span>
+      </h2>
+      {list.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+          {list.map(c => (
+            <span key={c.label} className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full ${TONES[c.tone || 'indigo']}`}>{c.label}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SegmentedPills({ value, onChange, options }) {
+  return (
+    <div className="inline-flex flex-wrap items-center gap-1 bg-gray-50 border border-gray-200 rounded-full p-1">
+      {options.map(o => (
+        <button key={o.key} onClick={() => onChange(o.key)} className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${value === o.key ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25' : 'text-gray-600 hover:text-indigo-600'}`}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function StatCard({ label, value, icon, badge, trend, sublabel, tint, hint }) {
   return (
     <div className={`rounded-2xl border p-5 shadow-sm hover:-translate-y-[2px] transition-transform flex flex-col justify-between min-h-[112px] ${tint || 'bg-white border-gray-100'}`}>
@@ -4822,50 +4815,23 @@ function ClassementSection({ allSessions, userId, accessToken }) {
 
   return (
     <div className="space-y-5">
-      {/* En-tête de section */}
-      <div>
-        <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
-          <span>🏆</span> Classement hebdomadaire
-        </h2>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Ta semaine face à la promo — remise en jeu chaque jour.
-        </p>
-      </div>
-
-      {/* Explication du classement */}
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
-        <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-        </svg>
-        <div className="text-sm text-amber-800 leading-relaxed">
-          <p className="font-semibold mb-1">Comment fonctionne le classement hebdomadaire ?</p>
-          <p>Ton score combine <span className="font-semibold">précision et régularité sur tes 7 derniers jours</span> — pas seulement le volume. Un résultat isolé ne suffit pas à grimper en tête, et le classement <span className="font-semibold">évolue chaque jour</span> : ta place se défend toute la semaine.</p>
-        </div>
-      </div>
-
-      {/* KPI */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="grid grid-cols-3 gap-px bg-gray-100">
-          {[
-            { l: 'Ta position', v: <>{userRank}<span className="text-base text-gray-400">/{totalParticipants}</span></>, cls: 'text-gray-900' },
-            { l: 'Percentile', v: `Top ${Math.max(1, 100 - percentile)}%`, cls: 'text-indigo-600' },
-            { l: 'Score moyen · 7 j', v: `${userAvg}%`, cls: scoreClass(userAvg) },
-          ].map(st => (
-            <div key={st.l} className="bg-white px-5 py-3.5 text-center">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{st.l}</div>
-              <div className={`text-2xl font-black tabular-nums ${st.cls}`}>{st.v}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <SectionHeader
+        lead="Ton" word="classement"
+        chips={[
+          { label: `${userRank}e sur ${totalParticipants}` },
+          { label: `Top ${Math.max(1, 100 - percentile)}%`, tone: 'emerald' },
+          { label: `${userAvg}% de moyenne · 7 j`, tone: 'amber' },
+        ]}
+      />
+      <p className="text-xs text-gray-400 -mt-2">
+        Ton score combine <strong className="text-gray-600">précision et régularité sur tes 7 derniers jours</strong> — le classement est remis en jeu chaque jour.
+      </p>
 
       {/* Podium top 3 */}
       {podium.length === 3 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" style={{ borderTopWidth: 3, borderTopColor: '#4f46e5' }}>
           <div className="flex items-center justify-between mb-5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-              🏆 Top de la semaine
-            </span>
+            <h3 className="font-jakarta text-base font-bold text-gray-900">Top de la semaine</h3>
             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-2.5 py-1">
               📈 Évolue chaque jour
             </span>
@@ -4914,11 +4880,11 @@ function ClassementSection({ allSessions, userId, accessToken }) {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50/60 border-b border-gray-100">
-                <th className="text-center py-2.5 px-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-14">Rang</th>
-                <th className="text-left py-2.5 px-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Étudiant</th>
-                <th className="text-left py-2.5 px-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Score</th>
-                <th className="text-right py-2.5 px-5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Sessions · 7 j</th>
+              <tr className="bg-gray-50/80 border-b border-gray-100">
+                <th className="text-center py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider w-14">Rang</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Étudiant</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Score</th>
+                <th className="text-right py-3 px-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sessions · 7 j</th>
               </tr>
             </thead>
             <tbody>
