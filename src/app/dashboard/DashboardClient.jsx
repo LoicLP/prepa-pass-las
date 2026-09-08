@@ -536,10 +536,10 @@ export default function DashboardPage() {
     <div style={{ background: '#f6f5fb', height: '100vh', overflow: 'hidden' }}>
 
       {/* ===== OVERLAY EXAMEN EMBARQUÉ ===== */}
-      {/* Sidebar visible pendant la sélection (left:220px sur desktop), plein écran pendant l'épreuve. */}
+      {/* Sidebar visible pendant la sélection (left:120px sur desktop, largeur du rail), plein écran pendant l'épreuve. */}
       {activeExamen && (
         <div
-          className={examImmersive ? 'left-0' : 'left-0 md:left-[220px]'}
+          className={examImmersive ? 'left-0' : 'left-0 md:left-[120px]'}
           style={{ position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 200, background: '#f8fafc', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
         >
           <div style={{ flexShrink: 0, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #eef0f7', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -559,11 +559,11 @@ export default function DashboardPage() {
       )}
 
       {/* ===== OVERLAY QCM EMBARQUÉ ===== */}
-      {/* Pendant la sélection (mode/matière/fiche/sujet), l'overlay laisse la sidebar visible sur desktop (left:220px).
+      {/* Pendant la sélection (mode/matière/fiche/sujet), l'overlay laisse la sidebar visible sur desktop (left:120px).
           Pendant le quiz, il passe en plein écran immersif (left:0). */}
       {activeQCM && (
         <div
-          className={qcmImmersive ? 'left-0' : 'left-0 md:left-[220px]'}
+          className={qcmImmersive ? 'left-0' : 'left-0 md:left-[120px]'}
           style={{ position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 200, background: '#f8fafc', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
         >
           {/* Barre de navigation overlay */}
