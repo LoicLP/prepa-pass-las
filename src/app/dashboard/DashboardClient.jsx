@@ -820,7 +820,8 @@ export default function DashboardPage() {
         {/* ===== MAIN CONTENT ===== */}
         <main ref={mainRef} className="md:pt-[34px] md:px-9 pt-[72px] px-4 pb-[80px] md:pb-12" style={{ flex: 1, minWidth: 0, maxWidth: '100%', overflowY: 'auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-          {/* GREETING — mise en page CRFPA : date + actions sur une ligne, salutation en dessous */}
+          {/* GREETING — accueil uniquement. Mise en page CRFPA : date + actions sur une ligne, salutation en dessous */}
+          {activeSection === 'overview' && (
           <div className="hidden md:flex" style={{ flexDirection: 'column', gap: 14, marginBottom: 14, flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 20, paddingBottom: 4 }}>
               <span style={{ fontSize: 13, color: '#8a8ea8' }}>
@@ -847,23 +848,21 @@ export default function DashboardPage() {
               )}
               </div>
             </div>
-            {activeSection === 'overview' && (
-              <h1 className="font-jakarta" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, margin: 0, color: '#0f1020' }}>
-                {greetingForNow()} {user.displayName ? user.displayName.split(' ')[0] : ''}
-              </h1>
-            )}
+            <h1 className="font-jakarta" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, margin: 0, color: '#0f1020' }}>
+              {greetingForNow()} {user.displayName ? user.displayName.split(' ')[0] : ''}
+            </h1>
           </div>
-          {/* Mobile greeting (compact) */}
+          )}
+          {/* Mobile greeting (compact) — accueil uniquement */}
+          {activeSection === 'overview' && (
           <div className="md:hidden" style={{ marginBottom: 12, flexShrink: 0 }}>
             <p style={{ fontSize: 11, color: '#8a8ea8', marginBottom: 2, textTransform: 'capitalize' }}>
               {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              {activeSection === 'overview' && (
-                <h1 className="font-jakarta" style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.6, margin: 0, color: '#0f1020' }}>
-                  {greetingForNow()} {user.displayName ? user.displayName.split(' ')[0] : ''} 👋
-                </h1>
-              )}
+              <h1 className="font-jakarta" style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.6, margin: 0, color: '#0f1020' }}>
+                {greetingForNow()} {user.displayName ? user.displayName.split(' ')[0] : ''} 👋
+              </h1>
               {!isPaid && (
                 <Link href="/tarifs" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: trialDaysLeft > 0 ? '#eef2ff' : '#fff1f2', border: `1px solid ${trialDaysLeft > 0 ? '#c7d2fe' : '#fecdd3'}`, borderRadius: 999, padding: '4px 9px', fontSize: 11, fontWeight: 800, color: trialDaysLeft > 0 ? '#4f46e5' : '#e11d48', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   ⏱ {trialDaysLeft > 0 ? `Essai : ${trialDaysLeft}j` : 'Essai expiré'}
@@ -876,6 +875,7 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+          )}
 
           {/* ===== VUE D'ENSEMBLE ===== */}
           {activeSection === 'overview' && (
@@ -945,7 +945,7 @@ export default function DashboardPage() {
                 <OnboardingChecklist steps={onboardSteps} onDismiss={dismissOnboard} />
               )}
               {/* Parcours vers le concours */}
-              <ConcoursPath examDate={user.user_metadata?.exam_date || null} onSetDate={() => setPicoSignal(k => k + 1)} />
+              <ConcoursPath examDate={user.user_metadata?.exam_date || null} />
               <ActionHub
                 todaySubject={todaySubject}
                 reviewDue={reviewDue}
@@ -1387,7 +1387,7 @@ export default function DashboardPage() {
 
             {/* ===== MON COMPTE ===== */}
             {activeSection === 'account' && (
-              <AccountSection user={user} tier={tier} isPremiumPlus={isPremiumPlus} accessToken={accessToken} gam={data.hasAnySessions ? gam : null} data={data} />
+              <AccountSection user={user} tier={tier} isPremiumPlus={isPremiumPlus} accessToken={accessToken} />
             )}
 
           </div>
@@ -1626,7 +1626,23 @@ function BentoFeatured({ icon, title, badge = null, description, ctaLabel, onCli
 }
 
 /* ========== PARCOURS VERS LE CONCOURS ========== */
-function ConcoursPath({ examDate, onSetDate = null }) {
+function ConcoursPath({ examDate }) {
+  /* Édition de la date directement dans la carte. La sauvegarde passe par
+     supabase.auth.updateUser : l'AuthContext reçoit USER_UPDATED et `examDate`
+     se met à jour tout seul, sans rechargement. */
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const openEditor = () => { setDraft(examDate || ''); setError(null); setEditing(true); };
+  const saveDate = async () => {
+    if (!draft || !supabase) return;
+    setSaving(true); setError(null);
+    const { error: err } = await supabase.auth.updateUser({ data: { exam_date: draft } });
+    setSaving(false);
+    if (err) setError(err.message); else setEditing(false);
+  };
+
   const days = daysToNextConcours(examDate);
   if (days == null) return null;
   const WINDOW = 365; // fenêtre de « prépa » d'un an
@@ -1681,10 +1697,32 @@ function ConcoursPath({ examDate, onSetDate = null }) {
       {/* Légende départ / arrivée */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 }}>
         <span style={{ fontSize: 10, fontWeight: 700, color: '#b0b3c6', textTransform: 'uppercase', letterSpacing: 0.4 }}>Départ</span>
-        {examDate ? (
-          <span><span style={{ fontSize: 11, fontWeight: 800, color: '#0f1020' }}>Le concours</span><span style={{ fontSize: 10.5, color: '#8a8ea8', marginLeft: 6 }}>{dateLabel}</span></span>
+        {editing ? (
+          <form onSubmit={(e) => { e.preventDefault(); saveDate(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <input
+              type="date"
+              value={draft}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(e) => setDraft(e.target.value)}
+              autoFocus
+              style={{ fontSize: 11.5, padding: '4px 8px', border: '1px solid #c7d2fe', borderRadius: 8, color: '#0f1020', background: '#fff', outline: 'none' }}
+            />
+            <button type="submit" disabled={saving || !draft} style={{ fontSize: 11, fontWeight: 700, padding: '5px 11px', borderRadius: 8, border: 'none', background: '#4f46e5', color: '#fff', cursor: saving || !draft ? 'default' : 'pointer', opacity: saving || !draft ? 0.6 : 1 }}>
+              {saving ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
+            <button type="button" onClick={() => setEditing(false)} style={{ fontSize: 11, fontWeight: 600, padding: '5px 8px', borderRadius: 8, border: 'none', background: 'none', color: '#8a8ea8', cursor: 'pointer' }}>
+              Annuler
+            </button>
+            {error && <span style={{ fontSize: 10.5, color: '#dc2626', width: '100%', textAlign: 'right' }}>{error}</span>}
+          </form>
+        ) : examDate ? (
+          <span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#0f1020' }}>Le concours</span>
+            <span style={{ fontSize: 10.5, color: '#8a8ea8', marginLeft: 6 }}>{dateLabel}</span>
+            <button onClick={openEditor} title="Modifier la date du concours" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 6px', fontSize: 10.5, color: '#7c3aed', fontWeight: 700 }} className="hover:underline">modifier</button>
+          </span>
         ) : (
-          <button onClick={() => onSetDate?.()} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 700, color: '#7c3aed' }} className="hover:underline">
+          <button onClick={openEditor} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 700, color: '#7c3aed' }} className="hover:underline">
             📅 Ajoute ta date de concours →
           </button>
         )}
@@ -4018,43 +4056,61 @@ function EmptyState({ title, description, ctaHref, ctaLabel, onCta, userName }) 
 /* ============================================================
    ACCOUNT SECTION
    ============================================================ */
-function AccountSection({ user, tier, isPremiumPlus, accessToken, gam = null, data = null }) {
+/* Page « Mon compte », calquée sur le dashboard CRFPA : identité, e-mail,
+   mot de passe, abonnement, suppression. La date du concours se modifie
+   depuis le parcours de l'accueil ; grade, XP et série vivent dans Progression. */
+function AccountSection({ user, tier, accessToken }) {
   const { logOut } = useAuth();
   const router = useRouter();
+
+  const isPaidTier = tier === 'essentiel' || tier === 'premium+';
+  const isOAuth = user?.app_metadata?.provider === 'google' ||
+    (user?.identities?.length > 0 && user.identities.every(id => id.provider !== 'email'));
+
+  const [emailForm, setEmailForm] = useState({ email: user?.email || '', loading: false, success: '', error: '' });
+  const [pwForm, setPwForm] = useState({ password: '', confirm: '', loading: false, success: '', error: '' });
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState(null);
-
-  // Date du concours
-  const [examDraft, setExamDraft] = useState(user?.user_metadata?.exam_date || '');
-  const [examLoading, setExamLoading] = useState(false);
-  const [examMsg, setExamMsg] = useState(null);
-
-  const handleExamSave = async (e) => {
-    e.preventDefault();
-    if (!examDraft) return;
-    setExamLoading(true); setExamMsg(null);
-    try {
-      const { error } = await supabase.auth.updateUser({ data: { exam_date: examDraft } });
-      if (error) throw error;
-      setExamMsg({ type: 'success', text: 'Date du concours enregistrée.' });
-    } catch (err) {
-      setExamMsg({ type: 'error', text: err.message || 'Erreur lors de l\'enregistrement.' });
-    } finally { setExamLoading(false); }
-  };
-
-  const handleLogout = async () => { try { await logOut(); router.push('/'); } catch (e) { console.error(e); } };
-
-  // Tenue de Pico
-  // Suppression de compte
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+
+  const handleEmailUpdate = async (e) => {
+    e.preventDefault();
+    if (!emailForm.email || emailForm.email === user?.email) return;
+    setEmailForm(f => ({ ...f, loading: true, success: '', error: '' }));
+    const { error } = await supabase.auth.updateUser({ email: emailForm.email });
+    setEmailForm(f => ({ ...f, loading: false, error: error?.message || '', success: error ? '' : 'Un lien de confirmation a été envoyé à ta nouvelle adresse.' }));
+  };
+
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+    if (!pwForm.password || pwForm.password !== pwForm.confirm) { setPwForm(f => ({ ...f, error: 'Les mots de passe ne correspondent pas.', success: '' })); return; }
+    if (pwForm.password.length < 8) { setPwForm(f => ({ ...f, error: 'Le mot de passe doit contenir au moins 8 caractères.', success: '' })); return; }
+    setPwForm(f => ({ ...f, loading: true, success: '', error: '' }));
+    const { error } = await supabase.auth.updateUser({ password: pwForm.password });
+    setPwForm(f => ({ ...f, loading: false, error: error?.message || '', success: error ? '' : 'Mot de passe mis à jour.', password: error ? f.password : '', confirm: error ? f.confirm : '' }));
+  };
+
+  const handlePortal = async () => {
+    setPortalLoading(true); setPortalError(null);
+    try {
+      const res = await fetch('/api/stripe/portal', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } });
+      const d = await res.json();
+      if (d.url) { window.location.href = d.url; return; }
+      setPortalError(d.error || 'Erreur lors de la redirection.');
+    } catch { setPortalError('Erreur de connexion. Réessaie.'); }
+    setPortalLoading(false);
+  };
+
+  /* Suppression réelle (API + Supabase) : on garde la confirmation par saisie,
+     contrairement au CRFPA où la suppression n'est pas encore branchée. */
   const handleDeleteAccount = async () => {
     if (deleteConfirm !== 'SUPPRIMER') return;
     setDeleteLoading(true); setDeleteError(null);
     try {
-      const res = await fetch('/api/delete-account', { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` } });
+      const res = await fetch('/api/delete-account', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || 'Échec de la suppression.');
       await logOut();
@@ -4062,399 +4118,150 @@ function AccountSection({ user, tier, isPremiumPlus, accessToken, gam = null, da
     } catch (e) { setDeleteError(e.message || 'Erreur.'); setDeleteLoading(false); }
   };
 
-  // Email
-  const [newEmail, setNewEmail] = useState('');
-  const [emailLoading, setEmailLoading] = useState(false);
-  const [emailMsg, setEmailMsg] = useState(null); // { type: 'success'|'error', text }
-
-  // Password
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordMsg, setPasswordMsg] = useState(null);
-  const [showNewPwd, setShowNewPwd] = useState(false);
-  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
-
-  // Détecter si l'utilisateur est connecté via OAuth (Google) → pas de mot de passe
-  const isOAuth = user?.app_metadata?.provider === 'google' ||
-    (user?.identities?.length > 0 && user.identities.every(id => id.provider !== 'email'));
-
-  const handleEmailUpdate = async (e) => {
-    e.preventDefault();
-    if (!newEmail || newEmail === user?.email) return;
-    setEmailLoading(true);
-    setEmailMsg(null);
-    try {
-      const { error } = await supabase.auth.updateUser({ email: newEmail });
-      if (error) throw error;
-      setEmailMsg({ type: 'success', text: 'Un lien de confirmation a été envoyé à votre nouvelle adresse e-mail.' });
-      setNewEmail('');
-    } catch (err) {
-      setEmailMsg({ type: 'error', text: err.message || 'Erreur lors de la mise à jour.' });
-    } finally {
-      setEmailLoading(false);
-    }
-  };
-
-  const handlePasswordUpdate = async (e) => {
-    e.preventDefault();
-    if (!newPassword) return;
-    if (newPassword !== confirmPassword) {
-      setPasswordMsg({ type: 'error', text: 'Les mots de passe ne correspondent pas.' });
-      return;
-    }
-    if (newPassword.length < 8) {
-      setPasswordMsg({ type: 'error', text: 'Le mot de passe doit contenir au moins 8 caractères.' });
-      return;
-    }
-    setPasswordLoading(true);
-    setPasswordMsg(null);
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
-      setPasswordMsg({ type: 'success', text: 'Mot de passe mis à jour avec succès.' });
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (err) {
-      setPasswordMsg({ type: 'error', text: err.message || 'Erreur lors de la mise à jour.' });
-    } finally {
-      setPasswordLoading(false);
-    }
-  };
-
-  const tierLabel = tier === 'gratuit' ? 'Gratuit' : 'Premium';
-  const tierColor = tier === 'gratuit' ? { bg: '#f3f4f6', text: '#374151' } : { bg: '#ede9fe', text: '#5b21b6' };
-
-  const PREMIUM_FEATURES = ['QCM illimités par IA', 'Examens blancs format concours', 'Cours complets + fiches PDF', 'Progression, Objectifs & Classement'];
-  const tierFeatures = {
-    gratuit: ['1 QCM par jour', 'Toutes les fiches de révision', 'Dashboard, Pico & série', 'Historique des sessions'],
-    essentiel: PREMIUM_FEATURES,
-    'premium+': PREMIUM_FEATURES,
-  };
-
-  const handlePortal = async () => {
-    setPortalLoading(true);
-    setPortalError(null);
-    try {
-      const res = await fetch('/api/stripe/portal', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setPortalError(data.error || 'Erreur lors de la redirection.');
-        setPortalLoading(false);
-      }
-    } catch {
-      setPortalError('Erreur de connexion. Réessayez.');
-      setPortalLoading(false);
-    }
-  };
-
-  const memberSince = user?.created_at ? new Date(user.created_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '—';
-  const heroStats = gam ? [
-    { l: 'Grade', v: `${gam.grade.emoji} ${gam.grade.name}` },
-    { l: 'XP total', v: `${gam.total.toLocaleString('fr-FR')}` },
-    { l: 'Série', v: `🔥 ${gam.streakInfo.streak} j` },
-    { l: 'Membre depuis', v: memberSince, cap: true },
-  ] : null;
+  const inputCls = 'w-full px-4 py-2.5 bg-[#fafafe] border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-indigo-300 focus:ring-[3px] focus:ring-indigo-100 transition';
+  const labelCls = 'block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5';
+  const submitCls = 'inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-full shadow-md shadow-indigo-600/20 hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
+  const Feedback = ({ error, success }) => (
+    <>
+      {error && <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-100 rounded-full px-3 py-1.5">{error}</p>}
+      {success && <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5">✓ {success}</p>}
+    </>
+  );
 
   return (
     <div className="space-y-5 pb-12">
-      {/* Profil — en-tête enrichi */}
-      <div className="rounded-2xl border border-indigo-100 shadow-sm overflow-hidden" style={{ background: 'linear-gradient(135deg,#eef2ff 0%,#faf9ff 62%)' }}>
-        <div className="p-6 flex items-center gap-5">
-          <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 27, flexShrink: 0, boxShadow: '0 6px 18px rgba(79,70,229,0.3)' }}>
-            {(user?.displayName?.[0] || user?.email?.[0] || '?').toUpperCase()}
+      {/* Titre */}
+      <div>
+        <h1 className="font-jakarta" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, margin: 0, color: '#0f1020' }}>
+          Mon <span style={{ color: '#4f46e5' }}>compte</span>
+        </h1>
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700">{user?.email}</span>
+          <span className="text-xs font-bold text-gray-500">{isPaidTier ? 'Plan Premium' : 'Plan gratuit'}</span>
+        </div>
+      </div>
+
+      {/* Identité */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" style={{ borderTopWidth: 3, borderTopColor: '#4f46e5' }}>
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-indigo-600/25" style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
+            <span className="font-jakarta text-2xl font-black text-white">{(user?.displayName || user?.email || 'U')[0].toUpperCase()}</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xl font-black text-gray-900 truncate tracking-tight">{user?.displayName || 'Utilisateur'}</p>
+          <div className="min-w-0">
+            <p className="font-jakarta text-lg font-bold text-gray-900 truncate">{user?.displayName || user?.email}</p>
             <p className="text-sm text-gray-500 truncate">{user?.email}</p>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 7, padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700, background: tierColor.bg, color: tierColor.text }}>
-              {tier === 'premium+' && <span>✦</span>}{tierLabel}
+            <span className={`inline-flex mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${isPaidTier ? 'bg-violet-100 text-violet-700' : 'bg-gray-100 text-gray-600'}`}>
+              {isPaidTier ? '⭐ Premium' : 'Plan gratuit'}
             </span>
           </div>
         </div>
-        {heroStats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 bg-white/50 border-t border-indigo-100/70">
-            {heroStats.map((s, i) => (
-              <div key={s.l} className={`px-4 py-3 ${i > 0 ? 'border-l border-indigo-100/70' : ''} ${i === 2 ? 'sm:border-l border-t sm:border-t-0 border-indigo-100/70' : ''} ${i === 3 ? 'border-l border-t sm:border-t-0 border-indigo-100/70' : ''}`}>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">{s.l}</div>
-                <div className={`text-sm font-black text-gray-900 truncate ${s.cap ? 'capitalize' : ''}`}>{s.v}</div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Abonnement */}
-      <div className="grid gap-5">
-      {/* Abonnement */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-violet-500"></span>
-          Mon abonnement
-        </h3>
-
-        {/* Plan actuel */}
-        <div style={{ padding: '16px 18px', borderRadius: 14, background: tier === 'premium+' ? 'linear-gradient(135deg, #1e1b4b, #4f46e5)' : tier === 'essentiel' ? 'linear-gradient(135deg, #fffbeb, #fef3c7)' : '#f9fafb', border: tier === 'gratuit' ? '1.5px solid #e5e7eb' : 'none', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: tier === 'premium+' ? '#fff' : tier === 'essentiel' ? '#92400e' : '#374151', letterSpacing: 0.3 }}>
-              Plan {tierLabel}
-            </span>
-            {tier !== 'gratuit' && (
-              <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: tier === 'premium+' ? 'rgba(255,255,255,0.15)' : '#fde68a', color: tier === 'premium+' ? '#fff' : '#92400e' }}>
-                Actif
-              </span>
-            )}
-          </div>
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-            {(tierFeatures[tier] || tierFeatures.gratuit).map((f, i) => (
-              <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: tier === 'premium+' ? 'rgba(255,255,255,0.85)' : '#4b5563', marginBottom: 4 }}>
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke={tier === 'premium+' ? 'rgba(255,255,255,0.7)' : '#6d28d9'} strokeWidth="2.5" style={{ flexShrink: 0 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-                {f}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Actions */}
-        {tier === 'gratuit' ? (
-          <Link href="/tarifs" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 20px', background: 'linear-gradient(135deg, #4f46e5, #8257f9)', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '0 6px 20px rgba(79,70,229,0.3)' }} className="hover:opacity-90 transition-opacity">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
-            Passer à un plan payant
-          </Link>
-        ) : (
-          <div className="space-y-3">
-            {!isPremiumPlus && (
-              <Link href="/tarifs" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 20px', background: 'linear-gradient(135deg, #4f46e5, #8257f9)', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: 14, textDecoration: 'none' }} className="hover:opacity-90 transition-opacity">
-                Passer Premium →
-              </Link>
-            )}
-            <button
-              onClick={handlePortal}
-              disabled={portalLoading}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 20px', background: '#f3f4f6', color: '#374151', borderRadius: 12, fontWeight: 600, fontSize: 14, border: 'none', cursor: portalLoading ? 'wait' : 'pointer' }}
-              className="hover:bg-gray-200 transition-colors"
-            >
-              {portalLoading ? (
-                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-              ) : (
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 21Z" /></svg>
-              )}
-              {portalLoading ? 'Redirection…' : 'Gérer mon abonnement (facturation)'}
-            </button>
-            {portalError && <p style={{ fontSize: 12, color: '#dc2626', textAlign: 'center' }}>{portalError}</p>}
-          </div>
-        )}
-      </div>
-      </div>
-
-      {/* Rangée 2 : e-mail + mot de passe (hauteurs égales) */}
-      <div className="grid lg:grid-cols-2 gap-5 items-stretch">
-      {/* Modifier l'adresse e-mail */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-sky-500"></span>
-          Adresse e-mail
-        </h3>
-        <p className="text-sm text-gray-400 mb-4">Actuelle : <span className="font-medium text-gray-600">{user?.email}</span></p>
-        <form onSubmit={handleEmailUpdate} className="space-y-3">
-          <div>
-            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Nouvelle adresse e-mail</label>
-            <input
-              type="email"
-              value={newEmail}
-              onChange={e => setNewEmail(e.target.value)}
-              placeholder="nouvelle@email.com"
-              required
-              style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, color: '#0f1020', outline: 'none', boxSizing: 'border-box' }}
-              className="focus:border-indigo-400 transition-colors"
-            />
-          </div>
-          {emailMsg && (
-            <p style={{ fontSize: 12.5, color: emailMsg.type === 'success' ? '#059669' : '#dc2626', display: 'flex', alignItems: 'center', gap: 6 }}>
-              {emailMsg.type === 'success' ? '✓' : '✕'} {emailMsg.text}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={emailLoading || !newEmail}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: '#4f46e5', color: '#fff', borderRadius: 10, fontWeight: 600, fontSize: 13.5, border: 'none', cursor: emailLoading || !newEmail ? 'not-allowed' : 'pointer', opacity: !newEmail ? 0.5 : 1 }}
-            className="hover:bg-indigo-700 transition-colors"
-          >
-            {emailLoading && <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
-            {emailLoading ? 'Mise à jour…' : 'Mettre à jour l\'e-mail'}
-          </button>
-        </form>
-      </div>
-
-      {/* Modifier le mot de passe */}
-      {!isOAuth ? (
+      {/* Identifiants */}
+      <div className="grid lg:grid-cols-2 gap-5 items-start">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Mot de passe
-          </h3>
-          <p className="text-sm text-gray-400 mb-4">Choisissez un mot de passe d'au moins 8 caractères.</p>
-          <form onSubmit={handlePasswordUpdate} className="space-y-3">
+          <h3 className="font-jakarta text-base font-bold text-gray-900 mb-4">Adresse e-mail</h3>
+          <form onSubmit={handleEmailUpdate} className="space-y-3">
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Nouveau mot de passe</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showNewPwd ? 'text' : 'password'}
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={8}
-                  style={{ width: '100%', padding: '10px 42px 10px 14px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, color: '#0f1020', outline: 'none', boxSizing: 'border-box' }}
-                  className="focus:border-indigo-400 transition-colors"
-                />
-                <button type="button" onClick={() => setShowNewPwd(v => !v)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0 }}>
-                  {showNewPwd
-                    ? <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
-                    : <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
-                  }
-                </button>
-              </div>
+              <label className={labelCls}>Nouvelle adresse</label>
+              <input type="email" value={emailForm.email} onChange={e => setEmailForm(f => ({ ...f, email: e.target.value }))} className={inputCls} placeholder="nouvelle@adresse.com" required />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Confirmer le mot de passe</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showConfirmPwd ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  style={{ width: '100%', padding: '10px 42px 10px 14px', borderRadius: 10, border: `1.5px solid ${confirmPassword && newPassword !== confirmPassword ? '#f87171' : '#e5e7eb'}`, fontSize: 14, color: '#0f1020', outline: 'none', boxSizing: 'border-box' }}
-                  className="focus:border-indigo-400 transition-colors"
-                />
-                <button type="button" onClick={() => setShowConfirmPwd(v => !v)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0 }}>
-                  {showConfirmPwd
-                    ? <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
-                    : <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
-                  }
-                </button>
-              </div>
-              {confirmPassword && newPassword !== confirmPassword && (
-                <p style={{ fontSize: 11.5, color: '#ef4444', marginTop: 4 }}>Les mots de passe ne correspondent pas</p>
-              )}
-            </div>
-            {passwordMsg && (
-              <p style={{ fontSize: 12.5, color: passwordMsg.type === 'success' ? '#059669' : '#dc2626', display: 'flex', alignItems: 'center', gap: 6 }}>
-                {passwordMsg.type === 'success' ? '✓' : '✕'} {passwordMsg.text}
-              </p>
-            )}
-            <button
-              type="submit"
-              disabled={passwordLoading || !newPassword || newPassword !== confirmPassword}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: '#059669', color: '#fff', borderRadius: 10, fontWeight: 600, fontSize: 13.5, border: 'none', cursor: passwordLoading || !newPassword || newPassword !== confirmPassword ? 'not-allowed' : 'pointer', opacity: !newPassword || newPassword !== confirmPassword ? 0.5 : 1 }}
-              className="hover:bg-emerald-700 transition-colors"
-            >
-              {passwordLoading && <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
-              {passwordLoading ? 'Mise à jour…' : 'Mettre à jour le mot de passe'}
+            <Feedback error={emailForm.error} success={emailForm.success} />
+            <button type="submit" disabled={emailForm.loading || emailForm.email === user?.email} className={submitCls}>
+              {emailForm.loading ? 'Mise à jour…' : "Mettre à jour l'e-mail"}
             </button>
           </form>
         </div>
-      ) : (
+
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Mot de passe
-          </h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb' }}>
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#6b7280" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" /></svg>
-            <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>Connexion via Google — gestion du mot de passe désactivée.</p>
+          <h3 className="font-jakarta text-base font-bold text-gray-900 mb-4">Mot de passe</h3>
+          {isOAuth ? (
+            <p className="text-sm text-gray-500 leading-relaxed">Tu te connectes avec Google : ton mot de passe se gère depuis ton compte Google.</p>
+          ) : (
+            <form onSubmit={handlePasswordUpdate} className="space-y-3">
+              <div>
+                <label className={labelCls}>Nouveau mot de passe</label>
+                <input type="password" value={pwForm.password} onChange={e => setPwForm(f => ({ ...f, password: e.target.value }))} className={inputCls} placeholder="8 caractères minimum" required />
+              </div>
+              <div>
+                <label className={labelCls}>Confirmer le mot de passe</label>
+                <input type="password" value={pwForm.confirm} onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))} className={inputCls} placeholder="Répète le mot de passe" required />
+              </div>
+              <Feedback error={pwForm.error} success={pwForm.success} />
+              <button type="submit" disabled={pwForm.loading} className={submitCls}>
+                {pwForm.loading ? 'Mise à jour…' : 'Changer le mot de passe'}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+
+      {/* Abonnement */}
+      {isPaidTier ? (
+        <div className="rounded-2xl border border-amber-200/70 shadow-sm p-6" style={{ background: 'linear-gradient(150deg, #fffbeb, #fff)' }}>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/25">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <p className="font-jakarta text-base font-bold text-gray-900">Abonnement Premium actif</p>
+              <p className="text-sm text-gray-500">QCM illimités, examens blancs, cours complets, progression et classement.</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <button type="button" onClick={handlePortal} disabled={portalLoading} className="text-xs font-semibold text-amber-700 hover:underline disabled:opacity-50">
+                {portalLoading ? 'Ouverture…' : 'Gérer mon abonnement →'}
+              </button>
+              {portalError && <p className="text-xs text-red-600 mt-1">{portalError}</p>}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl p-6 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
+          <div className="absolute pointer-events-none" style={{ right: -20, bottom: -30, opacity: 0.12 }} aria-hidden="true">
+            <svg width="140" height="140" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="1.4"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
+          </div>
+          <div className="relative flex flex-wrap items-center gap-4">
+            <div className="flex-1 min-w-[220px]">
+              <p className="font-jakarta text-base font-bold">Tu es en plan gratuit</p>
+              <p className="text-sm text-indigo-100 mt-0.5">Débloque les QCM illimités, les examens blancs, les cours complets et le suivi de progression.</p>
+            </div>
+            <Link href="/tarifs" className="shrink-0 px-5 py-2.5 bg-white text-indigo-700 text-sm font-bold rounded-full hover:bg-indigo-50 transition-colors shadow-lg">
+              Passer au Premium
+            </Link>
           </div>
         </div>
       )}
+
+      {/* Suppression */}
+      <div className="pt-1">
+        <button type="button" onClick={() => { setDeleteConfirm(''); setDeleteError(null); setDeleteOpen(true); }} className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-red-200 text-red-600 text-sm font-semibold rounded-full hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+          Supprimer mon compte
+        </button>
       </div>
 
-      {/* Rangée 3 : date du concours + zone de danger (hauteurs égales) */}
-      <div className="grid lg:grid-cols-2 gap-5 items-stretch">
-      {/* Date du concours */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-          Date du concours
-        </h3>
-        <p className="text-sm text-gray-400 mb-4">Sert au compte à rebours et à ton parcours sur l&apos;accueil.</p>
-        <form onSubmit={handleExamSave} className="flex flex-col sm:flex-row gap-2 sm:items-end">
-          <div className="flex-1">
-            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Ta date d&apos;examen</label>
-            <input
-              type="date"
-              value={examDraft}
-              onChange={e => { setExamDraft(e.target.value); setExamMsg(null); }}
-              style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, color: '#0f1020', outline: 'none', boxSizing: 'border-box' }}
-              className="focus:border-indigo-400 transition-colors"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={examLoading || !examDraft || examDraft === user?.user_metadata?.exam_date}
-            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 18px', background: '#4f46e5', color: '#fff', borderRadius: 10, fontWeight: 600, fontSize: 13.5, border: 'none', cursor: (examLoading || !examDraft || examDraft === user?.user_metadata?.exam_date) ? 'not-allowed' : 'pointer', opacity: (!examDraft || examDraft === user?.user_metadata?.exam_date) ? 0.5 : 1, whiteSpace: 'nowrap' }}
-            className="hover:bg-indigo-700 transition-colors"
-          >
-            {examLoading && <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
-            Enregistrer
-          </button>
-        </form>
-        {examMsg && (
-          <p style={{ fontSize: 12.5, marginTop: 10, color: examMsg.type === 'success' ? '#059669' : '#dc2626', display: 'flex', alignItems: 'center', gap: 6 }}>
-            {examMsg.type === 'success' ? '✓' : '✕'} {examMsg.text}
-          </p>
-        )}
-      </div>
-
-      {/* Zone de danger : suppression du compte */}
-      <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-          Suppression du compte
-        </h3>
-        <p className="text-sm text-gray-400 mb-4">La suppression est <strong className="text-gray-600">définitive</strong> : compte, progression et données sont effacés.</p>
-        {!deleteOpen ? (
-          <button onClick={() => { setDeleteOpen(true); setDeleteError(null); setDeleteConfirm(''); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-200 text-rose-600 font-semibold text-sm hover:bg-rose-50 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
-            Supprimer mon compte
-          </button>
-        ) : (
-          <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-4">
-            <p className="text-sm text-gray-700 mb-3">Pour confirmer, tape <strong className="text-rose-600 tracking-wide">SUPPRIMER</strong> ci-dessous.</p>
-            <input
-              type="text"
-              value={deleteConfirm}
-              onChange={e => setDeleteConfirm(e.target.value)}
-              placeholder="SUPPRIMER"
-              autoFocus
-              style={{ width: '100%', maxWidth: 260, padding: '9px 13px', borderRadius: 10, border: '1.5px solid #fecaca', fontSize: 14, color: '#0f1020', outline: 'none', boxSizing: 'border-box' }}
-              className="focus:border-rose-400 transition-colors mb-3 block"
-            />
-            {deleteError && <p className="text-xs text-rose-600 mb-3">✕ {deleteError}</p>}
-            <div className="flex gap-2">
-              <button onClick={handleDeleteAccount} disabled={deleteConfirm !== 'SUPPRIMER' || deleteLoading} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 text-white font-bold text-sm hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                {deleteLoading && <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
-                {deleteLoading ? 'Suppression…' : 'Supprimer définitivement'}
+      {deleteOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'grid', placeItems: 'center', background: 'rgba(15,16,32,0.45)', backdropFilter: 'blur(3px)' }} onClick={() => !deleteLoading && setDeleteOpen(false)}>
+          <div onClick={e => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl p-6 w-[min(420px,90vw)] text-center">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+            </div>
+            <h3 className="font-jakarta text-lg font-bold text-gray-900 mb-2">Supprimer ton compte ?</h3>
+            <p className="text-sm text-gray-500 mb-4 leading-relaxed">
+              Cette action est <strong className="text-red-600">définitive</strong> : ton historique, tes objectifs et ta progression seront effacés. Tape{' '}
+              <strong className="text-gray-900">SUPPRIMER</strong> pour confirmer.
+            </p>
+            <input type="text" value={deleteConfirm} onChange={e => setDeleteConfirm(e.target.value)} placeholder="SUPPRIMER" className={`${inputCls} text-center mb-3`} autoFocus />
+            {deleteError && <p className="text-xs text-red-600 mb-3">{deleteError}</p>}
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteOpen(false)} disabled={deleteLoading} className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-full hover:border-gray-300 transition-colors disabled:opacity-50">Annuler</button>
+              <button onClick={handleDeleteAccount} disabled={deleteLoading || deleteConfirm !== 'SUPPRIMER'} className="flex-1 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-full hover:bg-red-700 transition-colors disabled:opacity-40">
+                {deleteLoading ? 'Suppression…' : 'Oui, supprimer'}
               </button>
-              <button onClick={() => setDeleteOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors">Annuler</button>
             </div>
           </div>
-        )}
-      </div>
-      </div>
-
-      {/* Déconnexion */}
-      <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-gray-200 bg-white text-rose-600 font-semibold text-sm hover:bg-rose-50 hover:border-rose-200 transition-colors">
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" /></svg>
-        Se déconnecter
-      </button>
+        </div>
+      )}
     </div>
   );
 }
