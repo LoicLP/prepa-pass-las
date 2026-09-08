@@ -604,3 +604,33 @@ html { scroll-behavior: smooth; }
    le hero qui le suit n'a donc plus à la porter. */
 .promo-banner + section#accueil { padding-top: 2.5rem; }
 @media (min-width: 768px) { .promo-banner + section#accueil { padding-top: 3.5rem; } }
+
+/* ===== ACCUEIL — police d'affichage et animations (langage CRFPA) ===== */
+@keyframes heroIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+.hero-seq-1, .hero-seq-2, .hero-seq-3, .hero-seq-4, .hero-seq-5 { opacity: 0; animation: heroIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.hero-seq-1 { animation-delay: 0.05s; }
+.hero-seq-2 { animation-delay: 0.15s; }
+.hero-seq-3 { animation-delay: 0.28s; }
+.hero-seq-4 { animation-delay: 0.42s; }
+.hero-seq-5 { animation-delay: 0.55s; }
+
+@keyframes floatSoft { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+.float-soft { animation: floatSoft 4.5s ease-in-out infinite; }
+
+/* Révélation au défilement : masquage appliqué seulement une fois l'observer monté
+   (html.js-reveal) — sans JS ou avant hydratation, tout reste visible. */
+html.js-reveal [data-reveal] { opacity: 0; transform: translateY(26px); transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1); }
+html.js-reveal [data-reveal].revealed { opacity: 1; transform: none; }
+[data-reveal-delay="1"] { transition-delay: 0.08s; }
+[data-reveal-delay="2"] { transition-delay: 0.16s; }
+[data-reveal-delay="3"] { transition-delay: 0.24s; }
+[data-reveal-delay="4"] { transition-delay: 0.32s; }
+html.js-reveal [data-reveal] .anim-bar { transform: scaleX(0); transform-origin: left; transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.35s; }
+html.js-reveal [data-reveal].revealed .anim-bar { transform: scaleX(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-seq-1, .hero-seq-2, .hero-seq-3, .hero-seq-4, .hero-seq-5 { animation: none; opacity: 1; }
+  .float-soft { animation: none; }
+  html.js-reveal [data-reveal] { opacity: 1; transform: none; transition: none; }
+  html.js-reveal [data-reveal] .anim-bar { transform: none; transition: none; }
+}

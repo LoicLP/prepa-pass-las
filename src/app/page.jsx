@@ -1,8 +1,8 @@
-import { Fragment } from 'react';
 import Link from 'next/link';
 import { PROGRAMME_DATA } from '@/data/programme';
 import QuestionDuJour from '@/components/home/QuestionDuJour';
 import FaqSection from '@/components/home/FaqSection';
+import RevealObserver from '@/components/home/RevealObserver';
 import ConcoursBanner from '@/components/ConcoursBanner';
 import PromoBanner from '@/components/PromoBanner';
 import PromoPriceLine from '@/components/PromoPriceLine';
@@ -14,1083 +14,670 @@ export const metadata = {
   title: {
     absolute: 'Prépa PASS/LAS - Réussissez votre première année de médecine',
   },
-  description: 'La plateforme de révision n°1 pour réussir le concours PASS/LAS. QCM illimités, fiches de cours, mode examen et suivi de progression.',
+  description:
+    'La plateforme de révision pour réussir le concours PASS/LAS : QCM illimités corrigés, révisions espacées, examens blancs, 150 fiches et un coach de progression.',
   alternates: { canonical: '/' },
 };
 
-function StarIcon() {
+/* ============================================================
+   Briques visuelles (langage de l'accueil CRFPA, palette indigo)
+============================================================ */
+function GridBackground({ opacity = 0.05 }) {
   return (
-    <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <div className="w-5 h-5 min-w-[20px] min-h-[20px] bg-accent-400/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-      <svg
-        className="w-3 h-3 text-accent-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth="3"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-      </svg>
+    <div className="absolute inset-0 pointer-events-none [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" aria-hidden="true">
+      <div
+        className="w-full h-full"
+        style={{
+          backgroundImage: `linear-gradient(to right, rgba(30,27,75,${opacity}) 1px, transparent 1px), linear-gradient(to bottom, rgba(30,27,75,${opacity}) 1px, transparent 1px)`,
+          backgroundSize: '44px 44px',
+        }}
+      />
     </div>
   );
 }
 
-const UE_BG_COLORS = {
-  indigo: 'bg-indigo-500/30',
-  emerald: 'bg-emerald-500/30',
-  violet: 'bg-violet-500/30',
-  cyan: 'bg-cyan-500/30',
-  amber: 'bg-amber-500/30',
-  rose: 'bg-rose-500/30',
+function CheckIcon({ className = 'w-4 h-4 text-emerald-500' }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+    </svg>
+  );
+}
+
+function ArrowIcon({ className = 'w-4 h-4' }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+    </svg>
+  );
+}
+
+// Couleurs par UE (frise et cartes du programme)
+const UE_TONES = {
+  indigo: { bg: 'bg-indigo-500', soft: 'bg-indigo-50 text-indigo-700 border-indigo-100', dot: 'bg-indigo-500' },
+  emerald: { bg: 'bg-emerald-500', soft: 'bg-emerald-50 text-emerald-700 border-emerald-100', dot: 'bg-emerald-500' },
+  violet: { bg: 'bg-violet-500', soft: 'bg-violet-50 text-violet-700 border-violet-100', dot: 'bg-violet-500' },
+  cyan: { bg: 'bg-cyan-500', soft: 'bg-cyan-50 text-cyan-700 border-cyan-100', dot: 'bg-cyan-500' },
+  amber: { bg: 'bg-amber-500', soft: 'bg-amber-50 text-amber-700 border-amber-100', dot: 'bg-amber-500' },
+  rose: { bg: 'bg-rose-500', soft: 'bg-rose-50 text-rose-700 border-rose-100', dot: 'bg-rose-500' },
 };
-
-// Codes UE officiels (identiques à ceux utilisés dans l'application)
-const UE_CODES = {
-  chimie: 'UE1',
-  biocell: 'UE2',
-  biophysique: 'UE3',
-  biostats: 'UE4',
-  anatomie: 'UE5',
-  ssh: 'UE6',
-};
-
-// Couleurs pleines par UE (rail + pastille) pour la section programme
-const UE_SOLID_COLORS = {
-  indigo: '#818cf8',
-  emerald: '#34d399',
-  violet: '#a78bfa',
-  cyan: '#22d3ee',
-  amber: '#fbbf24',
-  rose: '#fb7185',
-};
-
-// Palette par étape de la méthode (classes Tailwind complètes → détectées par le JIT)
-const METHODE_COLORS = {
-  indigo: { rail: 'from-indigo-500 to-violet-500', iconBg: 'bg-indigo-50', icon: 'text-indigo-600', num: 'text-indigo-500', border: 'hover:border-indigo-300', arrow: 'text-indigo-600' },
-  violet: { rail: 'from-violet-500 to-fuchsia-500', iconBg: 'bg-violet-50', icon: 'text-violet-600', num: 'text-violet-500', border: 'hover:border-violet-300', arrow: 'text-violet-600' },
-  amber: { rail: 'from-amber-400 to-orange-500', iconBg: 'bg-amber-50', icon: 'text-amber-600', num: 'text-amber-500', border: 'hover:border-amber-300', arrow: 'text-amber-600' },
-  rose: { rail: 'from-rose-500 to-pink-500', iconBg: 'bg-rose-50', icon: 'text-rose-600', num: 'text-rose-500', border: 'hover:border-rose-300', arrow: 'text-rose-600' },
-  emerald: { rail: 'from-emerald-500 to-teal-500', iconBg: 'bg-emerald-50', icon: 'text-emerald-600', num: 'text-emerald-500', border: 'hover:border-emerald-300', arrow: 'text-emerald-600' },
-};
-
-const METHODE_STEPS = [
-  {
-    href: '/qcm', color: 'indigo',
-    icon: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
-    title: 'QCM illimités par IA',
-    desc: <>Générés <strong>par matière, fiche ou thème libre</strong> — corrections détaillées et réponses multiples, comme au concours.</>,
-  },
-  {
-    href: '/qcm', color: 'violet', isNew: true,
-    icon: 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99',
-    title: 'À consolider',
-    desc: <>Chaque erreur rejoint ta <strong>pile de révision</strong>. Tu la rejoues jusqu&apos;à la maîtriser : c&apos;est la répétition espacée.</>,
-  },
-  {
-    href: '/qcm', color: 'amber', isNew: true,
-    icon: 'm3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z',
-    title: 'Session éclair',
-    desc: <><strong>8 questions chrono en 5 minutes.</strong> Parfait entre deux cours, dans le bus, avant de dormir.</>,
-  },
-  {
-    href: '/examen', color: 'rose',
-    icon: 'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
-    title: 'Examen blanc concours',
-    desc: <><strong>40 questions mélangées, 60 min</strong>, grille de réponses et chrono : les vraies conditions du jour J.</>,
-  },
-  {
-    href: '/fiches', color: 'indigo',
-    icon: 'M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25',
-    title: 'Fiches & cours trackés',
-    desc: <><strong>150 fiches</strong> avec temps de lecture, sommaire et suivi «&nbsp;lue&nbsp;» — tu sais toujours où tu en es.</>,
-  },
-  {
-    href: '/dashboard', color: 'emerald', isNew: true,
-    icon: 'M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941',
-    title: 'Coach de progression',
-    desc: <>Courbe par matière, objectifs hebdo et une reco claire :{' '}<strong>«&nbsp;l&apos;Anatomie te freine, 3 QCM et tu passes la barre&nbsp;»</strong>.</>,
-  },
-];
-
-const METHODE_LOOP = ["S'entraîner", 'Consolider', 'Valider', 'Progresser'];
+const UE_CODES = { chimie: 'UE1', biocell: 'UE2', biophysique: 'UE3', biostats: 'UE4', anatomie: 'UE5', ssh: 'UE6' };
 
 export default function Home() {
+  const totalCoeff = PROGRAMME_DATA.reduce((a, u) => a + (u.coeff || 0), 0);
+  const totalHours = PROGRAMME_DATA.reduce((a, u) => a + (u.hours || 0), 0);
+  const byCode = [...PROGRAMME_DATA].sort((a, b) => (UE_CODES[a.id] || '').localeCompare(UE_CODES[b.id] || ''));
+
   return (
-    <>
-      {/* ==================== BANDEAU OFFRE DE RENTRÉE ==================== */}
+    <div className="bg-white">
+      <RevealObserver />
+
+      {/* Bandeau offre de rentrée — rendu serveur, s'éteint seul à l'échéance */}
       <PromoBanner />
 
-      {/* ==================== HERO SECTION ==================== */}
-      <section
-        id="accueil"
-        className="relative gradient-hero noise-overlay dot-grid pt-28 pb-16 md:pt-36 md:pb-24 overflow-hidden"
-      >
-        <div className="blob-1"></div>
-        <div className="blob-2"></div>
-        <div className="absolute w-[350px] h-[350px] bg-violet-200/20 rounded-full filter blur-[80px] top-1/2 left-1/3 -translate-y-1/2 hidden lg:block"></div>
-        {/* Geometric decorations */}
-        <div className="geo-circle-light w-40 h-40 top-24 right-[10%] hidden lg:block"></div>
-        <div className="geo-ring-light w-64 h-64 -bottom-16 left-[5%] hidden lg:block"></div>
-        <div className="geo-circle-light w-20 h-20 top-[60%] right-[25%] hidden lg:block"></div>
-        <div className="geo-ring-light w-32 h-32 top-16 left-[20%] hidden lg:block"></div>
+      {/* ================================================================
+          HERO — centré, grille de fond, typographie serrée
+      ================================================================ */}
+      <section id="accueil" className="relative pt-28 pb-24 md:pt-36 md:pb-32 overflow-hidden bg-gradient-to-b from-[#eef2ff] via-white to-[#f5f3ff]">
+        <GridBackground opacity={0.06} />
+        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-indigo-600/[0.07] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="absolute top-10 right-[-8%] w-[400px] h-[400px] bg-violet-300/[0.16] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="absolute top-32 left-[-6%] w-[350px] h-[350px] bg-indigo-300/[0.16] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            {/* Left: Text */}
-            <div>
-              <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-violet-200 mb-6">
-                <span className="text-base leading-none">🦉</span>
-                <span className="text-sm font-semibold text-violet-700">
-                  Avec Pico, ton coach de révision
-                </span>
-              </div>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 leading-[1.1] mb-6">
-                Le QG de révision qui te fait{' '}
-                <span className="home-gradient-text">tenir jusqu&apos;au concours</span>.
-              </h1>
-              <p className="text-lg md:text-xl text-gray-600 leading-relaxed mb-8 max-w-xl">
-                QCM illimités corrigés, <strong className="text-gray-900">révisions espacées</strong> de
-                tes erreurs, <strong className="text-gray-900">examens blancs</strong> en conditions
-                concours — et un système de progression qui récompense ta{' '}
-                <strong className="text-gray-900">régularité</strong>, jour après jour.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <Link
-                  href="/connexion"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white text-base font-bold rounded-2xl transition-all shadow-xl shadow-indigo-500/30 hover:opacity-90"
-                  style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
-                >
-                  Commencer gratuitement
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"
-                    />
-                  </svg>
-                </Link>
-                <Link
-                  href="#methode"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-gray-700 text-base font-bold rounded-2xl border-2 border-gray-200 hover:border-primary-300 hover:text-primary-600 transition-all"
-                >
-                  Voir la méthode ↓
-                </Link>
-              </div>
-              <PromoPriceLine />
-
-              {/* Stats row */}
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-8">
-                <div className="home-stat flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                    <svg
-                      className="w-5 h-5 text-indigo-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-lg font-black text-gray-900">150</p>
-                    <p className="text-xs text-gray-500 font-medium">Cours détaillés</p>
-                  </div>
-                </div>
-                <div className="w-px h-10 bg-gray-200 hidden sm:block"></div>
-                <div className="home-stat flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-                    <svg
-                      className="w-5 h-5 text-violet-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-lg font-black text-gray-900">&infin;</p>
-                    <p className="text-xs text-gray-500 font-medium">QCM illimités</p>
-                  </div>
-                </div>
-                <div className="w-px h-10 bg-gray-200 hidden sm:block"></div>
-                <div className="home-stat flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                    <svg
-                      className="w-5 h-5 text-emerald-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-lg font-black text-gray-900">6</p>
-                    <p className="text-xs text-gray-500 font-medium">UE couvertes</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Social proof */}
-              <div className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-2xl px-4 py-3 border border-gray-100 w-fit">
-                <div className="flex -space-x-2">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                    M
-                  </div>
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                    S
-                  </div>
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                    L
-                  </div>
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                    A
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1">
-                    <StarIcon />
-                    <StarIcon />
-                    <StarIcon />
-                    <StarIcon />
-                    <StarIcon />
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Rejoignez <strong className="text-gray-900">+2 500</strong> étudiants
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: aperçu du tableau de bord (avec Pico) */}
-            <div className="flex justify-center lg:justify-end">
-              <div className="relative w-full max-w-lg">
-                {/* Glow derrière */}
-                <div className="absolute -inset-4 bg-primary-400/15 rounded-[2.5rem] filter blur-2xl animate-pulse"></div>
-                {/* Petits éléments flottants */}
-                <div className="absolute -top-3 -right-3 w-7 h-7 bg-violet-400/30 rounded-full filter blur-sm pricing-float"></div>
-                <div className="absolute -bottom-2 -left-3 w-5 h-5 bg-primary-400/25 rounded-full filter blur-sm pricing-float pricing-float-delay"></div>
-
-                <div className="relative bg-white/95 backdrop-blur rounded-3xl border border-indigo-100 shadow-2xl shadow-primary-500/15 p-5 sm:p-6">
-                  {/* En-tête aperçu */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                      Ton tableau de bord
-                    </span>
-                    <span
-                      className="inline-flex items-center gap-1 text-[11px] font-extrabold text-white px-2.5 py-1 rounded-full"
-                      style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
-                    >
-                      🎯 J-134
-                    </span>
-                  </div>
-
-                  {/* Salutation + gamification */}
-                  <div className="flex items-center justify-between gap-2 mb-4">
-                    <p className="text-lg font-black text-gray-900">Bonjour Emma 👋</p>
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-800 bg-gray-50 border border-gray-100 rounded-full px-2 py-1">
-                        🤓 Carabin
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-800 bg-gray-50 border border-gray-100 rounded-full px-2 py-1">
-                        🔥 7
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Focus du jour */}
-                  <div className="rounded-2xl px-4 py-3 mb-3 flex items-center justify-between gap-3 bg-violet-50 border border-violet-100">
-                    <div className="min-w-0">
-                      <p className="text-[9.5px] font-bold uppercase tracking-wide text-violet-600 mb-0.5">
-                        Focus du jour
-                      </p>
-                      <p className="text-sm font-extrabold text-gray-900 truncate">
-                        On reprend l&apos;Anatomie
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-[11px] font-bold text-white bg-violet-600 rounded-lg px-3 py-1.5">
-                      Réviser 30 min
-                    </span>
-                  </div>
-
-                  {/* Modules */}
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    <div
-                      className="rounded-xl p-3 text-white"
-                      style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
-                    >
-                      <p className="text-base leading-none mb-1.5">🔁</p>
-                      <p className="text-[10.5px] font-bold leading-tight">À consolider</p>
-                      <p className="text-[9px] opacity-80 mt-0.5">5 questions</p>
-                    </div>
-                    <div className="rounded-xl p-3 bg-indigo-50 border border-indigo-100">
-                      <p className="text-base leading-none mb-1.5">✅</p>
-                      <p className="text-[10.5px] font-bold text-gray-900 leading-tight">QCM</p>
-                      <p className="text-[9px] text-gray-500 mt-0.5">Toutes UE</p>
-                    </div>
-                    <div className="rounded-xl p-3 bg-amber-50 border border-amber-100">
-                      <p className="text-base leading-none mb-1.5">⚡</p>
-                      <p className="text-[10.5px] font-bold text-gray-900 leading-tight">Éclair</p>
-                      <p className="text-[9px] text-gray-500 mt-0.5">5 min</p>
-                    </div>
-                  </div>
-
-                  {/* Parcours vers le concours */}
-                  <div className="relative mx-1" style={{ height: 30 }}>
-                    <div
-                      className="absolute left-0 right-6 top-[15px]"
-                      style={{
-                        height: 3,
-                        borderRadius: 3,
-                        background:
-                          'repeating-linear-gradient(90deg, #d7d9e8 0 5px, transparent 5px 11px)',
-                      }}
-                    ></div>
-                    <div
-                      className="absolute left-0 top-[15px]"
-                      style={{
-                        height: 3,
-                        width: '58%',
-                        borderRadius: 3,
-                        background: 'linear-gradient(90deg, #4f46e5, #7c3aed)',
-                      }}
-                    ></div>
-                    <span
-                      className="absolute text-lg"
-                      style={{ left: '58%', top: -4, transform: 'translateX(-50%)' }}
-                    >
-                      🧑‍🎓
-                    </span>
-                    <span className="absolute right-0 top-[2px] text-lg">🏁</span>
-                  </div>
-                  <div className="flex justify-between text-[9px] font-bold text-gray-400 uppercase tracking-wide mx-1">
-                    <span>Départ</span>
-                    <span>Le concours</span>
-                  </div>
-
-                  {/* Pico */}
-                  <div
-                    className="absolute -bottom-4 -right-3 w-14 h-14 rounded-full bg-violet-100 border-4 border-white shadow-lg shadow-indigo-500/25 flex items-center justify-center text-3xl pricing-float"
-                    aria-hidden="true"
-                  >
-                    🦉
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== QUESTION DU JOUR ==================== */}
-      <section
-        className="py-14 md:py-16"
-        style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 30%)' }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">
-              Teste-toi avec la question du jour
-            </h2>
-            <p className="text-gray-500">Une nouvelle question de concours chaque jour, corrigée.</p>
-          </div>
-          <div className="max-w-lg mx-auto">
-            <div className="phone-mockup w-full shadow-2xl shadow-primary-500/15 relative">
-              <QuestionDuJour />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== WAVE: Question du jour -> PASS vs LAS ==================== */}
-      <div className="wave-divider" style={{ marginBottom: '-1px' }}>
-        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Voile indigo en retrait, derrière la vague pleine */}
-          <path
-            d="M0,30 C320,58 640,10 960,34 C1120,46 1320,26 1440,32 L1440,80 L0,80 Z"
-            fill="#e0e7ff"
-            opacity="0.45"
-          />
-          {/* Vague pleine : exactement la couleur de tête de la section suivante */}
-          <path
-            d="M0,40 C360,80 720,0 1080,40 C1260,60 1380,50 1440,40 L1440,80 L0,80 Z"
-            fill="#f1f5f9"
-          />
-        </svg>
-      </div>
-
-      {/* ==================== PARCOURS PASS VS LAS ==================== */}
-      <section
-        className="py-16 md:py-24 relative overflow-hidden dot-grid"
-        style={{ background: 'linear-gradient(180deg, #f1f5f9 0%, #ffffff 45%, #f8fafc 100%)' }}
-      >
-        {/* Halos duo-ton : indigo côté PASS, émeraude côté LAS */}
-        <div className="absolute w-[420px] h-[420px] bg-indigo-300/30 rounded-full filter blur-[110px] top-28 -left-28 pointer-events-none"></div>
-        <div className="absolute w-[420px] h-[420px] bg-emerald-300/25 rounded-full filter blur-[110px] bottom-12 -right-28 pointer-events-none"></div>
-        <div className="geo-ring-light w-40 h-40 top-16 right-[10%] hidden lg:block"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-gray-200 mb-6">
-            <svg
-              className="w-4 h-4 text-primary-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"
-              />
-            </svg>
-            <span className="text-sm font-semibold text-gray-600">Votre parcours</span>
-          </div>
-          <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-            Quelle voie choisir ?
-          </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto mb-12">
-            Deux voies d&apos;accès aux études de santé existent depuis la réforme. Choisissez
-            celle qui correspond à votre profil.
-          </p>
-          <div className="relative grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {/* Badge VS central */}
-            <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-14 h-14 rounded-full bg-gray-900 text-white items-center justify-center text-sm font-black border-4 border-white shadow-xl">
-              VS
-            </div>
-
-            {/* PASS Card */}
-            <div className="bg-white rounded-3xl border border-indigo-100 shadow-xl shadow-indigo-500/10 p-8 text-left relative overflow-hidden">
-              <div
-                className="absolute inset-x-0 top-0 h-1.5"
-                style={{ background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' }}
-              ></div>
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-3xl font-black text-gray-900">PASS</h3>
-                <span
-                  className="text-[10px] font-extrabold uppercase tracking-wide text-white px-2.5 py-1 rounded-full"
-                  style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
-                >
-                  Voie majoritaire
-                </span>
-              </div>
-              <p className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-7">
-                Parcours d&apos;Accès Spécifique Santé
-              </p>
-              <div className="space-y-5">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">Structure</p>
-                  <p className="text-sm font-semibold text-gray-800">Majeure santé + mineure disciplinaire</p>
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Chances de candidater</p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
-                    ⚠️ 1 seule chance
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Volume santé</p>
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: '85%', background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' }}></div>
-                    </div>
-                    <span className="text-xs font-bold text-indigo-600 whitespace-nowrap">Important dès le S1</span>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">En cas d&apos;échec</p>
-                  <p className="text-sm font-semibold text-gray-800">Réorientation en L1 (LAS possible)</p>
-                </div>
-              </div>
-            </div>
-
-            {/* LAS Card */}
-            <div className="bg-white rounded-3xl border border-emerald-100 shadow-xl shadow-emerald-500/10 p-8 text-left relative overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-1.5 bg-emerald-500"></div>
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-3xl font-black text-gray-900">LAS</h3>
-                <span className="text-[10px] font-extrabold uppercase tracking-wide text-white bg-emerald-600 px-2.5 py-1 rounded-full">
-                  Voie sécurisée
-                </span>
-              </div>
-              <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-7">
-                Licence avec Accès Santé
-              </p>
-              <div className="space-y-5">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">Structure</p>
-                  <p className="text-sm font-semibold text-gray-800">Licence classique + option santé</p>
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Chances de candidater</p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
-                    ✓ 2 chances (L1, L2 ou L3)
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Volume santé</p>
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-emerald-500" style={{ width: '40%' }}></div>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-600 whitespace-nowrap">Réduit (mineure)</span>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">En cas d&apos;échec</p>
-                  <p className="text-sm font-semibold text-gray-800">Poursuite de licence garantie</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom : destination commune */}
-          <div className="mt-10 flex flex-col items-center gap-4">
-            <div className="flex items-center gap-3 text-gray-400">
-              <span className="h-px w-16 bg-gray-300"></span>
-              <span className="text-xs font-bold uppercase tracking-widest">Les deux mènent aux mêmes portes</span>
-              <span className="h-px w-16 bg-gray-300"></span>
-            </div>
-            <div
-              className="rounded-2xl px-8 py-5 inline-flex items-center gap-4 shadow-xl shadow-indigo-900/20"
-              style={{ background: 'linear-gradient(135deg, #111827 0%, #1e1b4b 60%, #312e81 100%)' }}
-            >
-              <div className="w-10 h-10 min-w-[40px] min-h-[40px] bg-accent-500 rounded-full flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 text-center">
+          <div className="hero-seq-1 inline-flex items-center justify-center mb-8">
+            <div className="relative float-soft">
+              <div className="absolute inset-0 bg-indigo-600/10 rounded-2xl blur-lg" />
+              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg shadow-indigo-600/30 flex items-center justify-center">
+                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
                 </svg>
               </div>
-              <div className="text-left">
-                <p className="text-xs font-semibold text-accent-400 uppercase tracking-wider">
-                  Accès aux études de
-                </p>
-                <p className="text-xl md:text-2xl font-black text-white">
-                  Médecine, Pharma, Maïeutique, Odonto, Kiné
-                </p>
-              </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* ==================== WAVE: PASS vs LAS -> Programme ==================== */}
-      <div className="wave-divider" style={{ background: '#14122f', marginTop: '-1px' }}>
-        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M0,28 C360,56 720,8 1080,36 C1260,48 1380,32 1440,28 L1440,0 L0,0 Z"
-            fill="#f8fafc"
-            fillOpacity="0.45"
-          />
-          <path
-            d="M0,40 C480,0 960,80 1440,40 L1440,0 L0,0 Z"
-            fill="#f8fafc"
-          />
-        </svg>
-      </div>
+          <h1 className="hero-seq-2 text-5xl sm:text-6xl md:text-7xl font-black tracking-tight text-slate-900 leading-[1.05] mb-8">
+            Réussis le concours<br />
+            <span className="text-indigo-600">PASS/LAS</span>
+          </h1>
 
-      {/* ==================== PROGRAMME ==================== */}
-      <section
-        id="programme"
-        className="py-16 md:py-24 noise-overlay text-white relative overflow-hidden"
-        style={{
-          background:
-            'radial-gradient(1000px 520px at 88% -12%, rgba(124,58,237,0.4), transparent 62%), radial-gradient(800px 480px at -12% 112%, rgba(59,130,246,0.28), transparent 60%), radial-gradient(620px 380px at 50% 118%, rgba(79,70,229,0.35), transparent 65%), linear-gradient(160deg, #14122f 0%, #1e1b4b 55%, #2a2470 100%)',
-        }}
-      >
-        {/* Constellation de points */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)',
-            backgroundSize: '28px 28px',
-          }}
-        ></div>
-        {/* Geometric shapes */}
-        <div className="geo-circle w-32 h-32 top-20 left-[8%] hidden lg:block"></div>
-        <div className="geo-diamond w-16 h-16 bottom-24 right-[12%] hidden lg:block"></div>
-        <div className="geo-cross top-1/2 left-[3%] hidden lg:block"></div>
-        <div className="geo-circle w-20 h-20 bottom-12 left-[45%] hidden lg:block"></div>
+          <p className="hero-seq-3 text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed mb-10">
+            Le QG de révision qui te fait tenir jusqu&apos;au concours : QCM illimités corrigés, révisions espacées de tes erreurs,
+            examens blancs en conditions réelles — et un coach qui récompense ta régularité, jour après jour.
+          </p>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full border border-white/20 mb-6">
-            <svg
-              className="w-4 h-4 text-primary-300"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
-              />
+          <div className="hero-seq-4 flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+            <Link href="/inscription" className="group inline-flex items-center justify-center gap-2 px-7 py-4 bg-slate-900 text-white font-semibold rounded-full hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10">
+              Commencer gratuitement
+              <ArrowIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+            <Link href="#methode" className="inline-flex items-center justify-center gap-2 px-7 py-4 bg-white text-slate-900 font-semibold rounded-full border border-slate-200 hover:border-slate-300 transition-colors">
+              Découvrir la méthode
+            </Link>
+          </div>
+
+          <div className="hero-seq-5">
+            <PromoPriceLine />
+          </div>
+
+          <div className="hero-seq-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-slate-500">
+            <div className="inline-flex items-center gap-1.5"><CheckIcon /> 2 jours de Premium offerts</div>
+            <div className="inline-flex items-center gap-1.5"><CheckIcon /> Sans carte bancaire</div>
+            <div className="inline-flex items-center gap-1.5"><CheckIcon /> 150 fiches en accès libre</div>
+          </div>
+
+          <div className="mt-16 flex justify-center">
+            <svg className="w-6 h-6 text-slate-300 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
             </svg>
-            <span className="text-sm font-semibold text-primary-200">Programme</span>
-          </div>
-          <h2 className="text-3xl md:text-4xl font-black mb-4">Les matières du concours</h2>
-          <p className="text-primary-200 text-lg max-w-2xl mx-auto mb-4">
-            Retrouvez les UE du tronc commun au programme de la première année de santé.
-          </p>
-          <Link
-            href="/programme"
-            className="text-sm text-primary-300 hover:text-white font-semibold underline underline-offset-4 mb-12 inline-block"
-          >
-            Voir le programme complet &rarr;
-          </Link>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
-            {PROGRAMME_DATA.map((ue, i) => {
-              const solid = UE_SOLID_COLORS[ue.color] || UE_SOLID_COLORS.indigo;
-              return (
-                <Link
-                  key={ue.id}
-                  href={`/programme#ue-${ue.id}`}
-                  className="group bg-white/[0.07] backdrop-blur border border-white/10 rounded-2xl p-6 pl-7 text-left hover:bg-white/[0.13] hover:-translate-y-1 hover:border-white/25 transition-all duration-200 block relative overflow-hidden"
-                >
-                  {/* Rail coloré */}
-                  <span
-                    className="absolute left-0 top-5 bottom-5 w-1 rounded-r-full"
-                    style={{ background: solid }}
-                  ></span>
-                  <div className="flex items-start justify-between mb-4">
-                    <div
-                      className={`w-12 h-12 ${UE_BG_COLORS[ue.color] || 'bg-indigo-500/30'} rounded-xl flex items-center justify-center`}
-                      dangerouslySetInnerHTML={{ __html: ue.icon }}
-                    />
-                    <span
-                      className="text-[10px] font-extrabold tracking-widest px-2 py-1 rounded-md text-gray-900"
-                      style={{ background: solid }}
-                    >
-                      {UE_CODES[ue.id] || `UE${i + 1}`}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-lg mb-1">{ue.name}</h3>
-                  <p className="text-sm text-primary-200 leading-relaxed">{ue.description}</p>
-                  <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-primary-300">
-                      25 fiches · QCM illimités
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-white/70 group-hover:text-white group-hover:gap-2 transition-all">
-                      Explorer
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                      </svg>
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
           </div>
         </div>
       </section>
 
-      {/* ==================== WAVE: Programme -> Méthode ==================== */}
-      <div className="wave-divider" style={{ background: '#e9edfe', marginTop: '-1px' }}>
-        <svg viewBox="0 0 1440 70" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M0,50 C320,66 640,26 960,50 C1120,62 1320,42 1440,48 L1440,0 L0,0 Z"
-            fill="#2a2470"
-            fillOpacity="0.45"
-          />
-          <path
-            d="M0,34 C360,70 720,6 1080,38 C1260,52 1380,40 1440,34 L1440,0 L0,0 Z"
-            fill="#2a2470"
-          />
-        </svg>
-      </div>
-
-      {/* ==================== METHODE ==================== */}
-      <section
-        id="methode"
-        className="py-16 md:py-24 bg-indigo-100/70 grid-pattern relative overflow-hidden"
-      >
-        <div className="geo-circle-light w-48 h-48 -top-12 -right-12 hidden lg:block"></div>
-        <div className="geo-ring-light w-32 h-32 bottom-8 left-[6%] hidden lg:block"></div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-indigo-200 mb-5">
-            <span className="text-sm font-semibold text-indigo-700">La méthode</span>
-          </div>
-          <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-            Une boucle simple pour réussir votre concours
-          </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto mb-8">
-            Tu t&apos;entraînes, tes <strong>erreurs sont capturées</strong>, tu les consolides,
-            tu valides en <strong>conditions concours</strong> — et tu vois ta progression monter.
-          </p>
-
-          {/* Mini-stepper : la boucle en 4 temps */}
-          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 mb-14">
-            {METHODE_LOOP.map((step, i) => (
-              <Fragment key={step}>
-                <span className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full pl-2.5 pr-4 py-1.5 shadow-sm">
-                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-black flex items-center justify-center">{i + 1}</span>
-                  <span className="text-sm font-bold text-gray-700">{step}</span>
-                </span>
-                <svg className={`w-4 h-4 text-indigo-400 ${i === METHODE_LOOP.length - 1 ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                </svg>
-              </Fragment>
-            ))}
-            <span className="text-sm font-bold text-indigo-600">on recommence 🔁</span>
-          </div>
-
-          {/* Les 6 briques de la méthode, numérotées */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {METHODE_STEPS.map((s, i) => {
-              const c = METHODE_COLORS[s.color];
-              return (
-                <Link
-                  key={s.title}
-                  href={s.href}
-                  className={`group relative bg-white border border-gray-200 ${c.border} rounded-2xl p-7 pt-8 text-left block overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200`}
-                >
-                  {/* Accent supérieur */}
-                  <span className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${c.rail}`}></span>
-                  {s.isNew && (
-                    <span className="absolute top-4 right-4 text-[10px] font-extrabold uppercase tracking-wide text-white px-2 py-0.5 rounded-md" style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
-                      Nouveau
-                    </span>
-                  )}
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className={`w-14 h-14 ${c.iconBg} rounded-2xl flex items-center justify-center shrink-0`}>
-                      <svg className={`w-7 h-7 ${c.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d={s.icon} />
-                      </svg>
-                    </div>
-                    <span className={`text-4xl font-black leading-none ${c.num} opacity-25 group-hover:opacity-40 transition-opacity`}>
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-1.5">
-                    {s.title}
-                    <svg className={`w-4 h-4 ${c.arrow} opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                    </svg>
-                  </h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{s.desc}</p>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== WAVE: Méthode -> Reste motivé ==================== */}
-      <div className="wave-divider" style={{ marginTop: '-1px' }}>
-        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M0,42 C320,58 640,20 960,44 C1120,54 1320,36 1440,42 L1440,0 L0,0 Z"
-            fill="#e9edfe"
-            fillOpacity="0.5"
-          />
-          <path
-            d="M0,28 C360,58 720,4 1080,32 C1260,44 1380,32 1440,28 L1440,0 L0,0 Z"
-            fill="#e9edfe"
-          />
-        </svg>
-      </div>
-
-      {/* ==================== RESTE MOTIVÉ (gamification + Pico) ==================== */}
-      <section className="py-16 md:py-24 bg-white relative overflow-hidden">
-        <div className="absolute w-[420px] h-[420px] bg-violet-200/25 rounded-full filter blur-[100px] -top-24 -right-24"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-violet-50 px-4 py-2 rounded-full border border-violet-200 mb-5">
-              <span className="text-base leading-none">🦉</span>
-              <span className="text-sm font-semibold text-violet-700">Pico &amp; la gamification</span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              Reste motivé jusqu&apos;au bout
-            </h2>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              La PASS se gagne sur la <strong>régularité</strong>. On a construit tout un système
-              pour que tu aies envie de revenir chaque jour.
+      {/* ================================================================
+          PASS OU LAS — deux voies, une même destination
+      ================================================================ */}
+      <section id="parcours" className="py-20 md:py-28 bg-[#f8f9fc] border-t border-indigo-100/60 relative overflow-hidden">
+        <div className="absolute top-[-10%] right-[5%] w-[350px] h-[350px] bg-violet-200/[0.28] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
+          <div data-reveal className="max-w-2xl mx-auto text-center mb-14">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-5">PASS ou LAS&nbsp;?</h2>
+            <p className="text-slate-500 text-lg leading-relaxed">
+              Depuis la réforme, deux voies mènent aux études de santé. Elles n&apos;ont ni le même rythme ni le même filet de sécurité — mais le programme du tronc commun, lui, est le même. C&apos;est celui que tu révises ici.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-6 max-w-5xl mx-auto items-stretch">
-            {/* Pico */}
-            <div className="bg-gradient-to-br from-violet-50 to-white border border-violet-100 rounded-3xl p-7 flex flex-col">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 rounded-full bg-violet-100 flex items-center justify-center text-4xl shadow-lg shadow-violet-500/20 pricing-float">
-                  🦉
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-gray-900">Pico, ton compagnon de prépa</h3>
-                  <p className="text-sm text-violet-600 font-semibold">Toujours là, jamais lourd.</p>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 leading-relaxed mb-5">
-                Il connaît ta <strong>date de concours</strong>, célèbre tes progrès, te rappelle ta
-                pile «&nbsp;À consolider&nbsp;» et te souffle un conseil chaque jour.
-              </p>
-              <div className="flex flex-wrap gap-2 mt-auto">
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-full">
-                  🔥 Série de jours + jokers 🧊
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full">
-                  🎯 Défis du jour (+XP)
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-full">
-                  🧭 Parcours vers le concours
-                </span>
-              </div>
-            </div>
-
-            {/* Grades */}
-            <div className="bg-white border border-gray-200 rounded-3xl p-7 flex flex-col">
-              <h3 className="text-xl font-black text-gray-900 mb-1">Monte en grade de carabin</h3>
-              <p className="text-sm text-gray-600 leading-relaxed mb-6">
-                Chaque bonne réponse rapporte des <strong>XP</strong>. De Bizuth à{' '}
-                <strong>Major de promo</strong>, ton grade reflète le travail accompli.
-              </p>
-              <div className="flex items-center gap-1.5 mt-auto">
-                {[
-                  { e: '🐣', n: 'Bizuth' },
-                  { e: '🤓', n: 'Carabin' },
-                  { e: '🥼', n: 'Externe' },
-                  { e: '⚕️', n: 'Interne' },
-                  { e: '👨‍⚕️', n: 'Chef' },
-                  { e: '🎓', n: 'Major' },
-                ].map((g, i) => (
-                  <div key={g.n} className="flex-1 flex items-center gap-1.5">
-                    <div className="flex-1 text-center">
-                      <div className={`text-2xl ${i === 1 ? 'scale-125' : ''}`}>{g.e}</div>
-                      <div className={`text-[10px] font-bold mt-1 ${i === 1 ? 'text-violet-700' : 'text-gray-400'}`}>{g.n}</div>
-                    </div>
-                    {i < 5 && (
-                      <div
-                        className="h-0.5 w-3 shrink-0"
-                        style={{
-                          background:
-                            i < 1
-                              ? 'linear-gradient(90deg,#4f46e5,#7c3aed)'
-                              : 'repeating-linear-gradient(90deg,#d7d9e8 0 3px,transparent 3px 6px)',
-                        }}
-                      ></div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: '34%', background: 'linear-gradient(90deg,#4f46e5,#7c3aed)' }}
-                ></div>
-              </div>
-              <p className="text-[11px] text-gray-400 mt-2">
-                1 407 XP · prochain grade : <strong className="text-gray-600">Externe 🥼</strong>
-              </p>
-            </div>
-          </div>
-
-          {/* Classement : mesure-toi aux autres */}
-          <div className="max-w-5xl mx-auto mt-6 relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-[#1e1b4b] to-indigo-950 p-7 md:p-10">
-            <div className="absolute w-72 h-72 bg-indigo-500/20 rounded-full filter blur-[90px] -top-20 -right-16 pointer-events-none"></div>
-            <div className="absolute w-56 h-56 bg-violet-500/15 rounded-full filter blur-[80px] -bottom-16 left-1/4 pointer-events-none"></div>
-            <div className="relative grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-              {/* Texte */}
-              <div className="text-left">
-                <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 px-4 py-2 rounded-full mb-5">
-                  <span className="text-base leading-none">🏆</span>
-                  <span className="text-sm font-semibold text-indigo-200">Classement hebdomadaire</span>
-                </div>
-                <h3 className="text-2xl md:text-3xl font-black text-white mb-3">
-                  Mesure-toi aux autres carabins
-                </h3>
-                <p className="text-sm md:text-base text-indigo-200/90 leading-relaxed mb-6">
-                  Ton score combine <strong className="text-white">précision et régularité</strong>{' '}
-                  sur tes 7 derniers jours — pas seulement le volume. Grimpe dans le top,
-                  d&eacute;fends ta place, et vois exactement o&ugrave; tu te situes dans la promo.
-                </p>
-                <div className="flex flex-wrap gap-2 mb-7">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-100 bg-white/10 border border-white/15 px-3 py-1.5 rounded-full">
-                    👥 563 participants cette semaine
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-100 bg-white/10 border border-white/15 px-3 py-1.5 rounded-full">
-                    📈 Évolue chaque jour
-                  </span>
-                </div>
-                <Link
-                  href="/connexion"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-indigo-900/50"
-                  style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
-                >
-                  Voir o&ugrave; tu te places
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                  </svg>
-                </Link>
-              </div>
-
-              {/* Mini-classement */}
-              <div className="bg-white/[0.06] backdrop-blur border border-white/10 rounded-2xl p-4 md:p-5">
-                <div className="flex items-center justify-between px-2 mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">
-                    Top de la semaine
-                  </span>
-                  <span className="text-[10px] font-bold text-indigo-300/70">Score</span>
-                </div>
-                <div className="space-y-1.5">
-                  {[
-                    { medal: '🥇', name: 'Emma L.', grade: '⚕️', score: '92 %', ring: 'border-amber-300/40 bg-amber-400/10' },
-                    { medal: '🥈', name: 'Hugo M.', grade: '👨‍⚕️', score: '89 %', ring: 'border-slate-300/30 bg-slate-300/10' },
-                    { medal: '🥉', name: 'Léa B.', grade: '🥼', score: '87 %', ring: 'border-orange-300/30 bg-orange-400/10' },
-                  ].map((r) => (
-                    <div key={r.name} className={`flex items-center gap-3 rounded-xl border ${r.ring} px-3.5 py-2.5`}>
-                      <span className="text-xl leading-none">{r.medal}</span>
-                      <span className="text-sm font-bold text-white flex-1">{r.name}</span>
-                      <span className="text-sm">{r.grade}</span>
-                      <span className="text-sm font-black text-white tabular-nums">{r.score}</span>
+          <div className="grid md:grid-cols-2 gap-5 max-w-4xl mx-auto">
+            {[
+              {
+                name: 'PASS', full: "Parcours d'Accès Spécifique Santé", tag: 'Voie majoritaire', highlight: true,
+                rows: [
+                  ['Structure', 'Majeure santé + mineure disciplinaire'],
+                  ['Chances de candidater', 'Une seule — pas de redoublement'],
+                  ['Volume santé', 'Dense dès le premier semestre'],
+                  ['En cas d’échec', 'Réorientation en L1, LAS possible'],
+                ],
+              },
+              {
+                name: 'LAS', full: 'Licence avec Accès Santé', tag: 'Voie sécurisée', highlight: false,
+                rows: [
+                  ['Structure', 'Licence classique + option santé'],
+                  ['Chances de candidater', 'Deux, en L1, L2 ou L3'],
+                  ['Volume santé', 'Réduit, en mineure'],
+                  ['En cas d’échec', 'Poursuite de licence garantie'],
+                ],
+              },
+            ].map((v, i) => (
+              <div
+                data-reveal data-reveal-delay={i + 1} key={v.name}
+                className={`relative rounded-2xl p-7 border transition-all ${v.highlight ? 'bg-gradient-to-br from-[#eef2ff] to-white border-indigo-600/20 shadow-lg shadow-indigo-600/5' : 'bg-white border-slate-200'}`}
+              >
+                <span className={`absolute -top-3 left-6 text-[10px] font-bold uppercase tracking-wider text-white px-2.5 py-1 rounded-full ${v.highlight ? 'bg-indigo-600' : 'bg-emerald-600'}`}>{v.tag}</span>
+                <h3 className="text-3xl font-black text-slate-900 mt-1">{v.name}</h3>
+                <p className={`text-xs font-bold uppercase tracking-wider mb-6 ${v.highlight ? 'text-indigo-600' : 'text-emerald-600'}`}>{v.full}</p>
+                <dl className="space-y-4">
+                  {v.rows.map(([k, val]) => (
+                    <div key={k}>
+                      <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{k}</dt>
+                      <dd className="text-sm font-semibold text-slate-800">{val}</dd>
                     </div>
                   ))}
-                  <div className="text-center text-indigo-300/60 text-sm font-black leading-none py-1">⋯</div>
-                  <div
-                    className="flex items-center gap-3 rounded-xl px-3.5 py-3 border border-transparent"
-                    style={{ background: 'linear-gradient(135deg, rgba(79,70,229,0.35), rgba(124,58,237,0.35))', boxShadow: 'inset 0 0 0 1.5px rgba(165,180,252,0.4)' }}
-                  >
-                    <span className="w-7 h-7 rounded-full bg-white/15 border border-white/25 flex items-center justify-center text-sm font-black text-white">?</span>
-                    <span className="text-sm font-bold text-white flex-1">Toi</span>
-                    <span className="text-xs font-bold text-indigo-100">Ta place t&apos;attend 👀</span>
-                  </div>
-                </div>
+                </dl>
+              </div>
+            ))}
+          </div>
+
+          <div data-reveal className="mt-10 flex flex-col items-center gap-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Les deux mènent aux mêmes portes</p>
+            <p className="text-lg md:text-xl font-bold text-slate-900 text-center">Médecine · Pharmacie · Maïeutique · Odontologie · Kinésithérapie</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          QUESTION DU JOUR — outil gratuit, sans inscription
+      ================================================================ */}
+      <section id="question-du-jour" className="py-16 md:py-20 bg-[#f8f9fc] relative overflow-hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
+          <div data-reveal className="relative overflow-hidden rounded-3xl border border-indigo-200/80 bg-gradient-to-br from-white via-[#eef2ff]/60 to-white shadow-xl shadow-indigo-200/20">
+            <GridBackground opacity={0.04} />
+            <div className="absolute top-[-40%] right-[-10%] w-[380px] h-[380px] bg-violet-200/[0.35] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+            <div className="relative grid md:grid-cols-2 gap-10 items-center p-8 md:p-12">
+              <div>
+                <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider mb-5">
+                  <CheckIcon className="w-3.5 h-3.5 text-emerald-600" />
+                  100 % gratuit · sans inscription
+                </span>
+                <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 mb-4">
+                  Une question de <span className="text-indigo-600">concours</span> chaque jour
+                </h2>
+                <p className="text-slate-500 text-lg leading-relaxed mb-7">
+                  Tirée du programme du tronc commun, corrigée et expliquée. Trente secondes pour savoir où tu en es — et une bonne excuse pour revenir demain.
+                </p>
+                <span className="text-sm text-slate-400 font-medium">Nouvelle question à minuit · correction immédiate</span>
+              </div>
+              <div data-reveal data-reveal-delay="1" className="relative">
+                <QuestionDuJour />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ==================== PREUVE SOCIALE ==================== */}
-      <section
-        className="py-12 md:py-14"
-        style={{ background: 'linear-gradient(180deg, #ffffff 0%, #eef1f6 22%, #eef1f6 78%, #f4f5fe 100%)' }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5 text-center">
-              <p className="text-3xl font-black text-indigo-600 tabular-nums">12 400</p>
-              <p className="text-xs text-gray-500 font-medium mt-1">QCM répondus cette semaine</p>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5 text-center">
-              <p className="text-3xl font-black text-violet-600 tabular-nums">+2 500</p>
-              <p className="text-xs text-gray-500 font-medium mt-1">étudiants inscrits</p>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5 text-center">
-              <p className="text-3xl font-black text-emerald-600 tabular-nums">563</p>
-              <p className="text-xs text-gray-500 font-medium mt-1">au classement cette semaine</p>
-            </div>
+      {/* ================================================================
+          LA MÉTHODE — 5 outils, en rangées numérotées avec mini-écrans
+      ================================================================ */}
+      <section id="methode" className="py-20 md:py-28 bg-gradient-to-b from-[#eef2ff] via-[#f5f3ff] to-[#eef2ff] relative overflow-hidden border-t border-indigo-100/60">
+        <GridBackground opacity={0.04} />
+        <div className="absolute top-[5%] left-[-5%] w-[400px] h-[400px] bg-indigo-200/[0.25] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="absolute bottom-[10%] right-[-5%] w-[380px] h-[380px] bg-violet-200/[0.22] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
+          <div data-reveal className="max-w-2xl mx-auto text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-5">
+              Une boucle simple<br />pour progresser chaque jour
+            </h2>
+            <p className="text-slate-500 text-lg leading-relaxed">
+              Tu t&apos;entraînes, tes erreurs sont capturées, tu les consolides, tu valides en conditions concours — et tu vois ta courbe monter.
+            </p>
           </div>
-          <div className="grid sm:grid-cols-2 gap-4 max-w-4xl mx-auto mt-4">
-            <figure className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
-              <blockquote className="text-sm text-gray-700 leading-relaxed">
-                «&nbsp;La pile À consolider a changé ma façon de réviser. Mes erreurs ne se perdent
-                plus, je les retravaille jusqu&apos;à les connaître.&nbsp;»
-              </blockquote>
-              <figcaption className="mt-3 text-xs font-bold text-gray-500">
-                Léa · PASS, Lyon Est
-              </figcaption>
-            </figure>
-            <figure className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
-              <blockquote className="text-sm text-gray-700 leading-relaxed">
-                «&nbsp;Le streak et Pico me font ouvrir l&apos;appli même les jours sans motivation.
-                C&apos;est bête, mais ça marche.&nbsp;»
-              </blockquote>
-              <figcaption className="mt-3 text-xs font-bold text-gray-500">
-                Adam · LAS Droit, Bordeaux
-              </figcaption>
-            </figure>
+
+          <div className="space-y-8">
+            <FeatureRow num="1" label="S'entraîner · toutes les UE" title="QCM illimités, corrigés" subtitle="Par matière, par fiche ou sur un thème libre : autant de questions que tu veux, dans le format du concours."
+              bullets={['Réponses multiples et pièges, comme le jour J', 'Correction détaillée à chaque question, pas seulement la bonne réponse', 'Les 6 UE du tronc commun, du premier au dernier chapitre']}
+              href="/qcm" cta="Lancer un QCM" mockup={<MockQCM />} />
+            <FeatureRow num="2" flip label="Consolider · révisions espacées" title="La pile « À consolider »" subtitle="Chaque erreur rejoint ta pile. Tu la rejoues jusqu'à la maîtriser, puis elle disparaît : c'est la répétition espacée, sans y penser."
+              bullets={['Rien ne se perd : une question ratée revient au bon moment', 'Une question réussie deux fois sort de la pile', 'Session de 5 minutes possible entre deux cours']}
+              href="/qcm" cta="Voir comment ça marche" mockup={<MockConsolider />} />
+            <FeatureRow num="3" label="Valider · conditions concours" title="Examens blancs chronométrés" subtitle="40 questions mélangées, 60 minutes, grille de réponses. Le stress du jour J, avant le jour J."
+              bullets={['Toutes les UE mélangées, comme au concours', 'Grille de réponses et chrono qui tourne', 'Correction complète et score par matière à la fin']}
+              href="/examen" cta="Passer un examen blanc" mockup={<MockExamen />} />
+            <FeatureRow num="4" flip label="Réviser · 150 fiches et cours" title="Fiches suivies, cours complets" subtitle="Chaque fiche a son temps de lecture, son sommaire et son QCM ciblé. Tu sais toujours ce qui est lu, et ce qui reste."
+              bullets={['150 fiches synthétiques, 25 par UE, en accès libre', 'Cours détaillés avec schémas pour aller plus loin', 'Téléchargement PDF pour réviser hors ligne']}
+              href="/fiches" cta="Parcourir les fiches" mockup={<MockFiches />} />
+            <FeatureRow num="5" label="Progresser · coach de révision" title="Un coach qui te dit quoi faire" subtitle="Courbe par matière, objectifs de la semaine et une recommandation claire à chaque connexion."
+              bullets={['« L’Anatomie te freine : 3 QCM ciblés et tu passes la barre »', 'Objectifs hebdo modifiables : sessions, temps, jours actifs', 'Parcours vers ta date de concours, jour par jour']}
+              href="/inscription" cta="Créer mon compte" mockup={<MockProgression />} />
           </div>
         </div>
       </section>
 
-      {/* ==================== WAVE: Preuve sociale -> FAQ ==================== */}
-      <div className="wave-divider" style={{ background: '#f4f5fe', marginTop: '-1px' }}>
-        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M0,30 C240,60 480,0 720,30 C960,60 1200,0 1440,30 L1440,60 L0,60 Z"
-            fill="#eef2ff"
-            fillOpacity="0.55"
-          />
-        </svg>
-      </div>
+      {/* ================================================================
+          PROGRAMME — les 6 UE du tronc commun, pondérées par coefficient
+      ================================================================ */}
+      <section id="programme" className="py-20 md:py-28 bg-gradient-to-b from-white via-[#f8f9fc] to-white border-t border-slate-100 relative overflow-hidden">
+        <div className="absolute top-[20%] right-[0%] w-[320px] h-[320px] bg-violet-200/[0.16] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 relative">
+          <div data-reveal className="max-w-2xl mx-auto text-center mb-14">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-5">Le programme du tronc commun</h2>
+            <p className="text-slate-500 text-lg leading-relaxed">
+              Six unités d&apos;enseignement, {totalHours}{' '}heures de cours, des coefficients qui ne se valent pas. La frise donne le poids de chaque UE dans le concours&nbsp;: c&apos;est là que se joue ton temps de révision.
+            </p>
+          </div>
 
-      {/* ==================== FAQ ==================== */}
+          <div data-reveal className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">6</div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Tronc commun · S1 et S2</p>
+                <p className="font-bold text-slate-900">Poids de chaque UE dans la note finale</p>
+              </div>
+              <div className="ml-auto text-sm text-slate-500 font-mono hidden sm:block">{totalHours}h · coef. {totalCoeff}</div>
+            </div>
+            <div className="grid gap-1.5 rounded-2xl overflow-hidden bg-slate-100 p-1" style={{ gridTemplateColumns: `repeat(${totalCoeff}, minmax(0, 1fr))` }}>
+              {byCode.map((ue) => {
+                const t = UE_TONES[ue.color] || UE_TONES.indigo;
+                return (
+                  <div key={ue.id} className={`${t.bg} rounded-xl px-1.5 sm:px-3 py-2 sm:py-3 min-w-0 text-center sm:text-left`} style={{ gridColumn: `span ${ue.coeff}` }}>
+                    <p className="text-[10px] font-bold uppercase tracking-normal sm:tracking-wider text-white/80 mb-0.5 truncate"><span className="sm:hidden">{UE_CODES[ue.id]}</span><span className="hidden sm:inline">{UE_CODES[ue.id]} · coef. {ue.coeff}</span></p>
+                    <p className="text-xs font-bold text-white leading-tight truncate hidden sm:block">{ue.name}</p>
+                    <p className="text-[10px] font-bold text-white/80 sm:hidden">×{ue.coeff}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {byCode.map((ue, i) => {
+              const t = UE_TONES[ue.color] || UE_TONES.indigo;
+              return (
+                <Link data-reveal data-reveal-delay={(i % 3) + 1} key={ue.id} href={`/programme#ue-${ue.id}`} className="group bg-white rounded-2xl border border-slate-200 p-5 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5 transition-all block">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`inline-flex items-center gap-2 text-[11px] font-bold px-2.5 py-1 rounded-full border ${t.soft}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${t.dot}`} />{UE_CODES[ue.id]}
+                    </span>
+                    <span className="text-xs text-slate-400 font-mono">{ue.hours}h · coef. {ue.coeff}</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-1.5">{ue.name}</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed line-clamp-3">{ue.description}</p>
+                  <p className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 group-hover:gap-2.5 transition-all">
+                    25 fiches · QCM illimités <ArrowIcon className="w-3.5 h-3.5" />
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div data-reveal className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-start gap-3">
+            <svg className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            <p className="text-sm text-amber-900 leading-relaxed">
+              <strong>En PASS, tu n&apos;as qu&apos;une chance</strong>{' '}: pas de redoublement possible. C&apos;est la raison d&apos;être des révisions espacées et des examens blancs — ne rien laisser au hasard avant le jour J.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          RESTE MOTIVÉ — Pico, grades, classement + aperçu du tableau de bord
+      ================================================================ */}
+      <section id="motivation" className="py-20 md:py-28 bg-gradient-to-br from-[#eef2ff] via-[#f8f9fc] to-[#f5f3ff] border-t border-indigo-100/60 relative overflow-hidden">
+        <GridBackground opacity={0.04} />
+        <div className="absolute top-[10%] left-[-4%] w-[360px] h-[360px] bg-violet-200/[0.22] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="absolute bottom-[5%] right-[-4%] w-[340px] h-[340px] bg-emerald-200/[0.16] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div data-reveal>
+              <div className="inline-flex items-center gap-2 bg-white border border-indigo-600/15 rounded-full px-4 py-1.5 text-sm font-medium text-indigo-600 mb-6 shadow-sm">
+                <span className="text-base leading-none">🦉</span> Pico, ton coach de révision
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-5 leading-tight">
+                Tenir jusqu&apos;au bout,<br className="hidden md:block" />{' '}c&apos;est un système.
+              </h2>
+              <p className="text-slate-500 text-lg leading-relaxed mb-8">
+                La première année se gagne sur la régularité, pas sur un sprint. Tout est construit pour que tu aies envie de revenir demain.
+              </p>
+              <ul className="space-y-4 mb-8">
+                {[
+                  { title: 'Pico connaît ta date de concours', desc: 'Il célèbre tes progrès, te rappelle ta pile « À consolider » et te souffle un conseil par jour. Toujours là, jamais lourd.' },
+                  { title: 'Des grades de carabin, de Bizuth à Major de promo', desc: 'Chaque bonne réponse rapporte des XP. Ton grade reflète le travail accompli, avec une série de jours et des jokers pour les jours sans.' },
+                  { title: 'Un classement hebdomadaire', desc: 'Ton score combine précision et régularité sur 7 jours — pas le volume. Remis en jeu chaque jour, pour que chacun ait sa chance.' },
+                ].map((f) => (
+                  <li key={f.title} className="flex gap-3">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckIcon className="w-3.5 h-3.5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900 text-sm mb-0.5">{f.title}</p>
+                      <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/inscription" className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-semibold text-sm">
+                Voir où tu te places <ArrowIcon className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div data-reveal data-reveal-delay="1" className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-br from-indigo-600/10 via-violet-400/5 to-transparent rounded-3xl blur-2xl pointer-events-none" />
+              <MockDashboard />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          TÉMOIGNAGES
+      ================================================================ */}
+      <section id="temoignages" className="py-20 md:py-28 bg-gradient-to-b from-white via-[#f5f3ff] to-white border-t border-slate-100 relative overflow-hidden">
+        <div className="absolute top-[15%] left-[3%] w-[300px] h-[300px] bg-violet-200/[0.15] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="absolute bottom-[10%] right-[3%] w-[300px] h-[300px] bg-indigo-200/[0.18] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
+          <div data-reveal className="max-w-2xl mx-auto text-center mb-14">
+            <div className="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-1.5 text-sm font-medium text-slate-700 mb-5 shadow-sm">
+              <div className="flex -space-x-1.5">
+                {['M', 'S', 'L', 'A'].map((l, i) => (
+                  <span key={l} className={`w-6 h-6 rounded-full border-2 border-white text-[10px] font-bold text-white flex items-center justify-center ${['bg-indigo-500', 'bg-violet-500', 'bg-cyan-500', 'bg-emerald-500'][i]}`}>{l}</span>
+                ))}
+              </div>
+              +2&nbsp;500 étudiants inscrits
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-4">Ils révisent avec nous</h2>
+            <p className="text-slate-500 text-lg">Ce que disent les étudiants qui préparent le concours sur la plateforme.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { name: 'Léa', role: 'PASS · Lyon Est', quote: "La pile À consolider a changé ma façon de réviser. Mes erreurs ne se perdent plus, je les retravaille jusqu'à les connaître.", gradient: 'from-indigo-500 to-violet-500' },
+              { name: 'Adam', role: 'LAS Droit · Bordeaux', quote: "Le streak et Pico me font ouvrir l'appli même les jours sans motivation. C'est bête, mais ça marche.", gradient: 'from-violet-500 to-fuchsia-500' },
+              { name: 'Inès', role: 'PASS · Paris Cité', quote: "Les examens blancs m'ont enlevé la peur du chrono. Le jour du concours, j'avais déjà fait dix fois le format.", gradient: 'from-cyan-500 to-indigo-500' },
+            ].map((t, i) => (
+              <div data-reveal data-reveal-delay={i + 1} key={t.name} className="bg-white rounded-2xl p-7 border border-slate-200 hover:shadow-lg hover:-translate-y-0.5 transition-all flex flex-col">
+                <div className="flex items-center gap-0.5 text-amber-400 mb-4">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <svg key={s} className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.961a1 1 0 00.95.69h4.164c.969 0 1.371 1.24.588 1.81l-3.37 2.449a1 1 0 00-.363 1.118l1.285 3.96c.3.922-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.176 0l-3.37 2.448c-.784.57-1.838-.196-1.539-1.118l1.285-3.96a1 1 0 00-.363-1.118L2.05 9.388c-.783-.57-.38-1.81.588-1.81h4.164a1 1 0 00.95-.69l1.286-3.961z" /></svg>
+                  ))}
+                </div>
+                <p className="text-slate-700 leading-relaxed mb-6 flex-1 text-[15px]">&laquo;&nbsp;{t.quote}&nbsp;&raquo;</p>
+                <div className="flex items-center gap-3 pt-5 border-t border-slate-100">
+                  <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center text-white font-bold shrink-0`}>{t.name.charAt(0)}</div>
+                  <div>
+                    <p className="font-semibold text-slate-900 text-sm leading-tight">{t.name}</p>
+                    <p className="text-xs text-indigo-600 font-semibold mt-0.5">{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          FAQ + bandeau concours (visiteurs)
+      ================================================================ */}
       <FaqSection />
-
-      {/* ==================== BANDEAU CONCOURS (visiteurs) ==================== */}
       <ConcoursBanner />
 
-      {/* ==================== CTA SECTION ==================== */}
-      <section
-        id="tarifs"
-        className="py-16 md:py-24 gradient-dark noise-overlay text-white relative overflow-hidden"
-      >
-        <div className="geo-circle w-24 h-24 top-8 left-[10%] hidden lg:block"></div>
-        <div className="geo-diamond w-12 h-12 top-16 right-[15%] hidden lg:block"></div>
-        <div className="geo-cross bottom-12 right-[8%] hidden lg:block"></div>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <h2 className="text-3xl md:text-4xl font-black mb-4">
-            Découvrez nos formules d&apos;accompagnement
-          </h2>
-          <p className="text-primary-200 text-lg max-w-xl mx-auto mb-4">
-            Sans engagement ou jusqu&apos;au concours, trouvez le rythme qui correspond à votre
-            objectif en santé.
+      {/* ================================================================
+          CTA FINAL — sombre, minimal
+      ================================================================ */}
+      <section id="tarifs" className="py-24 md:py-32 bg-slate-900 relative overflow-hidden border-t border-slate-800">
+        <div className="absolute inset-0 pointer-events-none opacity-[0.06]" style={{ backgroundImage: 'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)', backgroundSize: '44px 44px' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-indigo-600/30 rounded-full blur-[120px] pointer-events-none" />
+        <div data-reveal className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <h2 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6 leading-[1.05]">Prêt à réussir ta première année&nbsp;?</h2>
+          <p className="text-slate-300 text-lg md:text-xl mb-10 max-w-xl mx-auto leading-relaxed">
+            Rejoins les +2&nbsp;500 étudiants qui préparent le concours PASS/LAS avec un coach dans la poche.
           </p>
-          <div className="mb-8">
-            <PromoPriceLine variant="dark" />
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <Link href="/inscription" className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-slate-900 font-semibold rounded-full hover:bg-slate-100 transition-colors shadow-xl shadow-black/20">
+              Commencer gratuitement <ArrowIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+            <Link href="/tarifs" className="inline-flex items-center justify-center px-8 py-4 border border-white/20 text-white font-semibold rounded-full hover:bg-white/10 transition-colors">
+              Voir les tarifs
+            </Link>
           </div>
-          <Link
-            href="/tarifs"
-            className="inline-flex items-center gap-2 px-8 py-4 text-white text-base font-bold rounded-2xl hover:opacity-90 transition-opacity shadow-xl shadow-primary-600/30"
-            style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
-          >
-            Voir les tarifs en détail
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-              />
-            </svg>
-          </Link>
+          <div className="mb-4"><PromoPriceLine variant="dark" /></div>
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-400">
+            <div className="inline-flex items-center gap-1.5"><CheckIcon className="w-4 h-4 text-emerald-400" /> 2 jours de Premium offerts</div>
+            <div className="inline-flex items-center gap-1.5"><CheckIcon className="w-4 h-4 text-emerald-400" /> Sans carte bancaire</div>
+            <div className="inline-flex items-center gap-1.5"><CheckIcon className="w-4 h-4 text-emerald-400" /> Résiliation en 1 clic</div>
+          </div>
         </div>
       </section>
-    </>
+    </div>
+  );
+}
+
+/* ============================================================
+   FeatureRow — texte numéroté + mini-écran, en alternance
+============================================================ */
+function FeatureRow({ num, flip = false, label, title, subtitle, bullets, href, cta, mockup }) {
+  return (
+    <div className={`grid md:grid-cols-2 gap-8 md:gap-14 items-center ${flip ? 'md:[direction:rtl]' : ''}`}>
+      <div data-reveal className={flip ? 'md:[direction:ltr]' : ''}>
+        <div className="flex items-center gap-3 mb-4">
+          <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-900 text-white font-bold text-sm">{num}</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{label}</span>
+        </div>
+        <h3 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 mb-4 leading-tight">{title}</h3>
+        <p className="text-slate-500 text-lg leading-relaxed mb-5">{subtitle}</p>
+        <ul className="space-y-2.5 mb-6">
+          {bullets.map((b) => (
+            <li key={b} className="flex items-start gap-2.5 text-sm text-slate-700">
+              <CheckIcon className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" /><span>{b}</span>
+            </li>
+          ))}
+        </ul>
+        <Link href={href} className="inline-flex items-center gap-1.5 text-indigo-600 font-semibold text-sm hover:underline">
+          {cta} <ArrowIcon className="w-4 h-4" />
+        </Link>
+      </div>
+      <div data-reveal data-reveal-delay="1" className={`relative ${flip ? 'md:[direction:ltr]' : ''}`}>
+        <div className="absolute -inset-4 bg-gradient-to-br from-indigo-600/10 via-violet-400/[0.04] to-transparent rounded-3xl blur-2xl pointer-events-none" />
+        <div className="relative">{mockup}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   MOCKUPS — mini-écrans produit
+============================================================ */
+function MockFrame({ label, badge, children }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/[0.06] border border-slate-200/60 overflow-hidden">
+      <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-slate-100 bg-slate-50/60">
+        <span className="w-2 h-2 rounded-full bg-red-300" /><span className="w-2 h-2 rounded-full bg-amber-300" /><span className="w-2 h-2 rounded-full bg-emerald-300" />
+        <span className="ml-3 text-[11px] text-slate-400 font-mono truncate">{label}</span>
+        {badge && <span className="ml-auto text-[11px] font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-bold">{badge}</span>}
+      </div>
+      <div className="p-5">{children}</div>
+    </div>
+  );
+}
+
+function MockQCM() {
+  const options = [
+    { t: 'La cystéine, grâce à son groupement thiol', ok: true },
+    { t: 'La méthionine, grâce à son thioéther', ok: false },
+    { t: 'La sérine, grâce à son hydroxyle', ok: false },
+    { t: 'La thréonine', ok: false },
+  ];
+  return (
+    <MockFrame label="QCM · Chimie / Biochimie · 7/10" badge="UE1">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Question 7</p>
+      <p className="text-[13px] font-semibold text-slate-800 leading-snug mb-3">Quel acide aminé peut former des ponts disulfure&nbsp;?</p>
+      <div className="space-y-1.5">
+        {options.map((o, i) => (
+          <div key={o.t} className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-[11.5px] ${o.ok ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold' : 'bg-white border-slate-200 text-slate-600'}`}>
+            <span className={`w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0 ${o.ok ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500'}`}>{['A', 'B', 'C', 'D'][i]}</span>
+            <span className="truncate">{o.t}</span>
+            {o.ok && <CheckIcon className="w-3.5 h-3.5 text-emerald-600 ml-auto shrink-0" />}
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 mb-1">Correction</p>
+        <p className="text-[11px] text-indigo-900 leading-snug">Seule la cystéine porte un thiol (–SH) capable de former un pont S–S. La méthionine contient du soufre, mais sous forme thioéther.</p>
+      </div>
+    </MockFrame>
+  );
+}
+
+function MockConsolider() {
+  const items = [
+    { s: 'Anatomie', q: 'Nerf crânien de la mimique', due: "Aujourd'hui", tone: 'text-rose-600 bg-rose-50' },
+    { s: 'Biophysique', q: 'Loi de Beer-Lambert', due: 'Demain', tone: 'text-amber-600 bg-amber-50' },
+    { s: 'Chimie', q: 'pH d’un acide fort 0,01 M', due: 'Dans 3 j', tone: 'text-slate-500 bg-slate-100' },
+  ];
+  return (
+    <MockFrame label="À consolider · 12 questions" badge="5 min">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tes erreurs à revoir</p>
+        <span className="text-[10px] font-bold text-emerald-600">3 sorties de la pile cette semaine</span>
+      </div>
+      <div className="space-y-1.5">
+        {items.map((it) => (
+          <div key={it.q} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
+            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md shrink-0">{it.s}</span>
+            <span className="text-[11.5px] text-slate-700 truncate flex-1">{it.q}</span>
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0 ${it.tone}`}>{it.due}</span>
+          </div>
+        ))}
+      </div>
+      <button className="mt-3 w-full bg-indigo-600 text-white text-[11px] font-semibold py-2.5 rounded-lg inline-flex items-center justify-center gap-1.5">Rejouer mes 12 questions <ArrowIcon className="w-3 h-3" /></button>
+    </MockFrame>
+  );
+}
+
+function MockExamen() {
+  const grid = Array.from({ length: 40 }, (_, i) => (i < 23 ? 'done' : i === 23 ? 'current' : 'todo'));
+  return (
+    <MockFrame label="Examen blanc · 40 questions" badge="37:12">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Grille de réponses</p>
+        <span className="text-[10px] font-bold text-slate-500">23 / 40 répondues</span>
+      </div>
+      <div className="grid grid-cols-10 gap-1.5 mb-3">
+        {grid.map((g, i) => (
+          <span key={i} className={`h-6 rounded-md text-[9px] font-bold flex items-center justify-center ${g === 'done' ? 'bg-indigo-600 text-white' : g === 'current' ? 'bg-amber-400 text-white ring-2 ring-amber-200' : 'bg-slate-100 text-slate-400'}`}>{i + 1}</span>
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {[['UE1', 'Chimie', '7'], ['UE5', 'Anatomie', '8'], ['UE4', 'Biostats', '5']].map(([c, n, k]) => (
+          <div key={c} className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{c} · {n}</p>
+            <p className="text-sm font-bold text-slate-900">{k} <span className="text-[10px] text-slate-400 font-normal">questions</span></p>
+          </div>
+        ))}
+      </div>
+    </MockFrame>
+  );
+}
+
+function MockFiches() {
+  const fiches = [
+    { t: 'Ostéologie et arthrologie', min: 4, read: true },
+    { t: 'Myologie', min: 3, read: true },
+    { t: 'Angiologie', min: 5, read: false },
+    { t: 'Neuroanatomie', min: 6, read: false },
+  ];
+  return (
+    <MockFrame label="Fiches · Anatomie · UE5" badge="18 / 25 lues">
+      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-3"><div className="anim-bar h-full bg-indigo-600 rounded-full" style={{ width: '72%' }} /></div>
+      <div className="space-y-1.5">
+        {fiches.map((f) => (
+          <div key={f.t} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${f.read ? 'bg-emerald-500 text-white' : 'bg-slate-100'}`}>{f.read && <CheckIcon className="w-3 h-3 text-white" />}</span>
+            <span className={`text-[11.5px] flex-1 truncate ${f.read ? 'text-slate-500' : 'text-slate-800 font-semibold'}`}>{f.t}</span>
+            <span className="text-[10px] text-slate-400 font-mono shrink-0">{f.min} min</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center justify-between text-[10px]">
+        <span className="text-slate-400">Cours complet + schémas · PDF</span>
+        <span className="text-indigo-600 font-semibold">QCM sur cette fiche →</span>
+      </div>
+    </MockFrame>
+  );
+}
+
+function MockProgression() {
+  const bars = [
+    { n: 'Chimie / Biochimie', v: 82, c: 'bg-emerald-500' },
+    { n: 'Biologie cellulaire', v: 74, c: 'bg-emerald-500' },
+    { n: 'Biostatistiques', v: 61, c: 'bg-amber-500' },
+    { n: 'Anatomie', v: 48, c: 'bg-rose-500' },
+  ];
+  return (
+    <MockFrame label="Progression · 4 semaines" badge="↑ +9 pts">
+      <div className="space-y-2.5 mb-4">
+        {bars.map((b) => (
+          <div key={b.n}>
+            <div className="flex justify-between text-[11px] mb-1"><span className="text-slate-600 font-medium">{b.n}</span><span className="text-slate-400 font-mono">{b.v}%</span></div>
+            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div className={`anim-bar h-full ${b.c} rounded-full`} style={{ width: `${b.v}%` }} /></div>
+          </div>
+        ))}
+      </div>
+      <div className="bg-violet-50 border border-violet-100 rounded-lg p-3 flex gap-2.5 items-start">
+        <span className="text-lg leading-none">🦉</span>
+        <p className="text-[11px] text-violet-900 leading-snug"><strong>L&apos;Anatomie te freine</strong>{' '}(48 %). Trois QCM ciblés cette semaine et tu passes la barre des 60 %.</p>
+      </div>
+    </MockFrame>
+  );
+}
+
+function MockDashboard() {
+  return (
+    <div className="relative bg-white rounded-2xl shadow-2xl shadow-slate-900/10 border border-slate-200/60 overflow-hidden">
+      <div className="flex items-center gap-1.5 px-4 py-3 border-b border-slate-100 bg-slate-50">
+        <span className="w-2.5 h-2.5 rounded-full bg-red-300" /><span className="w-2.5 h-2.5 rounded-full bg-amber-300" /><span className="w-2.5 h-2.5 rounded-full bg-emerald-300" />
+        <span className="ml-3 text-xs text-slate-400 font-mono">Tableau de bord · J-134</span>
+      </div>
+      <div className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-lg font-black text-slate-900">Bonsoir Emma</p>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-800 bg-slate-50 border border-slate-100 rounded-full px-2 py-1">🤓 Carabin</span>
+            <span className="text-[11px] font-bold text-slate-800 bg-slate-50 border border-slate-100 rounded-full px-2 py-1">🔥 7</span>
+          </div>
+        </div>
+        <div className="relative mx-1" style={{ height: 30 }}>
+          <div className="absolute left-0 right-6 top-[15px]" style={{ height: 3, borderRadius: 3, background: 'repeating-linear-gradient(90deg, #d7d9e8 0 5px, transparent 5px 11px)' }} />
+          <div className="anim-bar absolute left-0 top-[15px]" style={{ height: 3, width: '58%', borderRadius: 3, background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' }} />
+          <span className="absolute text-lg" style={{ left: '58%', top: -4, transform: 'translateX(-50%)' }}>🧑‍🎓</span>
+          <span className="absolute right-0 top-[2px] text-lg">🏁</span>
+        </div>
+        <div className="flex justify-between text-[9px] font-bold text-slate-400 uppercase tracking-wide mx-1 -mt-2"><span>Départ</span><span>Le concours · 15 nov.</span></div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-xl p-3 text-white" style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
+            <p className="text-base leading-none mb-1.5">🔁</p><p className="text-[10.5px] font-bold leading-tight">À consolider</p><p className="text-[9px] opacity-80 mt-0.5">12 questions</p>
+          </div>
+          <div className="rounded-xl p-3 bg-indigo-50 border border-indigo-100"><p className="text-base leading-none mb-1.5">✅</p><p className="text-[10.5px] font-bold text-slate-900 leading-tight">QCM</p><p className="text-[9px] text-slate-500 mt-0.5">Toutes UE</p></div>
+          <div className="rounded-xl p-3 bg-amber-50 border border-amber-100"><p className="text-base leading-none mb-1.5">⚡</p><p className="text-[10.5px] font-bold text-slate-900 leading-tight">Éclair</p><p className="text-[9px] text-slate-500 mt-0.5">5 min</p></div>
+        </div>
+        <div className="bg-violet-50 border border-violet-100 rounded-xl px-4 py-3 flex items-start gap-3">
+          <span className="text-2xl leading-none">🦉</span>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-violet-600 mb-0.5">Pico · Conseil du jour</p>
+            <p className="text-[12px] text-slate-800 leading-snug">Sept jours d&apos;affilée, Emma. Dix minutes sur l&apos;Anatomie et tu gardes ta série&nbsp;🔥</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
