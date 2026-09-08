@@ -852,8 +852,7 @@ export default function Home() {
               </div>
               <p className="text-sm text-gray-600 leading-relaxed mb-5">
                 Il connaît ta <strong>date de concours</strong>, célèbre tes progrès, te rappelle ta
-                pile «&nbsp;À consolider&nbsp;» et te souffle un conseil chaque jour. Il change même
-                de tenue quand tu montes en grade.
+                pile «&nbsp;À consolider&nbsp;» et te souffle un conseil chaque jour.
               </p>
               <div className="flex flex-wrap gap-2 mt-auto">
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-full">
@@ -873,8 +872,7 @@ export default function Home() {
               <h3 className="text-xl font-black text-gray-900 mb-1">Monte en grade de carabin</h3>
               <p className="text-sm text-gray-600 leading-relaxed mb-6">
                 Chaque bonne réponse rapporte des <strong>XP</strong>. De Bizuth à{' '}
-                <strong>Major de promo</strong>, ton grade reflète le travail accompli — et
-                débloque les tenues de Pico.
+                <strong>Major de promo</strong>, ton grade reflète le travail accompli.
               </p>
               <div className="flex items-center gap-1.5 mt-auto">
                 {[

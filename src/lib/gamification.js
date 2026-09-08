@@ -157,13 +157,3 @@ export function computeStreakWithJokers(sessions, todayKey, jokersPerMonth = 2) 
   };
 }
 
-/* ---------- Garde-robe de Pico ----------
-   unlock({ gradeIndex, streak, badges }) → bool */
-export const PICO_OUTFITS = [
-  { id: 'classic', name: 'Classique',     emoji: '🦉', desc: 'La tenue de toujours',   unlock: () => true },
-  { id: 'glasses', name: 'Studieux',      emoji: '🤓', desc: 'Grade Carabin',          unlock: (c) => c.gradeIndex >= 1 },
-  { id: 'blouse',  name: 'Blouse blanche', emoji: '🥼', desc: 'Grade Externe',          unlock: (c) => c.gradeIndex >= 2 },
-  { id: 'gold',    name: 'Stétho doré',   emoji: '⚕️', desc: 'Grade Interne',          unlock: (c) => c.gradeIndex >= 3 },
-  { id: 'toque',   name: 'Toque de major', emoji: '🎓', desc: 'Grade Major de promo',   unlock: (c) => c.gradeIndex >= 5 },
-  { id: 'crown',   name: 'Couronne',      emoji: '👑', desc: '30 jours de streak',     unlock: (c) => c.streak >= 30 },
-];

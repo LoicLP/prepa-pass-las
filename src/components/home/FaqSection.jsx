@@ -48,7 +48,7 @@ const FAQ_ITEMS = [
   {
     question: 'C\'est quoi les XP, les grades et la série ?',
     answer:
-      'Chaque bonne réponse rapporte des XP qui te font monter en grade de carabin, de Bizuth à Major de promo. Réviser chaque jour entretient ta série 🔥 (avec des jokers si tu rates un jour). Défis quotidiens, badges et tenues de Pico complètent le système — conçu pour récompenser la régularité, pas la chance.',
+      'Chaque bonne réponse rapporte des XP qui te font monter en grade de carabin, de Bizuth à Major de promo. Réviser chaque jour entretient ta série 🔥 (avec des jokers si tu rates un jour). Les badges complètent le système — conçu pour récompenser la régularité, pas la chance.',
   },
   {
     question: 'Comment fonctionnent les révisions espacées (« À consolider ») ?',

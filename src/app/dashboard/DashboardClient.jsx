@@ -16,7 +16,7 @@ import { downloadFichePdf } from '@/utils/fichePdf';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
-import { computeXP, gradeForXP, computeStreakWithJokers, questStatus, GRADES, PICO_OUTFITS } from '@/lib/gamification';
+import { computeXP, gradeForXP, computeStreakWithJokers, questStatus, GRADES } from '@/lib/gamification';
 
 /* ========== HELPERS ========== */
 function getSubjectBadgeColors(subjectId) {
@@ -64,6 +64,15 @@ const MENU_ITEMS = [
 ];
 
 /* ========== MAIN PAGE ========== */
+/* Salutation adaptée au moment de la journée (même découpage que le dashboard CRFPA). */
+function greetingForNow() {
+  const h = new Date().getHours();
+  if (h < 6) return 'Bonne nuit';
+  if (h < 12) return 'Bonjour';
+  if (h < 18) return 'Bon après-midi';
+  return 'Bonsoir';
+}
+
 export default function DashboardPage() {
   const { user, loading: authLoading, accessToken, logOut } = useAuth();
   const router = useRouter();
@@ -580,7 +589,7 @@ export default function DashboardPage() {
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <div style={{ width: 30, height: 30, background: '#4f46e5', borderRadius: 8, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
             </svg>
           </div>
           <span style={{ fontSize: 14, fontWeight: 800, color: '#0f1020' }}>Prépa <span style={{ color: '#4f46e5' }}>PASS/LAS</span></span>
@@ -809,21 +818,15 @@ export default function DashboardPage() {
         />
 
         {/* ===== MAIN CONTENT ===== */}
-        <main ref={mainRef} className="md:pt-5 md:px-9 pt-[72px] px-4 pb-[80px] md:pb-5" style={{ flex: 1, minWidth: 0, maxWidth: '100%', overflowY: 'auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main ref={mainRef} className="md:pt-[34px] md:px-9 pt-[72px] px-4 pb-[80px] md:pb-12" style={{ flex: 1, minWidth: 0, maxWidth: '100%', overflowY: 'auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-          {/* GREETING */}
-          <div className="hidden md:flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0 }}>
-            <div>
-              <p style={{ fontSize: 13, color: '#5f6280', marginBottom: 4 }}>
+          {/* GREETING — mise en page CRFPA : date + actions sur une ligne, salutation en dessous */}
+          <div className="hidden md:flex" style={{ flexDirection: 'column', gap: 14, marginBottom: 14, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 20, paddingBottom: 4 }}>
+              <span style={{ fontSize: 13, color: '#8a8ea8' }}>
                 {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </p>
-              {activeSection === 'overview' && (
-                <h1 className="font-jakarta" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, margin: 0, color: '#0f1020' }}>
-                  Bonjour {user.displayName ? user.displayName.split(' ')[0] : ''}
-                </h1>
-              )}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {/* Grade + progression XP (cliquable → popover explicatif). La série de jours
                   n'est plus affichée ici : elle reste visible dans le menu mobile et la Progression. */}
               {data.hasAnySessions && <GradePill gam={gam} open={gradeOpen} setOpen={setGradeOpen} />}
@@ -842,10 +845,13 @@ export default function DashboardPage() {
                   </Link>
                 </>
               )}
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-                {(user.displayName?.[0] || user.email?.[0] || '?').toUpperCase()}
               </div>
             </div>
+            {activeSection === 'overview' && (
+              <h1 className="font-jakarta" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, margin: 0, color: '#0f1020' }}>
+                {greetingForNow()} {user.displayName ? user.displayName.split(' ')[0] : ''}
+              </h1>
+            )}
           </div>
           {/* Mobile greeting (compact) */}
           <div className="md:hidden" style={{ marginBottom: 12, flexShrink: 0 }}>
@@ -855,7 +861,7 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               {activeSection === 'overview' && (
                 <h1 className="font-jakarta" style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.6, margin: 0, color: '#0f1020' }}>
-                  Bonjour {user.displayName ? user.displayName.split(' ')[0] : ''} 👋
+                  {greetingForNow()} {user.displayName ? user.displayName.split(' ')[0] : ''} 👋
                 </h1>
               )}
               {!isPaid && (
@@ -1400,8 +1406,6 @@ export default function DashboardPage() {
         reviewDue={reviewDue}
         quests={gam.quests}
         gradeInfo={gam}
-        picoOutfit={user.user_metadata?.pico_outfit || 'classic'}
-        outfitContext={{ gradeIndex: gam.gradeIndex, streak: gam.streakInfo.streak }}
         openSignal={picoSignal}
         onShowGrade={() => setGradeOpen(true)}
       />
@@ -2159,7 +2163,7 @@ function PicoCalendar({ value, onChange }) {
   );
 }
 
-function PicoMascot({ data, todaySubject, firstName, onLaunchQCM, statsLoaded, hidden, examDate, reviewDue = [], quests = [], gradeInfo = null, picoOutfit = 'classic', onSelectOutfit = null, outfitContext = null, openSignal = 0, onShowGrade = null }) {
+function PicoMascot({ data, todaySubject, firstName, onLaunchQCM, statsLoaded, hidden, examDate, reviewDue = [], quests = [], gradeInfo = null, openSignal = 0, onShowGrade = null }) {
   const [open, setOpen] = useState(false);
   const [seenToday, setSeenToday] = useState(true);
   const [reaction, setReaction] = useState(null);
@@ -2171,11 +2175,8 @@ function PicoMascot({ data, todaySubject, firstName, onLaunchQCM, statsLoaded, h
   const [celebration, setCelebration] = useState(null); // badge fraîchement débloqué
   const [gradeUp, setGradeUp] = useState(null); // nouveau grade fraîchement atteint
   const [xpIntro, setXpIntro] = useState(false); // explication des XP au premier gain
-  const [wardrobeOpen, setWardrobeOpen] = useState(false); // garde-robe de Pico
-  const [outfitLocal, setOutfitLocal] = useState(null); // tenue choisie (optimiste)
   const autoOpened = useRef(false);
 
-  const currentOutfit = outfitLocal || picoOutfit || 'classic';
 
   // Ouverture commandée de l'extérieur (ex. étape onboarding « Répondre à Pico »)
   useEffect(() => {
@@ -2208,16 +2209,6 @@ function PicoMascot({ data, todaySubject, firstName, onLaunchQCM, statsLoaded, h
     setOpen(true);
     localStorage.setItem('pico_xp_intro_seen', '1');
   }, [statsLoaded, gradeInfo, data.hasAnySessions, reaction, celebration, gradeUp]);
-
-  // ---- Choix de tenue (persisté dans les métadonnées du compte) ----
-  const saveOutfit = async (id) => {
-    setOutfitLocal(id);
-    setWardrobeOpen(false);
-    if (supabase) {
-      const { error } = await supabase.auth.updateUser({ data: { pico_outfit: id } });
-      if (error) console.error('[Pico] Erreur tenue :', error.message);
-    }
-  };
 
   // ---- Badges : détection des nouveaux succès ----
   const earnedBadges = useMemo(() => PICO_BADGES.filter(b => b.test(data)), [data]);
@@ -2352,43 +2343,16 @@ function PicoMascot({ data, todaySubject, firstName, onLaunchQCM, statsLoaded, h
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ fontSize: 10.5, letterSpacing: 1, fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase' }}>
-              {wardrobeOpen ? 'Pico · Garde-robe' : gradeUp ? 'Pico · Nouveau grade !' : celebration ? 'Pico · Nouveau badge !' : xpIntro ? 'Pico · Tes premiers XP !' : reaction ? 'Pico · Débrief' : (askExamDate || dateSaved) ? 'Pico · Tes partiels' : 'Pico · Conseil du jour'}
+              {gradeUp ? 'Pico · Nouveau grade !' : celebration ? 'Pico · Nouveau badge !' : xpIntro ? 'Pico · Tes premiers XP !' : reaction ? 'Pico · Débrief' : (askExamDate || dateSaved) ? 'Pico · Tes partiels' : 'Pico · Conseil du jour'}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <button onClick={() => setWardrobeOpen(o => !o)} aria-label="Garde-robe de Pico" title="Changer la tenue de Pico" style={{ background: wardrobeOpen ? '#ece9ff' : 'none', border: 'none', cursor: 'pointer', padding: '1px 4px', borderRadius: 6, fontSize: 12, lineHeight: 1 }}>
-                👕
-              </button>
               <button onClick={close} aria-label="Fermer" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8ea8', padding: 2, display: 'flex' }}>
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
               </button>
             </div>
           </div>
 
-          {wardrobeOpen ? (
-            /* Garde-robe : choisir la tenue de Pico */
-            <div>
-              <p style={{ fontSize: 12, color: '#5f6280', margin: '0 0 10px' }}>Les tenues se débloquent avec tes grades et ton streak.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                {PICO_OUTFITS.map(o => {
-                  const unlocked = o.unlock(outfitContext || { gradeIndex: 0, streak: 0 });
-                  const selected = currentOutfit === o.id;
-                  return (
-                    <button
-                      key={o.id}
-                      onClick={() => unlocked && saveOutfit(o.id)}
-                      disabled={!unlocked}
-                      title={unlocked ? o.name : `${o.name} — ${o.desc}`}
-                      style={{ background: selected ? '#ece9ff' : '#fafafe', border: selected ? '2px solid #4f46e5' : '1px solid #eef0f7', borderRadius: 12, padding: '8px 4px 6px', cursor: unlocked ? 'pointer' : 'default', textAlign: 'center', opacity: unlocked ? 1 : 0.45, filter: unlocked ? 'none' : 'grayscale(1)' }}
-                    >
-                      <PicoOwlSvg size={34} outfit={o.id} />
-                      <div style={{ fontSize: 9.5, fontWeight: 600, color: '#2a2c44', marginTop: 3 }}>{o.name}</div>
-                      <div style={{ fontSize: 8.5, color: '#8a8ea8' }}>{unlocked ? (selected ? 'Portée' : '') : `🔒 ${o.desc}`}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : gradeUp ? (
+          {gradeUp ? (
             /* Célébration : nouveau grade atteint */
             <div style={{ textAlign: 'center' }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', margin: '4px auto 8px', display: 'grid', placeItems: 'center', fontSize: 30, background: 'linear-gradient(135deg, #f4f1fe, #e4ddfb)', border: '2px solid #7c3aed', animation: 'picoBounce 1s ease-in-out 2' }}>
@@ -2398,9 +2362,6 @@ function PicoMascot({ data, todaySubject, firstName, onLaunchQCM, statsLoaded, h
               <p style={{ fontSize: 12.5, color: '#2a2c44', margin: '0 0 10px', lineHeight: 1.5 }}>
                 Félicitations{firstName ? ` ${firstName}` : ''} ! 🎉 Ta régularité paie — tu montes en grade.
                 {gradeInfo?.next ? ` Prochain palier : ${gradeInfo.next.name} à ${gradeInfo.next.min} XP.` : ' Tu es au sommet !'}
-              </p>
-              <p style={{ fontSize: 11.5, color: '#8a8ea8', margin: 0 }}>
-                👕 De nouvelles tenues t'attendent peut-être dans ma garde-robe !
               </p>
             </div>
           ) : celebration ? (
@@ -2519,7 +2480,7 @@ function PicoMascot({ data, todaySubject, firstName, onLaunchQCM, statsLoaded, h
           className="bottom-[76px] md:bottom-6"
           style={{ position: 'fixed', right: 20, zIndex: 90, width: 52, height: 52, borderRadius: '50%', border: '2px solid #fff', background: '#ece9ff', cursor: 'pointer', padding: 0, boxShadow: '0 6px 20px rgba(79,70,229,0.3)', display: 'grid', placeItems: 'center', animation: open ? 'none' : (!seenToday ? 'picoBounce 2s ease-in-out infinite' : 'picoFloat 3.2s ease-in-out infinite') }}
         >
-          <PicoOwlSvg size={48} outfit={currentOutfit} />
+          <PicoOwlSvg size={48} />
           {!seenToday && !open && (
             <span style={{ position: 'absolute', top: 0, right: 0, width: 12, height: 12, borderRadius: '50%', background: '#e45770', border: '2px solid #fff' }} />
           )}
@@ -3345,9 +3306,9 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
 
           {/* ── Logo — retour à l'accueil du site ── */}
           <Link href="/" title="Retour à l'accueil" style={{ display: 'block', textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{ width: 46, height: 46, background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', borderRadius: 14, display: 'grid', placeItems: 'center', boxShadow: '0 4px 12px rgba(79,70,229,0.28)' }}>
-              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="1.75">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
+            <div style={{ width: 40, height: 40, background: '#4f46e5', borderRadius: 12, display: 'grid', placeItems: 'center' }}>
+              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
               </svg>
             </div>
           </Link>
@@ -4084,13 +4045,6 @@ function AccountSection({ user, tier, isPremiumPlus, accessToken, gam = null, da
   const handleLogout = async () => { try { await logOut(); router.push('/'); } catch (e) { console.error(e); } };
 
   // Tenue de Pico
-  const [outfit, setOutfit] = useState(user?.user_metadata?.pico_outfit || 'classic');
-  const outfitCtx = { gradeIndex: gam ? Math.max(0, GRADES.findIndex(g => g.name === gam.grade.name)) : 0, streak: gam?.streakInfo?.streak || 0 };
-  const saveOutfit = async (id) => {
-    setOutfit(id);
-    if (supabase) { try { await supabase.auth.updateUser({ data: { pico_outfit: id } }); } catch (e) { console.warn('pico_outfit', e); } }
-  };
-
   // Suppression de compte
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
@@ -4235,8 +4189,8 @@ function AccountSection({ user, tier, isPremiumPlus, accessToken, gam = null, da
         )}
       </div>
 
-      {/* Rangée 1 : abonnement + tenue de Pico (hauteurs égales) */}
-      <div className="grid lg:grid-cols-2 gap-5 items-stretch">
+      {/* Abonnement */}
+      <div className="grid gap-5">
       {/* Abonnement */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -4297,34 +4251,6 @@ function AccountSection({ user, tier, isPremiumPlus, accessToken, gam = null, da
             {portalError && <p style={{ fontSize: 12, color: '#dc2626', textAlign: 'center' }}>{portalError}</p>}
           </div>
         )}
-      </div>
-      {/* Préférences : tenue de Pico */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-violet-500"></span>
-          Tenue de Pico
-        </h3>
-        <p className="text-sm text-gray-400 mb-4">Personnalise ta mascotte. Les tenues se débloquent avec tes grades et ta série.</p>
-        <div className="grid grid-cols-3 gap-2.5">
-          {PICO_OUTFITS.map(o => {
-            const unlocked = o.unlock(outfitCtx);
-            const selected = outfit === o.id;
-            return (
-              <button
-                key={o.id}
-                onClick={() => unlocked && saveOutfit(o.id)}
-                disabled={!unlocked}
-                title={unlocked ? o.name : `${o.name} — ${o.desc}`}
-                className="rounded-xl px-1 py-2.5 text-center transition-all"
-                style={{ background: selected ? '#ece9ff' : '#fafafe', border: selected ? '2px solid #4f46e5' : '1px solid #eef0f7', cursor: unlocked ? 'pointer' : 'default', opacity: unlocked ? 1 : 0.45, filter: unlocked ? 'none' : 'grayscale(1)' }}
-              >
-                <PicoOwlSvg size={38} outfit={o.id} />
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#2a2c44', marginTop: 4 }}>{o.name}</div>
-                <div style={{ fontSize: 9, color: selected ? '#4f46e5' : '#8a8ea8', fontWeight: selected ? 700 : 400 }}>{unlocked ? (selected ? 'Portée' : 'Dispo') : `🔒 ${o.desc}`}</div>
-              </button>
-            );
-          })}
-        </div>
       </div>
       </div>
 
