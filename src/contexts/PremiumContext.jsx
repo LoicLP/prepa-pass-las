@@ -53,6 +53,8 @@ export function PremiumProvider({ children }) {
   const isEssentiel = isPaid || trialActive;
   const isPremiumPlus = isPaid || trialActive;
   const isPremium = isPremiumPlus;
+  // Jours d'essai restants, arrondis vers le haut (un essai qui finit dans 3 h affiche « 1j »).
+  const trialDaysLeft = trialActive ? Math.max(1, Math.ceil((trialEndsAt - new Date()) / 86400000)) : 0;
 
   const setSubscription = async (newTier) => {
     if (!TIERS.includes(newTier)) return;
@@ -70,7 +72,7 @@ export function PremiumProvider({ children }) {
   };
 
   return (
-    <PremiumContext.Provider value={{ tier, isEssentiel, isPremiumPlus, isPremium, trialActive, trialEndsAt, setSubscription, togglePremium, isLoaded }}>
+    <PremiumContext.Provider value={{ tier, isPaid, isEssentiel, isPremiumPlus, isPremium, trialActive, trialEndsAt, trialDaysLeft, setSubscription, togglePremium, isLoaded }}>
       {children}
     </PremiumContext.Provider>
   );

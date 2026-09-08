@@ -203,7 +203,9 @@ export default function DashboardPage() {
     title: 'À consolider',
   });
 
-  const { isPremiumPlus, tier, trialActive, trialEndsAt } = usePremium();
+  const { isPremiumPlus, isPaid, tier, trialActive, trialEndsAt, trialDaysLeft } = usePremium();
+  // Statut de l'essai affiché en en-tête tant que le compte ne paie pas (pattern CRFPA)
+  const trialLabel = trialDaysLeft > 0 ? `Essai : ${trialDaysLeft}j restant${trialDaysLeft > 1 ? 's' : ''}` : 'Essai expiré';
 
   // Bandeau « essai terminé » : visible pendant 5 jours après l'expiration, refermable.
   // Initialisé masqué puis révélé après lecture du localStorage (évite le flash si déjà fermé).
@@ -822,18 +824,22 @@ export default function DashboardPage() {
               )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {data.hasAnySessions && (
+              {/* Grade + progression XP (cliquable → popover explicatif). La série de jours
+                  n'est plus affichée ici : elle reste visible dans le menu mobile et la Progression. */}
+              {data.hasAnySessions && <GradePill gam={gam} open={gradeOpen} setOpen={setGradeOpen} />}
+              {!isPaid && (
                 <>
-                  {/* Grade + progression XP (cliquable → popover explicatif) */}
-                  <GradePill gam={gam} open={gradeOpen} setOpen={setGradeOpen} />
-                  {/* Streak + jokers */}
-                  <div title={`${gam.streakInfo.streak} jour${gam.streakInfo.streak > 1 ? 's' : ''} d'affilée · ${gam.streakInfo.jokersLeft} joker${gam.streakInfo.jokersLeft > 1 ? 's' : ''} restant${gam.streakInfo.jokersLeft > 1 ? 's' : ''} ce mois-ci (un joker protège ta série un jour manqué)`}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #eef0f7', borderRadius: 20, padding: '6px 12px' }}>
-                    <span style={{ fontSize: 13 }}>🔥</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: '#0f1020' }}>{gam.streakInfo.streak}</span>
-                    <span style={{ fontSize: 10.5, color: '#8a8ea8' }}>j</span>
-                    <span style={{ fontSize: 10.5, color: '#8a8ea8', marginLeft: 2 }}>{'🧊'.repeat(gam.streakInfo.jokersLeft)}</span>
-                  </div>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: trialDaysLeft > 0 ? '#eef2ff' : '#fff1f2', border: `1px solid ${trialDaysLeft > 0 ? '#c7d2fe' : '#fecdd3'}`, borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 800, color: trialDaysLeft > 0 ? '#4f46e5' : '#e11d48', whiteSpace: 'nowrap' }}>
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    {trialLabel}
+                  </span>
+                  <Link
+                    href="/tarifs"
+                    style={{ display: 'inline-flex', alignItems: 'center', background: '#0f1020', color: '#fff', borderRadius: 14, padding: '10px 18px', fontSize: 13.5, fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap' }}
+                    className="hover:opacity-90 transition-opacity"
+                  >
+                    Devenir premium
+                  </Link>
                 </>
               )}
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
@@ -852,10 +858,14 @@ export default function DashboardPage() {
                   Bonjour {user.displayName ? user.displayName.split(' ')[0] : ''} 👋
                 </h1>
               )}
+              {!isPaid && (
+                <Link href="/tarifs" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: trialDaysLeft > 0 ? '#eef2ff' : '#fff1f2', border: `1px solid ${trialDaysLeft > 0 ? '#c7d2fe' : '#fecdd3'}`, borderRadius: 999, padding: '4px 9px', fontSize: 11, fontWeight: 800, color: trialDaysLeft > 0 ? '#4f46e5' : '#e11d48', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  ⏱ {trialDaysLeft > 0 ? `Essai : ${trialDaysLeft}j` : 'Essai expiré'}
+                </Link>
+              )}
               {data.hasAnySessions && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   <GradePill gam={gam} open={gradeOpen} setOpen={setGradeOpen} compact />
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: '#fff', border: '1px solid #eef0f7', borderRadius: 16, padding: '4px 9px', fontSize: 11.5, fontWeight: 700, color: '#0f1020' }}>🔥 {gam.streakInfo.streak}</span>
                 </div>
               )}
             </div>
@@ -928,6 +938,8 @@ export default function DashboardPage() {
               {onboardVisible && (
                 <OnboardingChecklist steps={onboardSteps} onDismiss={dismissOnboard} />
               )}
+              {/* Parcours vers le concours */}
+              <ConcoursPath examDate={user.user_metadata?.exam_date || null} onSetDate={() => setPicoSignal(k => k + 1)} />
               <ActionHub
                 todaySubject={todaySubject}
                 reviewDue={reviewDue}
@@ -939,8 +951,6 @@ export default function DashboardPage() {
                 quests={gam.quests}
                 showQuests={data.hasAnySessions}
               />
-              {/* Parcours vers le concours */}
-              <ConcoursPath examDate={user.user_metadata?.exam_date || null} onSetDate={() => setPicoSignal(k => k + 1)} />
               {/* Contact bas de page — lien discret, masqué sur mobile */}
               <Link href="/contact" style={{ flexShrink: 0, marginTop: 4, textDecoration: 'none' }} className="hidden md:flex items-center justify-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M8 10.5h8M8 14h5m-9 5.5 3.5-3H18a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v13z" /></svg>
