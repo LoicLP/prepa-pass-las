@@ -17,7 +17,6 @@ import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
 import { computeXP, gradeForXP, computeStreakWithJokers, questStatus, GRADES, PICO_OUTFITS } from '@/lib/gamification';
-import { PROMO, HEADLINE, isPromoActive, promoDaysLeft } from '@/lib/promo';
 
 /* ========== HELPERS ========== */
 function getSubjectBadgeColors(subjectId) {
@@ -212,11 +211,6 @@ export default function DashboardPage() {
   useEffect(() => {
     setTrialEndDismissed(localStorage.getItem('ppl-trial-ended-dismissed') === '1');
   }, []);
-  // Offre de rentrée (affichée aux comptes gratuits)
-  const [promoInfo] = useState(() => isPromoActive()
-    ? { days: promoDaysLeft(), deadline: PROMO.endsAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) }
-    : null);
-
   const trialEndedRecently = tier === 'gratuit' && trialEndsAt && !trialActive
     && Date.now() > trialEndsAt.getTime()
     && Date.now() < trialEndsAt.getTime() + 5 * 24 * 3600 * 1000;
@@ -809,14 +803,7 @@ export default function DashboardPage() {
           setActiveSection={(s) => { if (activeQCM) closeQCM(); if (activeExamen) closeExamen(); setActiveSection(s); }}
           isPremiumPlus={isPremiumPlus}
           tier={tier}
-          onLaunchQCM={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })}
-          onLaunchExamen={() => openExamen()}
           onOpenFiches={(subjectId) => { if (activeQCM) closeQCM(); if (activeExamen) closeExamen(); setActiveFicheSubject(subjectId || null); setActiveSection('fiches'); }}
-          onLaunchFlash={todaySubject ? () => openQCM({ type: 'custom', subject: todaySubject.id, subjectName: todaySubject.name, title: todaySubject.name, count: 8, flash: true }) : null}
-          onLaunchReview={launchReview}
-          reviewCount={reviewDue.length}
-          gam={data.hasAnySessions ? gam : null}
-          onShowGrade={() => { setActiveSection('overview'); setGradeOpen(true); }}
         />
 
         {/* ===== MAIN CONTENT ===== */}
@@ -919,26 +906,6 @@ export default function DashboardPage() {
                   >
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                   </button>
-                </div>
-              )}
-              {/* Offre de rentrée — comptes gratuits uniquement (masqué pendant l'essai,
-                  qui a déjà son propre bandeau) */}
-              {promoInfo && tier === 'gratuit' && !trialActive && (
-                <div style={{ background: 'linear-gradient(135deg, #1e1b4b, #4f46e5 55%, #7c3aed)', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  <span style={{ background: '#fcd34d', color: '#1e1b4b', borderRadius: 999, padding: '4px 11px', fontSize: 12, fontWeight: 900, flexShrink: 0 }}>
-                    🎓 -50 % À VIE
-                  </span>
-                  <div style={{ flex: 1, minWidth: 220 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#fff' }}>
-                      Offre de rentrée — Premium dès {HEADLINE.perMonth} €/mois en annuel
-                    </div>
-                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.78)' }}>
-                      {HEADLINE.yearTotal} €/an au lieu de {HEADLINE.yearFull} €, conservé tant que tu restes abonné · jusqu&apos;au {promoInfo.deadline} (J-{promoInfo.days})
-                    </div>
-                  </div>
-                  <Link href="/tarifs" style={{ flexShrink: 0, background: '#fff', color: '#4f46e5', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, textDecoration: 'none' }} className="hover:bg-indigo-50 transition-colors">
-                    J&apos;en profite →
-                  </Link>
                 </div>
               )}
               {resumeState && (() => {
@@ -3313,18 +3280,14 @@ function FicheDetailModal({ fiche, fiches = [], isRead = false, onNavigate = nul
 /* ============================================================
    DASHBOARD SIDE NAV
    ============================================================ */
-const UE_SIDEBAR = [
-  { code: 'UE1', name: 'Chimie / Biochimie', id: 'chimie' },
-  { code: 'UE2', name: 'Biologie cellulaire', id: 'biocell' },
-  { code: 'UE3', name: 'Biophysique', id: 'biophysique' },
-  { code: 'UE4', name: 'Biostatistiques', id: 'biostats' },
-  { code: 'UE5', name: 'Anatomie', id: 'anatomie' },
-  { code: 'UE6', name: 'SSH / Éthique', id: 'ssh' },
-];
-
-function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier, onLaunchQCM, onLaunchExamen, onOpenFiches, onLaunchFlash, onLaunchReview, reviewCount = 0, gam = null, onShowGrade = null }) {
-  const [coursesOpen, setCoursesOpen] = useState(false);
-  const [trainingOpen, setTrainingOpen] = useState(false);
+/* Rail latéral : un seul niveau, icône + libellé court, accent indigo unique.
+ *
+ * Les sous-menus dépliants (les 6 UE, et les lancements QCM / examen blanc /
+ * session éclair / à consolider) ont été retirés : ils dupliquaient le bento
+ * « Que veux-tu faire ? » de l'accueil, la sélection de matière de la section
+ * Fiches et le menu mobile, au prix d'un niveau de navigation supplémentaire.
+ */
+function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier, onOpenFiches }) {
   const { user, logOut } = useAuth();
   const router = useRouter();
 
@@ -3334,232 +3297,125 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
 
   const navItems = [
     {
-      id: 'overview', label: "Vue d'ensemble", group: 'reviser', accent: '#4f46e5', accentBg: '#f2f0fe',
-      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg>,
+      id: 'overview', label: 'Accueil',
+      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" />,
     },
     {
-      id: 'courses', label: 'Fiches & Cours', expandable: true, badge: '6 UE', group: 'reviser', accent: '#7c3aed', accentBg: '#f3edff',
-      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2V5zM19 18v3H6" /></svg>,
+      id: 'fiches', label: 'Fiches',
+      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />,
     },
     {
-      id: 'training', label: 'Entraînement', expandableTraining: true, group: 'reviser', accent: '#e8a948', accentBg: '#fdf4e2',
-      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>,
+      id: 'progression', label: 'Progression', locked: !isPremiumPlus,
+      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />,
     },
     {
-      id: 'historique', label: 'Historique', group: 'progresser', accent: '#3eb489', accentBg: '#e5f6ee',
-      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg>,
+      id: 'objectifs', label: 'Objectifs', locked: !isPremiumPlus,
+      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />,
     },
     {
-      id: 'progression', label: 'Progression', locked: !isPremiumPlus, group: 'progresser', accent: '#4f8ff7', accentBg: '#e4edff',
-      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>,
+      id: 'classement', label: 'Classement', locked: !isPremiumPlus,
+      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172" />,
     },
     {
-      id: 'objectifs', label: 'Objectifs', locked: !isPremiumPlus, group: 'progresser', accent: '#7c3aed', accentBg: '#f3edff',
-      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" /></svg>,
-    },
-    {
-      id: 'classement', label: 'Classement', locked: !isPremiumPlus, group: 'progresser', accent: '#e8a948', accentBg: '#fdf4e2',
-      icon: <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172" /></svg>,
+      id: 'historique', label: 'Historique',
+      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />,
     },
   ];
 
+  const initial = (user?.displayName?.[0] || user?.email?.[0] || '?').toUpperCase();
+  const rule = <span style={{ width: 30, height: 1, background: '#eef0f7', flexShrink: 0 }} />;
+
   return (
-    <nav
-      className="hidden md:flex flex-col shrink-0"
-      style={{ width: 220, background: '#fff', borderRight: '1px solid #eef0f7', padding: '0 16px 24px', minHeight: '100vh', position: 'sticky', top: 0, alignSelf: 'flex-start', height: '100vh', overflowY: 'auto' }}
+    <aside
+      className="hidden md:block"
+      style={{ flexShrink: 0, padding: 12, height: '100vh', boxSizing: 'border-box', position: 'sticky', top: 0 }}
     >
-      {/* ── Logo ── */}
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 10px 18px', textDecoration: 'none', borderBottom: '1px solid #eef0f7', marginBottom: 16 }}>
-        <div style={{ width: 34, height: 34, background: '#4f46e5', borderRadius: 10, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
-          </svg>
-        </div>
-        <div>
-          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0f1020', lineHeight: 1.2 }}>Prépa <span style={{ color: '#4f46e5' }}>PASS/LAS</span></div>
-          <div style={{ fontSize: 9.5, letterSpacing: 0.8, color: '#8a8ea8', fontWeight: 600, textTransform: 'uppercase', marginTop: 1 }}>Tableau de bord</div>
-        </div>
-      </Link>
+      <div style={{ width: 96, height: '100%', background: '#fff', border: '1px solid #eef0f7', borderRadius: 26, boxShadow: '0 6px 24px rgba(15,16,32,0.05)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', padding: '18px 10px 16px' }}>
 
-      {navItems.map((item, idx) => {
-        const isCourses = item.id === 'courses';
-        const isTraining = item.id === 'training';
-        const isExpandable = isCourses || isTraining;
-        const isActive = isCourses ? activeSection === 'fiches' : (isTraining ? false : activeSection === item.id);
-        const isOpen = isCourses ? coursesOpen : (isTraining ? trainingOpen : false);
-        const showGroupLabel = idx === 0 || navItems[idx - 1].group !== item.group;
-        const iconColor = item.locked ? '#c1c3d4' : item.accent;
+          {/* ── Logo — retour à l'accueil du site ── */}
+          <Link href="/" title="Retour à l'accueil" style={{ display: 'block', textDecoration: 'none', flexShrink: 0 }}>
+            <div style={{ width: 46, height: 46, background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', borderRadius: 14, display: 'grid', placeItems: 'center', boxShadow: '0 4px 12px rgba(79,70,229,0.28)' }}>
+              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="1.75">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
+              </svg>
+            </div>
+          </Link>
+          <span style={{ width: 30, height: 1, background: '#eef0f7', margin: '16px 0 14px', flexShrink: 0 }} />
 
-        return (
-          <Fragment key={item.id}>
-            {showGroupLabel && (
-              <div style={{ fontSize: 9.5, letterSpacing: 1.4, fontWeight: 700, color: '#b0b3c6', textTransform: 'uppercase', padding: '0 10px 6px', marginTop: idx === 0 ? 0 : 14 }}>
-                {item.group === 'reviser' ? 'Réviser' : 'Progresser'}
-              </div>
-            )}
-            <button
-              onClick={() => {
-                if (isCourses) { setCoursesOpen(o => !o); onOpenFiches(null); }
-                else if (isTraining) { setTrainingOpen(o => !o); }
-                else { setActiveSection(item.id); }
-              }}
-              style={{
-                position: 'relative',
-                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                padding: '9px 12px', borderRadius: 10, marginBottom: 2,
-                background: isActive ? item.accentBg : 'transparent',
-                color: isActive ? item.accent : '#2a2c44',
-                fontSize: 14, fontWeight: isActive ? 700 : 500,
-                border: 'none', cursor: 'pointer',
-                textAlign: 'left',
-              }}
-              className={isActive ? '' : 'hover:bg-gray-50 transition-colors'}
-            >
-              {/* Barre d'accent à gauche quand actif */}
-              {isActive && <span style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: '0 3px 3px 0', background: item.accent }} />}
-              <span style={{ display: 'flex', color: iconColor, opacity: item.locked ? 0.7 : 1 }}>{item.icon}</span>
-              <span className="flex-1">{item.label}</span>
-              {item.badge && (
-                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 5, background: item.accentBg, color: item.accent }}>
-                  {item.badge}
-                </span>
-              )}
-              {isExpandable && (
-                <svg className="w-3 h-3 shrink-0 transition-transform" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', color: isActive ? item.accent : '#c1c3d4' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
-                </svg>
-              )}
-              {item.locked && (
-                <svg className="w-3.5 h-3.5 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-                </svg>
-              )}
-            </button>
-
-            {isCourses && coursesOpen && (
-              <div style={{ marginLeft: 24, borderLeft: '1px solid #eef0f7', paddingLeft: 4, marginBottom: 6 }}>
-                {UE_SIDEBAR.map(ue => (
-                  <button key={ue.code}
-                    onClick={() => onOpenFiches(ue.id)}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, fontSize: 12.5, color: '#2a2c44', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <span style={{ fontFamily: 'monospace', fontSize: 10.5, fontWeight: 700, color: '#4f46e5', minWidth: 24 }}>{ue.code}</span>
-                    <span>{ue.name}</span>
-                  </button>
-                ))}
+          {/* ── Navigation ── */}
+          <div style={{ flex: 1, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {navItems.map((item) => {
+              const isActive = activeSection === item.id;
+              return (
                 <button
-                  onClick={() => onOpenFiches(null)}
-                  style={{ width: '100%', display: 'block', padding: '6px 10px', fontSize: 12, fontWeight: 600, color: '#4f46e5', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                  key={item.id}
+                  onClick={() => { if (item.id === 'fiches') onOpenFiches(null); else setActiveSection(item.id); }}
+                  title={item.locked ? `${item.label} — Premium requis` : item.label}
+                  style={{
+                    position: 'relative', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                    padding: '11px 4px 10px', borderRadius: 14, border: 'none',
+                    background: isActive ? '#f2f0fe' : 'transparent',
+                    color: isActive ? '#4f46e5' : '#2a2c44',
+                    cursor: 'pointer',
+                  }}
+                  className={isActive ? '' : 'hover:bg-gray-50 transition-colors'}
                 >
-                  Toutes les fiches →
-                </button>
-              </div>
-            )}
-
-            {isTraining && trainingOpen && (
-              <div style={{ marginLeft: 24, borderLeft: '1px solid #eef0f7', paddingLeft: 4, marginBottom: 6 }}>
-                <button
-                  onClick={onLaunchQCM}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, fontSize: 12.5, color: '#2a2c44', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5 shrink-0" style={{ color: '#4f46e5' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                  <span>Entraînement QCM</span>
-                </button>
-                <button
-                  onClick={onLaunchExamen}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, fontSize: 12.5, color: '#2a2c44', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5 shrink-0" style={{ color: '#e45770' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg>
-                  <span>Examen blanc</span>
-                </button>
-                {onLaunchFlash && (
-                  <button
-                    onClick={onLaunchFlash}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, fontSize: 12.5, color: '#2a2c44', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <svg className="w-3.5 h-3.5 shrink-0" style={{ color: '#e8a948' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>
-                    <span>Session éclair</span>
-                  </button>
-                )}
-                <button
-                  onClick={reviewCount > 0 ? onLaunchReview : undefined}
-                  disabled={reviewCount === 0}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, fontSize: 12.5, color: '#2a2c44', background: 'transparent', border: 'none', cursor: reviewCount > 0 ? 'pointer' : 'default', textAlign: 'left', opacity: reviewCount > 0 ? 1 : 0.5 }}
-                  className={reviewCount > 0 ? 'hover:bg-gray-50 transition-colors' : ''}
-                >
-                  <svg className="w-3.5 h-3.5 shrink-0" style={{ color: '#4f46e5' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
-                  <span className="flex-1">À consolider</span>
-                  {reviewCount > 0 && (
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 20, background: '#ece9ff', color: '#4f46e5' }}>{reviewCount}</span>
+                  {isActive && <span style={{ position: 'absolute', left: -10, top: 12, bottom: 12, width: 4, borderRadius: '0 4px 4px 0', background: '#4f46e5' }} />}
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">{item.icon}</svg>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: -0.1, lineHeight: 1.15, textAlign: 'center' }}>{item.label}</span>
+                  {item.locked && (
+                    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="#c1c3d4" strokeWidth="2.2" style={{ position: 'absolute', top: 8, right: 9 }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
                   )}
                 </button>
-              </div>
-            )}
-          </Fragment>
-        );
-      })}
+              );
+            })}
 
-      {/* Espace + bas de sidebar */}
-      <div style={{ marginTop: 'auto', paddingTop: 16 }}>
-        {/* Premium upsell card */}
-        {!isPremiumPlus && (
-          <div style={{ marginBottom: 12 }}>
-            <Link href="/tarifs" style={{ display: 'block', padding: 14, borderRadius: 12, background: 'linear-gradient(135deg, #4f46e5 0%, #8257f9 100%)', textDecoration: 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.9)" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-                </svg>
-                <span style={{ fontSize: 10.5, letterSpacing: 1.1, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>
-                  {tier === 'gratuit' ? 'PLAN GRATUIT' : 'PLAN PREMIUM'}
+            {/* Passer Premium — tuile visible tant que l'abonnement n'est pas actif */}
+            {!isPremiumPlus && (
+              <Link
+                href="/tarifs"
+                title={tier === 'gratuit' ? 'Passer Premium' : 'Voir les offres'}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '12px 4px 10px', borderRadius: 14, textDecoration: 'none', marginTop: 4 }}
+                className="hover:bg-indigo-50 transition-colors"
+              >
+                <span style={{ width: 40, height: 40, background: 'linear-gradient(135deg, #4f46e5, #8257f9)', borderRadius: 12, display: 'grid', placeItems: 'center', boxShadow: '0 4px 10px rgba(79,70,229,0.3)' }}>
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="1.9">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                  </svg>
                 </span>
-              </div>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#fff', marginBottom: 10, lineHeight: 1.35 }}>
-                Débloque tout : QCM illimités, examens blancs, progression…
-              </div>
-              <div style={{ background: '#fff', color: '#4f46e5', borderRadius: 8, padding: '7px 10px', fontWeight: 700, fontSize: 12, textAlign: 'center' }}>
-                Passer Premium →
-              </div>
-            </Link>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#4f46e5', textAlign: 'center', lineHeight: 1.2 }}>Passer<br />Premium</span>
+              </Link>
+            )}
           </div>
-        )}
 
-        {/* Séparateur + déconnexion */}
-        <div style={{ borderTop: '1px solid #eef0f7', paddingTop: 12 }}>
+          {/* ── Bas : compte + déconnexion ── */}
+          <span style={{ width: 30, height: 1, background: '#eef0f7', margin: '12px 0', flexShrink: 0 }} />
           {user && (
             <button
               onClick={() => setActiveSection('account')}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, padding: '6px 10px', borderRadius: 10, background: activeSection === 'account' ? '#f3f4f6' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-              className="hover:bg-gray-50 transition-colors"
-              title="Mon compte"
+              title={`Mon compte — ${user.displayName || user.email}`}
+              style={{ width: 42, height: 42, borderRadius: '50%', background: activeSection === 'account' ? '#ece9ff' : '#f4f5f9', color: activeSection === 'account' ? '#4f46e5' : '#2a2c44', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer', flexShrink: 0 }}
+              className="hover:bg-indigo-50 transition-colors"
             >
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#ece9ff', color: '#4f46e5', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
-                {(user.displayName?.[0] || user.email?.[0] || '?').toUpperCase()}
-              </div>
-              <span style={{ fontSize: 12.5, fontWeight: 500, color: '#2a2c44', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                {user.displayName || user.email}
-              </span>
-              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#8a8ea8" strokeWidth="2" style={{ flexShrink: 0 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-              </svg>
+              {initial}
             </button>
           )}
           <button
             onClick={handleLogout}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 10, background: 'transparent', border: 'none', color: '#e45770', fontSize: 13.5, fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}
-            className="hover:bg-rose-50 transition-colors"
+            title="Se déconnecter"
+            style={{ marginTop: 10, width: 38, height: 38, borderRadius: 12, background: 'transparent', border: 'none', color: '#2a2c44', display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0 }}
+            className="hover:bg-rose-50 hover:text-[#e45770] transition-colors"
           >
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.9">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
             </svg>
-            Se déconnecter
           </button>
         </div>
       </div>
-    </nav>
+    </aside>
   );
 }
 
