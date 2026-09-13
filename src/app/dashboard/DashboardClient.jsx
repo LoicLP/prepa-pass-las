@@ -2978,26 +2978,26 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
         </div>
       </div>
 
-      {/* Matières : pastilles compactes, UE de la fac d'abord */}
+      {/* Matières : petits rectangles, nom surligné au fluo de l'UE, UE de la fac d'abord */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
         {(() => {
           const totalAll = FICHES_DATA.length; const isSel = currentSubject === 'all';
           return (
-            <button onClick={() => setCurrentSubject('all')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${isSel ? '#4f46e5' : '#e5e7f0'}`, background: isSel ? '#4f46e5' : '#fff', color: isSel ? '#fff' : '#2a2c44' }} className="transition-colors hover:border-indigo-300">
+            <button onClick={() => setCurrentSubject('all')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${isSel ? '#0f1020' : '#e5e7f0'}`, background: isSel ? '#0f1020' : '#fff', color: isSel ? '#fff' : '#2a2c44' }} className="transition-colors hover:border-gray-400">
               Toutes <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.7 }}>{totalAll}</span>
             </button>
           );
         })()}
         {SUBJECT_ORDER.map(id => SUBJECTS.find(s => s.id === id)).filter(Boolean).map(sub => {
-          const accent = FICHES_ACCENT_HEX[sub.color] || FICHES_ACCENT_HEX.primary;
+          const fluo = FLUO_HEX[sub.color] || FLUO_HEX.primary;
           const st = subjectStats[sub.id] || { total: 0, read: 0 };
           const isSel = currentSubject === sub.id;
           const done = st.total > 0 && st.read === st.total;
+          const stroke = `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}${isSel ? 'e6' : '99'} 2.4%, ${fluo}${isSel ? 'bf' : '73'} 5.8%, ${fluo}${isSel ? '66' : '26'} 93%, ${fluo}${isSel ? 'cc' : '8c'} 96%, ${fluo}00 98%)`;
           return (
-            <button key={sub.id} onClick={() => setCurrentSubject(sub.id)} title={`${st.read}/${st.total} lues`} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '6px 12px 6px 10px', borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${isSel ? accent : '#e5e7f0'}`, background: isSel ? accent : '#fff', color: isSel ? '#fff' : '#2a2c44' }} className="transition-colors hover:border-indigo-300">
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.85)' : accent, flexShrink: 0 }} />
-              {sub.name}
-              <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.7 }}>{done ? '✓' : st.read > 0 ? `${st.read}/${st.total}` : st.total}</span>
+            <button key={sub.id} onClick={() => setCurrentSubject(sub.id)} title={`${st.read}/${st.total} lues`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${isSel ? '#c9cbe0' : '#e5e7f0'}`, background: '#fff', color: '#0f1020', boxShadow: isSel ? '0 0 0 2px #eef0f7' : 'none' }} className="transition-colors hover:border-gray-400">
+              <span style={{ background: stroke, backgroundSize: '100% 62%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 70%', padding: '0 4px', margin: '0 -4px', borderRadius: 2 }}>{sub.name}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#8a8ea8' }}>{done ? '✓' : st.read > 0 ? `${st.read}/${st.total}` : st.total}</span>
             </button>
           );
         })}
