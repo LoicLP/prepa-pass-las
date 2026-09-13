@@ -3027,20 +3027,20 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
               {/* onglet de couleur (index) */}
               <span aria-hidden="true" style={{ position: 'absolute', left: -1, top: 14, width: 5, height: 34, borderRadius: '0 4px 4px 0', background: accent }} />
               {/* ruban adhésif */}
-              <span aria-hidden="true" style={{ position: 'absolute', top: -7, left: '50%', width: 62, height: 14, transform: 'translateX(-50%) rotate(-2deg)', background: `linear-gradient(90deg, ${fluo}88, ${fluo}cc)`, opacity: 0.85, borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }} />
+              <span aria-hidden="true" style={{ position: 'absolute', top: -7, left: '50%', width: 62, height: 14, transform: 'translateX(-50%) rotate(-2deg)', background: 'rgba(232,226,208,0.75)', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }} />
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f1020', lineHeight: '22px', margin: 0 }} className="group-hover:text-indigo-800 transition-colors">
-                  <span style={{ background: `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}d9 2.4%, ${fluo}99 5.8%, ${fluo}33 93%, ${fluo}b3 96%, ${fluo}00 98%)`, backgroundSize: '100% 72%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{fiche.title}</span>
+                  <span style={{ background: `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}a6 2.4%, ${fluo}73 5.8%, ${fluo}26 93%, ${fluo}8c 96%, ${fluo}00 98%)`, backgroundSize: '100% 66%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{fiche.title}</span>
                 </h3>
                 {isRead && (
-                  <span title="Lue" style={{ flexShrink: 0, width: 22, height: 22, borderRadius: '50%', background: '#7dffa0', border: '2px solid #fff', boxShadow: '0 1px 3px rgba(0,0,0,0.15)', color: '#14532d', display: 'grid', placeItems: 'center', transform: 'rotate(-8deg)' }}>
+                  <span title="Lue" style={{ flexShrink: 0, width: 22, height: 22, borderRadius: '50%', background: '#dcfce7', border: '1px solid #bbf7d0', color: '#166534', display: 'grid', placeItems: 'center' }}>
                     <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                   </span>
                 )}
               </div>
               <p style={{ fontSize: 12.5, color: '#4b4a40', lineHeight: '22px', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{fiche.summary}</p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2, fontSize: 11.5, lineHeight: '22px' }}>
-                <span style={{ fontWeight: 800, color: accent }}>{isRead ? 'Relire' : 'Lire'} →</span>
+                <span style={{ fontWeight: 700, color: '#4f46e5' }}>{isRead ? 'Relire' : 'Lire'} →</span>
                 <span style={{ color: '#9a978a' }}>{mins} min</span>
               </div>
             </div>
@@ -3062,7 +3062,7 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
                       <span className={`w-6 h-6 rounded-lg ${cols.light} ${cols.border} border flex items-center justify-center shrink-0`}>
                         <svg className={`w-3.5 h-3.5 ${cols.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d={FICHES_SUBJECT_ICONS[sub.id] || ''} /></svg>
                       </span>
-                      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#0f1020', margin: 0 }}><span style={{ background: `linear-gradient(104deg, ${FLUO_HEX[sub?.color] || FLUO_HEX.primary}00 1%, ${FLUO_HEX[sub?.color] || FLUO_HEX.primary}cc 3%, ${FLUO_HEX[sub?.color] || FLUO_HEX.primary}66 96%, ${FLUO_HEX[sub?.color] || FLUO_HEX.primary}00 99%)`, backgroundSize: '100% 60%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 70%', padding: '0 4px', margin: '0 -4px' }}>{sub.name}</span></h3>
+                      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#0f1020', margin: 0 }}>{sub.name}</h3>
                       <span style={{ fontSize: 11.5, color: '#8a8ea8' }}>{items.length} fiche{items.length > 1 ? 's' : ''}</span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 14, paddingTop: 6 }}>
