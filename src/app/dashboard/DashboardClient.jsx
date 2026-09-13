@@ -14,6 +14,7 @@ import ExamenPage from '@/app/examen/ExamenClient';
 import { FICHES_DATA } from '@/data/fiches';
 import { downloadFichePdf } from '@/utils/fichePdf';
 import BristolCard from '@/components/fiches/BristolCard';
+import CoursBristol from '@/components/fiches/CoursBristol';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
@@ -2835,53 +2836,7 @@ function CoursModal({ fiche, onClose }) {
           {/* Cours */}
           {!loading && cours && (
             <>
-              {/* Hero */}
-              <div style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #3730a3 60%, #4338ca 100%)', borderRadius: 18, padding: '28px 28px 24px', marginBottom: 24, color: '#fff' }}>
-                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-4`} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
-                  <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20" style={{ color: '#fbbf24' }}>
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  Premium · {sub?.name || ''}
-                </div>
-                <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 10px', letterSpacing: -0.5, lineHeight: 1.25 }}>{fiche.title}</h1>
-                {cours.introduction && <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.6 }}>{cours.introduction}</p>}
-                <div style={{ display: 'flex', gap: 12, marginTop: 18 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
-                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                    ~{cours.readTime || 15} min
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
-                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
-                    {cours.sections.length} sections
-                  </div>
-                </div>
-              </div>
-
-              {/* Sections */}
-              {cours.sections.map((sec, i) => {
-                const sectionId = `modal-section-${i}`;
-                const isAct = activeSection === sectionId;
-                return (
-                  <div
-                    key={i}
-                    id={sectionId}
-                    data-cours-section
-                    style={{ background: '#fff', borderRadius: 16, border: `1.5px solid ${isAct ? '#c7d2fe' : '#eef0f7'}`, padding: '22px 24px', marginBottom: 14, scrollMarginTop: 80, transition: 'border-color 0.2s' }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                      <span className={`w-9 h-9 rounded-xl ${cols.light} ${cols.border} border flex items-center justify-center text-sm font-black ${cols.icon}`} style={{ flexShrink: 0 }}>{i + 1}</span>
-                      <div>
-                        <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f1020', margin: 0 }}>{sec.title}</h3>
-                        <p style={{ fontSize: 11, color: '#9ca3af', margin: '2px 0 0' }}>Section {i + 1} sur {cours.sections.length}</p>
-                      </div>
-                    </div>
-                    <div
-                      className="prose prose-gray max-w-none text-gray-700 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(sec.content) }}
-                    />
-                  </div>
-                );
-              })}
+              <CoursBristol fiche={fiche} subject={sub} cours={cours} idPrefix="modal-section" />
 
               {/* Footer */}
               <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #eef0f7', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
