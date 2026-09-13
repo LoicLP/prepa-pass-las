@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PROGRAMME_DATA } from '@/data/programme';
+import { FICHES_DATA } from '@/data/fiches';
 import QuestionDuJour from '@/components/home/QuestionDuJour';
 import FaqSection from '@/components/home/FaqSection';
 import RevealObserver from '@/components/home/RevealObserver';
@@ -61,7 +62,11 @@ const UE_TONES = {
   cyan: { bg: 'bg-cyan-500', soft: 'bg-cyan-50 text-cyan-700 border-cyan-100', dot: 'bg-cyan-500' },
   amber: { bg: 'bg-amber-500', soft: 'bg-amber-50 text-amber-700 border-amber-100', dot: 'bg-amber-500' },
   rose: { bg: 'bg-rose-500', soft: 'bg-rose-50 text-rose-700 border-rose-100', dot: 'bg-rose-500' },
+  sky: { bg: 'bg-sky-500', soft: 'bg-sky-50 text-sky-700 border-sky-100', dot: 'bg-sky-500' },
+  teal: { bg: 'bg-teal-500', soft: 'bg-teal-50 text-teal-700 border-teal-100', dot: 'bg-teal-500' },
+  fuchsia: { bg: 'bg-fuchsia-500', soft: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100', dot: 'bg-fuchsia-500' },
 };
+const NEW_UES = new Set(['physiologie', 'medicament', 'histo']);
 const UE_CODES = { chimie: 'UE1', biocell: 'UE2', biophysique: 'UE3', biostats: 'UE4', anatomie: 'UE5', ssh: 'UE6', physiologie: 'UE7', medicament: 'UE8', histo: 'UE9' };
 
 export default function Home() {
@@ -326,13 +331,13 @@ export default function Home() {
           <div data-reveal className="max-w-2xl mx-auto text-center mb-14">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-5">Le programme du tronc commun</h2>
             <p className="text-slate-500 text-lg leading-relaxed">
-              Six unités d&apos;enseignement, {totalHours}{' '}heures de cours, des coefficients qui ne se valent pas. La frise donne le poids de chaque UE dans le concours&nbsp;: c&apos;est là que se joue ton temps de révision.
+              Neuf unités d&apos;enseignement, {totalHours}{' '}heures de cours, des coefficients qui ne se valent pas. La frise donne le poids indicatif de chaque UE&nbsp;: c&apos;est là que se joue ton temps de révision.
             </p>
           </div>
 
           <div data-reveal className="mb-8">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">6</div>
+              <div className="w-8 h-8 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">{byCode.length}</div>
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Tronc commun · S1 et S2</p>
                 <p className="font-bold text-slate-900">Poids de chaque UE dans la note finale</p>
@@ -359,22 +364,32 @@ export default function Home() {
               return (
                 <Link data-reveal data-reveal-delay={(i % 3) + 1} key={ue.id} href={`/programme#ue-${ue.id}`} className="group bg-white rounded-2xl border border-slate-200 p-5 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5 transition-all block">
                   <div className="flex items-center justify-between mb-3">
-                    <span className={`inline-flex items-center gap-2 text-[11px] font-bold px-2.5 py-1 rounded-full border ${t.soft}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${t.dot}`} />{UE_CODES[ue.id]}
+                    <span className="inline-flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-2 text-[11px] font-bold px-2.5 py-1 rounded-full border ${t.soft}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${t.dot}`} />{UE_CODES[ue.id]}
+                      </span>
+                      {NEW_UES.has(ue.id) && <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5">Nouveau</span>}
                     </span>
                     <span className="text-xs text-slate-400 font-mono">{ue.hours}h · coef. {ue.coeff}</span>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-1.5">{ue.name}</h3>
                   <p className="text-sm text-slate-500 leading-relaxed line-clamp-3">{ue.description}</p>
                   <p className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 group-hover:gap-2.5 transition-all">
-                    25 fiches · QCM illimités <ArrowIcon className="w-3.5 h-3.5" />
+                    {FICHES_DATA.filter((f) => f.subject === ue.id).length} fiches · QCM illimités <ArrowIcon className="w-3.5 h-3.5" />
                   </p>
                 </Link>
               );
             })}
           </div>
 
-          <div data-reveal className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-start gap-3">
+          <div data-reveal className="mt-8 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5 flex flex-col sm:flex-row sm:items-center gap-3">
+            <p className="text-sm text-indigo-900 leading-relaxed flex-1">
+              <strong>Le découpage exact dépend de ta fac.</strong>{' '}Lyon a 8 UE, Montpellier 10, Paris Cité sépare l&apos;embryologie et la santé publique : renseigne ta faculté et le site n&apos;affiche que ses UE, avec ses coefficients.
+            </p>
+            <Link href="/facs" className="shrink-0 inline-flex items-center gap-1.5 text-sm font-bold text-indigo-700 hover:underline">Voir le programme de ma fac <ArrowIcon className="w-3.5 h-3.5" /></Link>
+          </div>
+
+          <div data-reveal className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-start gap-3">
             <svg className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
             </svg>
