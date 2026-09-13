@@ -18,7 +18,7 @@ import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
 import { track } from '@/lib/track';
 import { getProfile, effectiveHours, momentFor, BAREMES, VOIES, HOURS } from '@/lib/profile';
-import { FACS } from '@/data/facs';
+import { FACS, mccFor } from '@/data/facs';
 import { computeMastery } from '@/lib/mastery';
 import { buildWeeklyPlan, doneThisWeek } from '@/lib/plan';
 import { PROGRAMME_DATA } from '@/data/programme';
@@ -84,6 +84,10 @@ export default function DashboardPage() {
   const router = useRouter();
   const mainRef = useRef(null);
   const [activeSection, setActiveSection] = useState('overview');
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get('section');
+    if (s && ['overview', 'progress', 'goals', 'leaderboard', 'history', 'account'].includes(s)) setActiveSection(s);
+  }, []);
   const [historyFilter, setHistoryFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(10);
   const [chartMode, setChartMode] = useState('epreuves');
@@ -225,8 +229,12 @@ export default function DashboardPage() {
   // Bandeau « essai terminé » : visible pendant 5 jours après l'expiration, refermable.
   // Initialisé masqué puis révélé après lecture du localStorage (évite le flash si déjà fermé).
   const [trialEndDismissed, setTrialEndDismissed] = useState(true);
+  // Invitation à renseigner sa faculté (comptes créés avant le profil de révision) : refermable 30 jours.
+  const [facNudgeDismissed, setFacNudgeDismissed] = useState(true);
   useEffect(() => {
     setTrialEndDismissed(localStorage.getItem('ppl-trial-ended-dismissed') === '1');
+    const until = Number(localStorage.getItem('ppl-fac-nudge-until') || 0);
+    setFacNudgeDismissed(until > Date.now());
   }, []);
   const trialEndedRecently = tier === 'gratuit' && trialEndsAt && !trialActive
     && Date.now() > trialEndsAt.getTime()
@@ -965,6 +973,20 @@ export default function DashboardPage() {
               })()}
               {onboardVisible && (
                 <OnboardingChecklist steps={onboardSteps} onDismiss={dismissOnboard} />
+              )}
+              {/* Faculté manquante : on ne peut pas appliquer le barème des MCC */}
+              {!profile.fac && !facNudgeDismissed && (
+                <div style={{ background: 'linear-gradient(to right, #eef2ff, #f5f3ff)', border: '1px solid #c7d2fe', borderRadius: 14, padding: '11px 15px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#4f46e5', display: 'grid', placeItems: 'center', flexShrink: 0, fontSize: 15 }}>🎓</div>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0f1020' }}>Dans quelle fac pr&eacute;pares-tu le concours ?</div>
+                    <div style={{ fontSize: 11.5, color: '#5f6280' }}>On applique le bar&egrave;me de tes MCC &agrave; tes examens blancs et on adapte le style des questions. 30 secondes.</div>
+                  </div>
+                  <button onClick={() => { track('fac_nudge_click'); setActiveSection('account'); }} style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 9, padding: '8px 16px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }} className="hover:bg-indigo-700 transition-colors">Renseigner ma facult&eacute; →</button>
+                  <button onClick={() => { localStorage.setItem('ppl-fac-nudge-until', String(Date.now() + 30 * 86400000)); setFacNudgeDismissed(true); }} aria-label="Plus tard" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8ea8', padding: 3, display: 'flex', flexShrink: 0 }} className="hover:text-gray-600">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
               )}
               {/* Parcours vers le concours */}
               <ConcoursPath examDate={user.user_metadata?.exam_date || null} />
@@ -4162,7 +4184,10 @@ function EmptyState({ title, description, ctaHref, ctaLabel, onCta, userName }) 
 /* Profil de révision : ce qui permet au site de s'adapter (faculté, voie, temps, barème). */
 function ProfileCard({ user }) {
   const initial = getProfile(user);
-  const [form, setForm] = useState({ fac: initial.fac || '', voie: initial.voie || '', mineure: initial.mineure || '', hoursPerWeek: initial.hoursPerWeek || '', bareme: initial.bareme || 'partiel' });
+  const explicitBareme = user?.user_metadata?.profile?.bareme || null; // choisi par l'étudiant (ou pré-rempli) ?
+  const [form, setForm] = useState({ fac: initial.fac || '', voie: initial.voie || '', mineure: initial.mineure || '', hoursPerWeek: initial.hoursPerWeek || '', bareme: explicitBareme || mccFor(initial.fac)?.bareme || 'partiel' });
+  const mcc = mccFor(form.fac);
+  const onFacChange = (fac) => setForm(f => ({ ...f, fac, bareme: mccFor(fac)?.bareme || f.bareme }));
   const [saving, setSaving] = useState(false); const [msg, setMsg] = useState(null);
   const save = async () => {
     setSaving(true); setMsg(null);
@@ -4179,18 +4204,25 @@ function ProfileCard({ user }) {
       <h3 className="font-jakarta text-base font-bold text-gray-900 mb-1">Mon profil de révision</h3>
       <p className="text-sm text-gray-500 mb-5">C&apos;est avec &ccedil;a que le site s&apos;adapte : plan de la semaine, style des questions, note au bar&egrave;me de ta fac.</p>
       <div className="grid sm:grid-cols-2 gap-4">
-        <div><label className={labelCls}>Facult&eacute;</label><select value={form.fac} onChange={e => setForm(f => ({ ...f, fac: e.target.value }))} className={inputCls}><option value="">Choisir…</option>{FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}</select></div>
+        <div><label className={labelCls}>Facult&eacute;</label><select value={form.fac} onChange={e => onFacChange(e.target.value)} className={inputCls}><option value="">Choisir…</option>{FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}</select></div>
         <div><label className={labelCls}>Voie</label><select value={form.voie} onChange={e => setForm(f => ({ ...f, voie: e.target.value }))} className={inputCls}><option value="">Choisir…</option>{VOIES.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}</select></div>
         <div><label className={labelCls}>Mineure (PASS) ou licence (LAS)</label><input value={form.mineure} onChange={e => setForm(f => ({ ...f, mineure: e.target.value }))} className={inputCls} placeholder="Droit, Biologie, Psychologie…" /></div>
         <div><label className={labelCls}>Temps pour la sant&eacute; par semaine</label><select value={form.hoursPerWeek} onChange={e => setForm(f => ({ ...f, hoursPerWeek: e.target.value }))} className={inputCls}><option value="">Par d&eacute;faut</option>{HOURS.map(h => <option key={h.id} value={h.id}>{h.label} — {h.desc}</option>)}</select></div>
         <div className="sm:col-span-2"><label className={labelCls}>Bar&egrave;me de ta facult&eacute;</label>
-          <div className="grid sm:grid-cols-3 gap-2">
+          <div className="grid sm:grid-cols-2 gap-2">
             {BAREMES.map(b => (
               <button key={b.id} type="button" onClick={() => setForm(f => ({ ...f, bareme: b.id }))} className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${form.bareme === b.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
-                <span className="block text-sm font-bold text-gray-900">{b.label}</span><span className="block text-[11px] text-gray-500 leading-snug">{b.desc}</span>
+                <span className="block text-sm font-bold text-gray-900">{b.label}{mcc && mcc.bareme === b.id && <span className="ml-2 inline-block align-middle rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5">Ta fac</span>}</span><span className="block text-[11px] text-gray-500 leading-snug">{b.desc}</span>
               </button>
             ))}
           </div>
+          {mcc ? (
+            <p className="mt-2 text-[11.5px] text-gray-500 leading-snug">
+              {mcc.confidence === 'officiel' ? 'D’après les ' : 'D’après une source non officielle ('}<a href={mcc.source} target="_blank" rel="noreferrer" className="text-indigo-600 font-semibold hover:underline">{mcc.sourceLabel}</a>{mcc.confidence === 'officiel' ? '' : ')'}{' '}: {mcc.note}{' '}Les MCC changent chaque ann&eacute;e&nbsp;: v&eacute;rifie sur ton intranet, tu peux modifier ce choix.
+            </p>
+          ) : form.fac ? (
+            <p className="mt-2 text-[11.5px] text-gray-500 leading-snug">Nous n&apos;avons pas encore les MCC de cette facult&eacute;&nbsp;: choisis le bar&egrave;me indiqu&eacute; sur ton intranet.</p>
+          ) : null}
         </div>
       </div>
       <div className="flex items-center gap-3 mt-5 flex-wrap">

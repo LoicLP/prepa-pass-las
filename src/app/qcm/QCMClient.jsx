@@ -15,7 +15,7 @@ import { usePremium } from '@/contexts/PremiumContext';
 import { supabase } from '@/lib/supabase';
 import { track } from '@/lib/track';
 import { getProfile, styleFor, VOIES, HOURS, CONCOURS_DATES } from '@/lib/profile';
-import { FACS } from '@/data/facs';
+import { FACS, mccFor } from '@/data/facs';
 import { levelOf } from '@/lib/mastery';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
@@ -548,7 +548,8 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
   const saveWelcomeProfile = async (extra = {}) => {
     if (!supabase || !user) return;
     const prev = getProfile(user);
-    const profile = { ...prev, ...(welcomeVoie ? { voie: welcomeVoie } : {}), ...(welcomeFac ? { fac: welcomeFac } : {}), ...(welcomeHours ? { hoursPerWeek: welcomeHours } : {}), ...extra };
+    const facBareme = !user?.user_metadata?.profile?.bareme && mccFor(welcomeFac)?.bareme; // barème des MCC si l'étudiant n'en a pas choisi
+    const profile = { ...prev, ...(welcomeVoie ? { voie: welcomeVoie } : {}), ...(welcomeFac ? { fac: welcomeFac } : {}), ...(facBareme ? { bareme: facBareme } : {}), ...(welcomeHours ? { hoursPerWeek: welcomeHours } : {}), ...extra };
     const data = { profile, ...(welcomeExamDate ? { exam_date: welcomeExamDate } : {}) };
     try { await supabase.auth.updateUser({ data }); } catch {}
   };
@@ -1117,6 +1118,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
                     <option value="">Choisir…</option>
                     {FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}
                   </select>
+                  {mccFor(welcomeFac)?.bareme && <p className="mt-1.5 text-[11px] text-indigo-700 leading-snug">Bar&egrave;me de tes MCC appliqu&eacute; &agrave; tes examens blancs{mccFor(welcomeFac).confidence === 'officiel' ? '' : ' (source non officielle, à vérifier)'}. Modifiable dans Mon compte.</p>}
                 </div>
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Temps pour la santé, par semaine</p>

@@ -1,6 +1,8 @@
-/* Facultés proposées au profil. Identité seulement : les formats d'épreuve et
-   les barèmes varient d'une année à l'autre, on les demande à l'étudiant plutôt
-   que d'affirmer des valeurs invérifiables. */
+/* Facultés proposées au profil, et barème indicatif d'après leurs MCC (modalités de
+   contrôle des connaissances) quand un document a pu être consulté. Le barème reste
+   modifiable par l'étudiant : les MCC changent chaque année et les universités
+   ne publient pas toutes le détail. `confidence` : 'officiel' (document de
+   l'université) ou 'secondaire' (prépa, blog — à confirmer sur l'intranet). */
 export const FACS = [
   { id: 'paris-cite', name: 'Université Paris Cité', city: 'Paris' },
   { id: 'sorbonne', name: 'Sorbonne Université', city: 'Paris' },
@@ -38,3 +40,107 @@ export const FACS = [
   { id: 'autre', name: 'Autre faculté', city: '' },
 ];
 export const facById = (id) => FACS.find((f) => f.id === id) || null;
+
+/* Barème indicatif par faculté. `bareme` renvoie à BAREMES (src/lib/profile.js).
+   `note` est montrée à l'étudiant, `quote` est la règle telle qu'écrite dans le document. */
+export const MCC = {
+  'paris-cite': {
+    bareme: 'differences', year: '2025-2026', confidence: 'officiel',
+    source: 'https://u-paris.fr/sante/wp-content/uploads/sites/19/2025/11/LIVRET-MCCC-PASS-2025-2026-VF.pdf',
+    sourceLabel: 'Livret MCCC PASS 2025-2026, Université Paris Cité',
+    quote: '0 différence : 1 pt · 1 différence : 0,7 pt · 2 différences : 0,1 pt · 3 différences et plus : 0. Il n’y a pas de points négatifs.',
+    note: 'QCM à 5 propositions, notés selon le nombre de différences avec la bonne réponse. Aucun point négatif.',
+  },
+  'paris-saclay': {
+    bareme: 'negatif', year: '2025-2026', confidence: 'secondaire',
+    source: 'https://diploma-sante.fr/prepa-pass/paris-saclay/',
+    sourceLabel: 'Diploma Santé, page PASS Paris-Saclay',
+    quote: 'Les écrits reposent sur une double notation : QCM, souvent à barème négatif + réponses rédigées.',
+    note: 'Le règlement officiel laisse le barème au jury ; les prépas décrivent des QCM à barème négatif, avec des QCS notés 1 ou 0 en statistiques.',
+  },
+  'lyon-est': {
+    bareme: 'degressif', year: '2024-2025', confidence: 'secondaire',
+    source: 'https://tutoratlyonest.univ-lyon1.fr/la-paces/glossaire/',
+    sourceLabel: 'Tutorat Lyon Est (glossaire)',
+    quote: 'La notation 1/0,5/0,2/0 implique une variabilité des points selon le nombre de bonnes réponses.',
+    note: 'Les MCCC officielles ne détaillent pas le barème ; le tutorat décrit une notation dégressive 1 / 0,5 / 0,2 / 0 selon le nombre d’erreurs, sans point négatif, et des QRU notées 1 ou 0.',
+  },
+  'lyon-sud': {
+    bareme: 'degressif', year: '2026-2027', confidence: 'secondaire',
+    source: 'https://tutoratlyonest.univ-lyon1.fr/la-paces/glossaire/',
+    sourceLabel: 'Tutorat Lyon Est (glossaire)',
+    quote: 'La notation 1/0,5/0,2/0 implique une variabilité des points selon le nombre de bonnes réponses.',
+    note: 'Les MCCC officielles (QCM sur tablette, contrôle terminal) ne détaillent pas le barème ; le tutorat décrit une notation dégressive 1 / 0,5 / 0,2 / 0, sans point négatif.',
+  },
+  montpellier: {
+    bareme: 'degressif75', year: '2025-2026', confidence: 'secondaire',
+    source: 'https://medibox.fr/pass-montpellier-2026-reussir-dans-un-systeme-exigeant/',
+    sourceLabel: 'Medibox, PASS Montpellier 2026',
+    quote: '0 faute = 1, 1 faute = 0,75, 2 fautes = 0,5, > 2 fautes = 0.',
+    note: 'Les MCC officielles 2025-2026 fixent des QCM d’une heure par UE sans publier le barème ; les prépas décrivent une notation dégressive 1 / 0,75 / 0,5 / 0 (durcie à 1 / 0,5 / 0 dans certaines UE), avec un item F « toutes les propositions sont fausses ».',
+  },
+  nantes: {
+    bareme: 'negatif', year: '2021-2022', confidence: 'secondaire',
+    source: 'https://lyceens.univ-nantes.fr/sinformer-sur-les-filieres/lacces-aux-etudes-de-sante-a-nantes-universite',
+    sourceLabel: 'présentation Nantes Université « L’accès aux études de santé » (2022)',
+    quote: 'QIM : 5 items, bonne réponse = +1, pas de réponse = 0, mauvaise réponse = −1, au minimum 0 point. QCM : 5 bonnes réponses = 1, une mauvaise = 0.',
+    note: 'Deux formats coexistent : QIM à points négatifs par item avec plancher 0 (chimie-biochimie, bio cellulaire, histologie) et QCM tout ou rien (les autres UE). Aucun MCCC 2025-2026 du bloc santé n’est public.',
+  },
+  strasbourg: {
+    bareme: null, year: '2025-2026', confidence: 'officiel',
+    source: 'https://www.unistra.fr/sites/default/files/2026-01/D%C3%A9lib%20108-2025%20-%20MCC%202025-2026%20-%20LSPS.pdf',
+    sourceLabel: 'MECC 2025-2026 de la Licence Sciences pour la Santé, Université de Strasbourg',
+    quote: 'Aucune note ne contribue pour plus de 50 % de la moyenne de l’UE.',
+    note: 'Pas de PASS à Strasbourg : l’accès passe par la L1 Sciences pour la Santé, en contrôle continu (deux écrits de 40 min par UE santé). Le barème des QCM n’est pas publié : choisis-le d’après ton intranet.',
+  },
+  toulouse: {
+    bareme: 'item_02_01', year: '2026-2027', confidence: 'secondaire',
+    source: 'https://www.sup-perform.fr/blog/tout-savoir-sur-le-pass-a-toulouse/',
+    sourceLabel: 'Sup’Perform, « Tout savoir sur le PASS à Toulouse »',
+    quote: '+0,2 point quand la réponse est juste, −0,1 quand la réponse est fausse. Il ne peut pas y avoir de point négatif par QCM, seulement 0.',
+    note: 'Les MCC officielles fixent le nombre de QCM et les durées par UE (de 30 min à 1 h 30) sans publier le barème ; plusieurs prépas décrivent des QCM à 5 propositions vrai/faux notées +0,2 / −0,1 par item, plancher 0.',
+  },
+  lille: {
+    bareme: null, year: '2025-2026', confidence: 'officiel',
+    source: 'https://ufr3s.univ-lille.fr/fileufr3s/user_upload/ufr3s-formations/pass-las/generalites/2025-26_pass-las_reglement-des-etudes.pdf',
+    sourceLabel: 'Règlement des études PASS-LAS 2025-2026, Université de Lille',
+    quote: 'Les étudiants sont informés au début de chaque semestre de la nature et des modalités du contrôle continu (nombre d’épreuves, type d’épreuves, coefficients, modalités de correction).',
+    note: 'Le règlement 2025-2026 fixe le nombre de QCM et les durées (ex. chimie-biochimie 40 QCM en 1 h 30, biologie cellulaire 30 QCM en 1 h) mais laisse le barème aux enseignants : il est diffusé sur Moodle, choisis-le d’après ton intranet.',
+  },
+  bordeaux: {
+    bareme: null, year: '2025-2026', confidence: 'officiel',
+    source: 'https://sante.u-bordeaux.fr/application/files/5717/6526/8587/MCCC_PASS_2025-26_vote_au_23-09-2025_V2.pdf',
+    sourceLabel: 'MCCC PASS 2025-2026, Université de Bordeaux',
+    quote: 'Les évaluations se déroulent sous forme d’épreuves écrites : QCM de 30 minutes, coefficient 1 pour chacune des UE.',
+    note: 'Toutes les UE santé sont évaluées par un QCM de 30 minutes, coefficient 1, compensables entre elles. Le barème des QCM n’est pas publié : choisis-le d’après ton intranet.',
+  },
+  sorbonne: {
+    bareme: 'degressif', year: '2025-2026', confidence: 'secondaire',
+    source: 'https://www.hippocast.fr/blog/les-qcm-en-pass-las-le-guide-complet-pour-reussir-medecine',
+    sourceLabel: 'Hippocast, guide des QCM en PASS/LAS',
+    quote: 'Sorbonne Université — dégressif — 1 / 0,5 / 0,2 / 0 (selon témoignages tutorat).',
+    note: 'Les MCC officielles 2025-2026 fixent des QCM anonymes sur papier (de 45 min à 1 h 30 par UE) sans publier le barème ; les prépas décrivent une notation dégressive 1 / 0,5 / 0,2 / 0, avec un « tout ou rien » en physiologie.',
+  },
+  rennes: {
+    bareme: null, year: '2025-2026', confidence: 'officiel',
+    source: 'https://acces-sante.univ-rennes.fr/sites/acces-sante.univ-rennes.fr/files/medias/files/Syllabus%20PASS%2025-26%20def.pdf',
+    sourceLabel: 'Syllabus PASS 2025-2026, Université de Rennes',
+    quote: 'Biologie cellulaire : QCM de 90 min · Biostatistiques : QCM et QCROC de 90 min · Anatomie générale : QCM de 30 min.',
+    note: 'Le syllabus donne les durées par UE (de 30 à 90 min) ; les MCC détaillées ne sont accessibles que sur l’ENT. Choisis le barème indiqué sur ton intranet.',
+  },
+  grenoble: {
+    bareme: null, year: '2025-2026', confidence: 'officiel',
+    source: 'https://medecine.univ-grenoble-alpes.fr/pass-las/pass/mccc-pass-874267.kjsp',
+    sourceLabel: 'MCCC PASS 2025-2026, Université Grenoble Alpes',
+    quote: 'Les épreuves sont dématérialisées sur tablettes numériques (questions à choix multiples et/ou questions rédactionnelles).',
+    note: 'Examen terminal à 100 % sur tablette, 60 min pour la plupart des UE ; le barème des QCM n’est pas publié. Choisis-le d’après ton intranet.',
+  },
+  marseille: {
+    bareme: 'degressif', year: '2025-2026', confidence: 'secondaire',
+    source: 'https://tutorat-marseille.fr/cursus/pass-a-marseille',
+    sourceLabel: 'Tutorat Associatif Marseillais',
+    quote: '0 faute : 1 point / 1 faute : 0,5 point / 2 fautes : 0,2 point / 3 fautes ou plus : 0 point.',
+    note: 'Le M3C officiel 2025-2026 fixe des épreuves en QCM sans en publier le barème ; le tutorat décrit des QCM à 5 items notés 1 / 0,5 / 0,2 / 0, sans point négatif.',
+  },
+};
+export const mccFor = (facId) => (facId && MCC[facId]) || null;

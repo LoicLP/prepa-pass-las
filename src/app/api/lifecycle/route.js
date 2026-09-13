@@ -63,6 +63,11 @@ function build(stage, firstName, st) {
       `Jusqu'au 31 octobre, le Premium est à <strong>${HEADLINE.monthlyPromo} €/mois</strong> au lieu de ${HEADLINE.monthlyFull} € — et ce prix reste le tien tant que tu restes abonné. Après, il repasse au tarif plein.`,
       `Sans engagement, résiliable en un clic. Tes XP, ta série et ton historique restent tels quels.`,
     ], cta: { href: `${SITE}/tarifs`, label: 'Profiter de l’offre' } }) };
+    case 'fac': return { subject: `${n}, dans quelle fac prépares-tu le concours ?`, html: layout({ title: 'Une info pour noter tes examens blancs comme ta fac', emoji: '🎓', paragraphs: [
+      `Salut ${esc(n)} 👋`,
+      `Nouveau sur Prépa PASS/LAS : les <strong>examens blancs par UE</strong> sont notés sur 20 <strong>au barème de ta faculté</strong> (points négatifs, différences, tout ou rien…), et les questions s'adaptent au style de ses annales.`,
+      `Il nous manque une seule chose pour l'activer : ta faculté. Ça prend 30 secondes dans « Mon compte », et tu pourras corriger le barème si tes MCC ont changé.`,
+    ], cta: { href: `${SITE}/dashboard?section=account`, label: 'Renseigner ma faculté' } }) };
     default: return null;
   }
 }
@@ -102,6 +107,8 @@ export async function GET(request) {
       else if (isPromoActive() && PROMO_REMINDERS.includes(today) && !lc[`promo_${today}`] && age >= TRIAL_DAYS) stage = 'promo';
     }
     if (!stage && st.pile >= 10 && (!lc.pile || now - new Date(lc.pile).getTime() > 7 * DAY) && age >= 2) stage = 'pile';
+    // Comptes sans faculté renseignée (créés avant le profil de révision) : une seule fois, aux comptes qui ont déjà révisé ou récents.
+    if (!stage && !lc.fac && !u.user_metadata?.profile?.fac && age >= 1 && ((p.session_count || 0) > 0 || age < 30)) stage = 'fac';
     if (stage) plan.push({ u, stage, firstName, st });
   }
 

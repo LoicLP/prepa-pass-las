@@ -86,7 +86,7 @@ function stripHtml(html) {
    affirmer de détail propre à une faculté (formats et barèmes changent). */
 export function styleBlock(style) {
   if (!style) return '';
-  const bar = { partiel: 'points partiels par proposition', negatif: 'points négatifs (une proposition fausse retire des points)', tout_ou_rien: 'tout ou rien (le point exige toutes les propositions justes)' }[style.bareme] || 'points partiels';
+  const bar = { partiel: 'points partiels par proposition', differences: 'par nombre de différences avec la bonne réponse (1 / 0,7 / 0,1 / 0), sans point négatif', degressif: 'dégressif selon le nombre d’erreurs (1 / 0,5 / 0,2 / 0), sans point négatif', degressif75: 'dégressif selon le nombre d’erreurs (1 / 0,75 / 0,5 / 0), sans point négatif', item_02_01: '+0,2 par proposition juste, −0,1 par proposition fausse, plancher zéro', negatif: 'points négatifs (une proposition fausse retire des points)', tout_ou_rien: 'tout ou rien (le point exige toutes les propositions justes)' }[style.bareme] || 'points partiels';
   return `
 
 STYLE ATTENDU :
