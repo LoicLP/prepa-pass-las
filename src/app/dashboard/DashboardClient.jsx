@@ -1142,7 +1142,7 @@ export default function DashboardPage() {
                             <SegmentedPills value={progSubject} onChange={setProgSubject} options={[{ key: 'all', label: 'Toutes' }, ...filterSubjects.map(s => ({ key: s.id, label: s.name }))]} />
                           )}
                         </div>
-                        <p className="text-xs text-gray-400 mb-3">Un point par session, dans l&rsquo;ordre chronologique. Le trait horizontal marque ton objectif.</p>
+                        <p className="text-xs text-gray-400 mb-3">Une session par point, sur papier millimétr&eacute; : un petit carreau vaut 5 %. Le pointill&eacute; rouge marque ton seuil, la note sur 20 se lit &agrave; droite.</p>
                         <ScoreLineChart points={chartData} target={data.targetScore} />
                         {progSubject === 'all' && data.last5Avg !== null && data.prev5Avg !== null && (
                           <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-gray-100">
@@ -4666,107 +4666,107 @@ function MiniProgressRing({ value, max, color }) {
    SCORE LINE CHART
    ============================================================ */
 function ScoreLineChart({ points, target = 70 }) {
+  /* Feuille de courbe façon papier millimétré d'hôpital : petit carreau = 5 %, gros carreau = 25 %,
+     tracé en segments comme une courbe de température, seuil objectif en pointillés rouges,
+     note /20 en regard du pourcentage. */
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   if (!points || points.length === 0) {
     return <p className="text-sm text-gray-400 text-center py-8">Pas assez de donnees pour afficher le graphique.</p>;
   }
 
-  const W = 600;
-  const H = 200;
+  const W = 640;
+  const H = 220;
   const padLeft = 40;
-  const padRight = 20;
-  const padTop = 24;
-  const padBottom = 32;
+  const padRight = 34;
+  const padTop = 18;
+  const padBottom = 30;
   const chartW = W - padLeft - padRight;
   const chartH = H - padTop - padBottom;
-
-  const minVal = 0;
-  const maxVal = 100;
+  const cell = chartH / 20; // 5 % par petit carreau
 
   const getX = (i) => padLeft + (points.length === 1 ? chartW / 2 : (i / (points.length - 1)) * chartW);
-  const getY = (v) => padTop + chartH - ((v - minVal) / (maxVal - minVal)) * chartH;
-
-  // Courbe lissée (Catmull-Rom → Bézier), avec bornage vertical pour éviter les débordements
+  const getY = (v) => padTop + chartH - (v / 100) * chartH;
   const pts = points.map((p, i) => [getX(i), getY(p.value)]);
-  const clampY = (v) => Math.max(padTop, Math.min(padTop + chartH, v));
-  const curvePath = (() => {
-    if (pts.length < 2) return pts.length ? `M${pts[0][0]},${pts[0][1]}` : '';
-    let d = `M${pts[0][0]},${pts[0][1]}`;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
-      const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = clampY(p1[1] + (p2[1] - p0[1]) / 6);
-      const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = clampY(p2[1] - (p3[1] - p1[1]) / 6);
-      d += ` C${c1x},${c1y} ${c2x},${c2y} ${p2[0]},${p2[1]}`;
-    }
-    return d;
-  })();
-  const areaPath = `${curvePath} L${getX(points.length - 1)},${padTop + chartH} L${getX(0)},${padTop + chartH} Z`;
+  const linePath = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const areaPath = `${linePath} L${getX(points.length - 1).toFixed(1)},${padTop + chartH} L${getX(0).toFixed(1)},${padTop + chartH} Z`;
   const objY = getY(target);
+  const last = pts[pts.length - 1];
 
-  const yTicks = [0, 25, 50, 75, 100];
-
-  // Show fewer X labels on small datasets
   const maxLabels = points.length <= 10 ? points.length : Math.min(points.length, 8);
   const labelStep = Math.max(1, Math.ceil(points.length / maxLabels));
+  const INK = '#4338ca'; const GRID = '#c7cbe8';
 
   return (
-    <div className="w-full overflow-hidden">
+    <div className="w-full overflow-hidden" style={{ borderRadius: 12, border: '1px solid #e5e7f0', background: '#fff' }}>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet" onMouseLeave={() => setHoveredIndex(null)}>
         <defs>
-          <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.24" />
-            <stop offset="100%" stopColor="#7c3aed" stopOpacity="0.02" />
+          <pattern id="mmMinor" width={cell} height={cell} patternUnits="userSpaceOnUse" x={padLeft} y={padTop}>
+            <path d={`M ${cell} 0 L 0 0 0 ${cell}`} fill="none" stroke={GRID} strokeWidth="0.5" opacity="0.55" />
+          </pattern>
+          <pattern id="mmMajor" width={cell * 5} height={cell * 5} patternUnits="userSpaceOnUse" x={padLeft} y={padTop}>
+            <rect width={cell * 5} height={cell * 5} fill="url(#mmMinor)" />
+            <path d={`M ${cell * 5} 0 L 0 0 0 ${cell * 5}`} fill="none" stroke={GRID} strokeWidth="1" />
+          </pattern>
+          <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={INK} stopOpacity="0.16" />
+            <stop offset="100%" stopColor={INK} stopOpacity="0.01" />
           </linearGradient>
         </defs>
 
-        {/* Y-axis grid lines */}
-        {yTicks.map(tick => (
+        {/* papier millimétré */}
+        <rect x={padLeft} y={padTop} width={chartW} height={chartH} fill="#fbfbff" />
+        <rect x={padLeft} y={padTop} width={chartW} height={chartH} fill="url(#mmMajor)" />
+        <rect x={padLeft} y={padTop} width={chartW} height={chartH} fill="none" stroke={GRID} strokeWidth="1" />
+
+        {/* graduations : % à gauche, /20 à droite */}
+        {[0, 25, 50, 75, 100].map(tick => (
           <g key={tick}>
-            <line x1={padLeft} y1={getY(tick)} x2={W - padRight} y2={getY(tick)} stroke="#eef0f6" strokeWidth="1" strokeDasharray={tick === 0 ? 'none' : '4 4'} />
-            <text x={padLeft - 6} y={getY(tick) + 4} textAnchor="end" className="text-[10px]" fill="#9ca3af">{tick}%</text>
+            <text x={padLeft - 6} y={getY(tick) + 3.5} textAnchor="end" fontSize="10" fontWeight="600" fill="#6b7280">{tick}%</text>
+            <text x={W - padRight + 6} y={getY(tick) + 3.5} textAnchor="start" fontSize="10" fontWeight="700" fill={INK}>{tick / 5}</text>
           </g>
         ))}
+        <text x={W - padRight + 6} y={padTop - 6} textAnchor="start" fontSize="8.5" fontWeight="800" fill={INK} letterSpacing="1">/20</text>
 
-        {/* Filled area under curve */}
-        <path d={areaPath} fill="url(#chartGradient)" />
+        {/* aire + tracé */}
+        <path d={areaPath} fill="url(#chartFill)" />
+        <path d={linePath} fill="none" stroke={INK} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
 
-        {/* Ligne d'objectif 70% */}
-        <line x1={padLeft} y1={objY} x2={W - padRight} y2={objY} stroke="#7c3aed" strokeWidth="1.4" strokeDasharray="5 5" opacity="0.5" />
-        <text x={W - padRight} y={objY - 5} textAnchor="end" className="text-[10px]" fontWeight="700" fill="#7c3aed" opacity="0.9">Objectif {target}%</text>
+        {/* seuil objectif */}
+        <line x1={padLeft} y1={objY} x2={W - padRight} y2={objY} stroke="#e11d48" strokeWidth="1.3" strokeDasharray="6 4" opacity="0.7" />
+        <rect x={padLeft + 6} y={objY - 16} width="78" height="13" rx="3" fill="#fff" stroke="#e11d48" strokeWidth="0.8" opacity="0.95" />
+        <text x={padLeft + 45} y={objY - 6.5} textAnchor="middle" fontSize="8.5" fontWeight="800" fill="#e11d48" letterSpacing="0.5">SEUIL {target} %</text>
 
-        {/* Main curve line */}
-        <path d={curvePath} fill="none" stroke="#7c3aed" strokeWidth="2.75" strokeLinecap="round" strokeLinejoin="round" />
+        {/* dernier point : halo pulsé */}
+        <circle cx={last[0]} cy={last[1]} r="9" fill={INK} opacity="0.12">
+          <animate attributeName="r" values="6;12;6" dur="2.2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.22;0.04;0.22" dur="2.2s" repeatCount="indefinite" />
+        </circle>
 
-        {/* Data points + hover zones */}
+        {/* points + survol */}
         {points.map((p, i) => {
-          const cx = getX(i);
-          const cy = getY(p.value);
+          const [cx, cy] = pts[i];
           const isHovered = hoveredIndex === i;
+          const isLast = i === points.length - 1;
           return (
             <g key={i} onMouseEnter={() => setHoveredIndex(i)} style={{ cursor: 'pointer' }}>
-              {/* Invisible wider hit area */}
               <circle cx={cx} cy={cy} r={16} fill="transparent" />
-              {/* Visible point */}
-              <circle cx={cx} cy={cy} r={isHovered ? 5.5 : (i === points.length - 1 ? 4.5 : 3)} fill={isHovered || i === points.length - 1 ? '#7c3aed' : '#fff'} stroke="#7c3aed" strokeWidth="2" style={{ transition: 'r 0.15s ease' }} />
-              {/* Tooltip */}
+              <circle cx={cx} cy={cy} r={isHovered ? 5 : isLast ? 4 : 3} fill={isHovered || isLast ? INK : '#fff'} stroke={INK} strokeWidth="2" />
               {isHovered && (
                 <g>
-                  <rect x={cx - 24} y={cy - 28} width="48" height="20" rx="6" fill="#1f2937" />
-                  <text x={cx} y={cy - 15} textAnchor="middle" fill="#fff" className="text-[11px]" fontWeight="700">{p.value}%</text>
+                  <rect x={cx - 30} y={cy - 32} width="60" height="22" rx="5" fill="#0f1020" />
+                  <text x={cx} y={cy - 18} textAnchor="middle" fill="#fff" fontSize="10.5" fontWeight="700">{p.value}% · {String(Math.round(p.value * 2) / 10).replace('.', ',')}/20</text>
                 </g>
               )}
             </g>
           );
         })}
 
-        {/* X-axis labels — on montre les ticks réguliers + le dernier, sans les coller */}
+        {/* dates */}
         {points.map((p, i) => {
           const isLast = i === points.length - 1;
           if (!isLast && (i % labelStep !== 0 || i > points.length - 1 - Math.ceil(labelStep / 2))) return null;
-          return (
-            <text key={i} x={getX(i)} y={H - 6} textAnchor="middle" className="text-[10px]" fill="#9ca3af">{p.label}</text>
-          );
+          return <text key={i} x={getX(i)} y={H - 8} textAnchor="middle" fontSize="10" fill="#6b7280">{p.label}</text>;
         })}
       </svg>
     </div>
