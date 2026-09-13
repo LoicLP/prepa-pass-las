@@ -847,6 +847,7 @@ export default function DashboardPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {/* Grade + progression XP (cliquable → popover explicatif). La série de jours
                   n'est plus affichée ici : elle reste visible dans le menu mobile et la Progression. */}
+              <FacPill profile={profile} prog={prog} onEdit={() => setActiveSection('account')} />
               {data.hasAnySessions && <GradePill gam={gam} open={gradeOpen} setOpen={setGradeOpen} />}
               {!isPaid && (
                 <>
@@ -868,7 +869,6 @@ export default function DashboardPage() {
             <h1 className="font-jakarta" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, margin: 0, color: '#0f1020' }}>
               {greetingForNow()} {user.displayName ? user.displayName.split(' ')[0] : ''}
             </h1>
-            <FacLine profile={profile} onEdit={() => setActiveSection('account')} />
           </div>
           )}
           {/* Mobile greeting (compact) — accueil uniquement */}
@@ -1783,7 +1783,64 @@ function ConcoursPath({ examDate, facId = null }) {
   );
 }
 
-/* Faculté et voie sous la salutation ; lien vers le profil si rien n'est renseigné. */
+/* Pastille « Ta fac » dans l'en-tête : nom court, détails au clic ou au survol. */
+function FacPill({ profile, prog, onEdit }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', close); return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+  const fac = facById(profile?.fac);
+  const ICON = <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>;
+  const pillBase = { display: 'inline-flex', alignItems: 'center', gap: 7, background: '#fff', border: '1px solid #ddd9fb', borderRadius: 999, padding: '8px 13px', fontSize: 13, fontWeight: 800, color: '#0f1020', cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 1px 2px rgba(15,16,32,0.04)' };
+  if (!fac) {
+    return (
+      <button onClick={onEdit} style={{ ...pillBase, color: '#4f46e5', borderStyle: 'dashed' }} className="hover:bg-indigo-50 transition-colors">
+        {ICON} Renseigner ma faculté
+      </button>
+    );
+  }
+  const voie = VOIES.find(v => v.id === profile?.voie)?.label || null;
+  const stripped = fac.name.replace(/^Université (de la |de |d’|d')?/i, '');
+  const short = stripped.length <= 22 ? stripped : (fac.city || stripped);
+  const mcc = mccFor(fac.id); const ex = facExams(fac.id);
+  const bar = baremeById(profile.bareme || 'partiel');
+  const nExams = (ex?.exams || []).filter(e => e.minutes).length;
+  const d = ex?.dates; const fmtD = (x) => new Date(x).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const rows = [
+    ['Barème', `${bar.label}${mcc?.confidence && mcc.confidence !== 'officiel' ? ' · à confirmer' : ''}`],
+    ['Épreuves', nExams ? `${nExams} UE au format de ta fac` : 'format à renseigner'],
+    ['Programme', prog.known ? `${prog.subjects.length} UE${prog.others.length ? ` · ${prog.others.map(o => o.name.toLowerCase()).join(', ')} hors programme` : ''}` : '9 UE'],
+    d?.s1 ? ['Partiels', `S1 ${fmtD(d.s1)}${d.s2 ? ` · S2 ${fmtD(d.s2)}` : ''}${d.approx ? ' (à confirmer)' : ''}`] : ex?.threshold ? ['Note-seuil', `${ex.threshold}/20`] : null,
+  ].filter(Boolean);
+  return (
+    <div ref={ref} style={{ position: 'relative' }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button onClick={() => setOpen(o => !o)} aria-expanded={open} style={pillBase} className="hover:border-indigo-300 transition-colors">
+        <span style={{ color: '#4f46e5', display: 'flex' }}>{ICON}</span>
+        {short}{voie ? <span style={{ color: '#8a8ea8', fontWeight: 600 }}>· {voie}</span> : null}
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#8a8ea8" strokeWidth="2.5" style={{ transition: 'transform .15s', transform: open ? 'rotate(180deg)' : 'none' }}><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', width: 300, background: '#fff', border: '1px solid #e4e2f6', borderRadius: 12, boxShadow: '0 12px 30px rgba(15,16,32,0.12)', padding: '12px 14px', zIndex: 40, fontSize: 12, lineHeight: 1.5 }}>
+          <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 6, color: '#0f1020' }}>{fac.name}{voie ? <span style={{ color: '#8a8ea8', fontWeight: 500 }}> · {voie}</span> : null}</div>
+          {rows.map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '3px 0', borderBottom: '1px dashed #eef0f7' }}>
+              <span style={{ color: '#8a8ea8', flexShrink: 0 }}>{k}</span><span style={{ textAlign: 'right', color: '#0f1020' }}>{v}</span>
+            </div>
+          ))}
+          <div style={{ marginTop: 9, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Link href={`/facs/${fac.id}`} style={{ color: '#4f46e5', fontWeight: 700, textDecoration: 'none' }} className="hover:underline">Fiche de la fac →</Link>
+            <button onClick={() => { setOpen(false); onEdit(); }} style={{ background: 'none', border: 'none', color: '#8a8ea8', cursor: 'pointer', fontSize: 12, padding: 0 }} className="hover:text-indigo-600">modifier ✎</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Faculté et voie sous la salutation (mobile) ; lien vers le profil si rien n'est renseigné. */
 function FacLine({ profile, onEdit, compact = false }) {
   const fac = facById(profile?.fac);
   const voie = VOIES.find(v => v.id === profile?.voie)?.label || null;
