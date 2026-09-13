@@ -4269,20 +4269,76 @@ function EmptyState({ title, description, ctaHref, ctaLabel, onCta, userName }) 
    ACCOUNT SECTION
    ============================================================ */
 /* Profil de révision : ce qui permet au site de s'adapter (faculté, voie, temps, barème). */
-/* Liste déroulante habillée : icône à gauche, chevron à droite, focus indigo ; le <select> natif reste
-   (accessibilité, clavier, mobile), seul son habillage change. `accent` signale une valeur pré-remplie. */
-function FancySelect({ value, onChange, placeholder, icon, accent = false, children }) {
-  const empty = !value;
+/* Liste déroulante sur mesure : bouton + panneau (rôle listbox) avec recherche pour les longues
+   listes, sous-titres, badge, navigation clavier (flèches, Entrée, Échap) et fermeture au clic dehors. */
+function FancySelect({ value, onChange, placeholder = 'Choisir…', icon, accent = false, options = [], searchable = false }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const [hi, setHi] = useState(-1);
+  const ref = useRef(null); const listRef = useRef(null); const searchRef = useRef(null);
+  const selected = options.find(o => o.value === value) || null;
+  const norm = (t) => (t || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const visible = q ? options.filter(o => norm(`${o.label} ${o.sub || ''}`).includes(norm(q))) : options;
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', close); return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+  useEffect(() => {
+    if (!open) { setQ(''); setHi(-1); return; }
+    setHi(Math.max(0, visible.findIndex(o => o.value === value)));
+    setTimeout(() => searchRef.current?.focus(), 0);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!open || hi < 0 || !listRef.current) return;
+    listRef.current.children[hi]?.scrollIntoView({ block: 'nearest' });
+  }, [hi, open]);
+  const pick = (o) => { onChange(o.value); setOpen(false); };
+  const onKey = (e) => {
+    if (!open && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setOpen(true); return; }
+    if (!open) return;
+    if (e.key === 'Escape') { e.preventDefault(); setOpen(false); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); setHi(h => Math.min(visible.length - 1, h + 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setHi(h => Math.max(0, h - 1)); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (visible[hi]) pick(visible[hi]); }
+  };
+  const empty = !selected;
   return (
-    <div className="relative group">
-      {icon && (
-        <svg className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${empty ? 'text-gray-400' : 'text-indigo-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">{icon}</svg>
+    <div ref={ref} className="relative" onKeyDown={onKey}>
+      <button type="button" onClick={() => setOpen(o => !o)} aria-haspopup="listbox" aria-expanded={open}
+        className={`w-full flex items-center gap-2.5 ${icon ? 'pl-3.5' : 'pl-3.5'} pr-3 py-2.5 rounded-xl border text-sm text-left transition-colors focus:outline-none focus:ring-[3px] focus:ring-indigo-100 focus:border-indigo-400 ${open ? 'border-indigo-400 ring-[3px] ring-indigo-100' : ''} ${accent ? 'border-indigo-300 bg-indigo-50/60 hover:bg-indigo-50' : 'border-gray-200 bg-[#fafafe] hover:border-indigo-300 hover:bg-white'}`}>
+        {icon && <svg className={`w-4 h-4 shrink-0 ${empty ? 'text-gray-400' : 'text-indigo-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">{icon}</svg>}
+        <span className={`flex-1 min-w-0 truncate ${empty ? 'text-gray-400 font-medium' : 'text-gray-900 font-semibold'}`}>{selected ? selected.label : placeholder}</span>
+        {selected?.badge && <span className="shrink-0 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5">{selected.badge}</span>}
+        <svg className={`w-4 h-4 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180 text-indigo-500' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+      </button>
+      {open && (
+        <div className="absolute z-40 left-0 right-0 mt-1.5 rounded-xl border border-gray-200 bg-white shadow-xl shadow-slate-900/10 overflow-hidden" style={{ minWidth: 320 }}>
+          {searchable && (
+            <div className="relative border-b border-gray-100">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+              <input ref={searchRef} value={q} onChange={e => { setQ(e.target.value); setHi(0); }} placeholder="Rechercher…" className="w-full pl-9 pr-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none bg-white" />
+            </div>
+          )}
+          <ul ref={listRef} role="listbox" className="max-h-64 overflow-y-auto py-1">
+            {visible.length === 0 && <li className="px-3.5 py-3 text-sm text-gray-400">Aucun résultat</li>}
+            {visible.map((o, i) => {
+              const isSel = o.value === value; const isHi = i === hi;
+              return (
+                <li key={o.value || '_'} role="option" aria-selected={isSel} onMouseEnter={() => setHi(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(o)}
+                  className={`flex items-center gap-2.5 px-3.5 py-2 cursor-pointer text-sm ${isHi ? 'bg-indigo-50' : ''}`}>
+                  <span className="flex-1 min-w-0">
+                    <span className={`block truncate ${isSel ? 'font-bold text-indigo-700' : 'font-semibold text-gray-900'}`}>{o.label}</span>
+                    {o.sub && <span className="block text-[11.5px] text-gray-500 leading-snug">{o.sub}</span>}
+                  </span>
+                  {o.badge && <span className="shrink-0 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5">{o.badge}</span>}
+                  {isSel && <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
-      <select value={value} onChange={e => onChange(e.target.value)} className={`w-full appearance-none ${icon ? 'pl-10' : 'pl-3.5'} pr-10 py-2.5 rounded-xl border text-sm font-semibold truncate cursor-pointer transition-colors focus:outline-none focus:ring-[3px] focus:ring-indigo-100 ${empty ? 'text-gray-400 font-medium' : 'text-gray-900'} ${accent ? 'border-indigo-300 bg-indigo-50/60 hover:bg-indigo-50' : 'border-gray-200 bg-[#fafafe] hover:border-indigo-300 hover:bg-white'} focus:border-indigo-400`}>
-        {placeholder && <option value="">{placeholder}</option>}
-        {children}
-      </select>
-      <svg className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
     </div>
   );
 }
@@ -4333,17 +4389,14 @@ function ProfileCard({ user }) {
       </div>
       <div className="grid sm:grid-cols-3 gap-4">
         <div><label className={labelCls}>Facult&eacute;</label>
-          <FancySelect value={form.fac} onChange={onFacChange} placeholder="Choisir ma faculté…" icon={<path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />}>
-            {FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}
-          </FancySelect></div>
+          <FancySelect value={form.fac} onChange={onFacChange} placeholder="Choisir ma faculté…" searchable icon={<path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />}
+            options={FACS.map(f => ({ value: f.id, label: f.name, sub: f.city || undefined, badge: mccFor(f.id)?.bareme ? 'barème connu' : undefined }))} /></div>
         <div><label className={labelCls}>Voie</label>
-          <FancySelect value={form.voie} onChange={v => setForm(f => ({ ...f, voie: v }))} placeholder="PASS ou LAS ?" icon={<path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />}>
-            {VOIES.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}
-          </FancySelect></div>
+          <FancySelect value={form.voie} onChange={v => setForm(f => ({ ...f, voie: v }))} placeholder="PASS ou LAS ?" icon={<path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />}
+            options={VOIES.map(v => ({ value: v.id, label: v.label, sub: v.desc }))} /></div>
         <div><label className={labelCls}>Bar&egrave;me des QCM</label>
-          <FancySelect value={form.bareme} onChange={v => setForm(f => ({ ...f, bareme: v }))} icon={<path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.5v3.75m0 0L21 5.25m-2.25 3L16.5 5.25m-9 3v-3.75m0 0L9.75 5.25M5.25 4.5 3 5.25" />} accent={mcc?.bareme === form.bareme}>
-            {BAREMES.map(b => <option key={b.id} value={b.id}>{b.label}{mcc?.bareme === b.id ? ' — ta fac' : ''}</option>)}
-          </FancySelect></div>
+          <FancySelect value={form.bareme} onChange={v => setForm(f => ({ ...f, bareme: v }))} icon={<path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.5v3.75m0 0L21 5.25m-2.25 3L16.5 5.25m-9 3v-3.75m0 0L9.75 5.25M5.25 4.5 3 5.25" />} accent={mcc?.bareme === form.bareme}
+            options={BAREMES.map(b => ({ value: b.id, label: b.label, sub: b.desc, badge: mcc?.bareme === b.id ? 'Ta fac' : undefined }))} /></div>
       </div>
       <p className="mt-2 text-[11.5px] text-gray-500 leading-snug">
         {mcc?.bareme
