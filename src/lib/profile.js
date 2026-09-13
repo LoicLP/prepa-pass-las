@@ -8,17 +8,12 @@ export const VOIES = [
   { id: 'las', label: 'LAS', desc: 'Licence + option santé' },
 ];
 
-export const HOURS = [
-  { id: 2, label: '≈ 2 h / semaine', desc: 'Entretien' },
-  { id: 4, label: '≈ 4 h / semaine', desc: 'Rythme régulier' },
-  { id: 7, label: '7 h et plus', desc: 'Préparation intensive' },
-];
-
 export const BAREMES = [
   { id: 'partiel', label: 'Points partiels', desc: 'Chaque proposition bien jugée rapporte une fraction de point.' },
   { id: 'differences', label: 'Dégressif 1 · 0,7 · 0,1 · 0', desc: '1 pt sans erreur, 0,7 avec une, 0,1 avec deux, 0 au-delà. Jamais négatif.' },
   { id: 'degressif', label: 'Dégressif 1 · 0,5 · 0,2 · 0', desc: '1 pt sans erreur, 0,5 avec une, 0,2 avec deux, 0 au-delà. Jamais négatif.' },
   { id: 'degressif75', label: 'Dégressif 1 · 0,75 · 0,5 · 0', desc: '1 pt sans erreur, 0,75 avec une, 0,5 avec deux, 0 au-delà. Jamais négatif.' },
+  { id: 'degressif50', label: 'Dégressif 1 · 0,5 · 0', desc: '1 pt sans erreur, 0,5 avec une, 0 dès deux erreurs. Jamais négatif.' },
   { id: 'item_02_01', label: '+0,2 / −0,1 par item', desc: 'Chaque proposition juste rapporte 0,2, chaque fausse retire 0,1 ; la question ne descend pas sous zéro.' },
   { id: 'negatif', label: 'Points négatifs', desc: 'Une proposition fausse retire des points ; la question ne descend pas sous zéro.' },
   { id: 'tout_ou_rien', label: 'Tout ou rien', desc: 'Le point n’est acquis que si toutes les propositions sont justes.' },
@@ -30,17 +25,11 @@ export const CONCOURS_DATES = [
   { id: '2027-05-17', label: 'Mai 2027', sub: 'Écrits du S2' },
 ];
 
-export const DEFAULT_PROFILE = { fac: null, voie: null, mineure: '', hoursPerWeek: null, bareme: 'partiel', placement: null, placementAt: null, level: null };
+export const DEFAULT_PROFILE = { fac: null, voie: null, mineure: '', bareme: 'partiel', placement: null, placementAt: null, level: null };
 
 export function getProfile(user) {
   const p = user?.user_metadata?.profile || {};
   return { ...DEFAULT_PROFILE, ...p };
-}
-
-/** Heures hebdo effectives : profil, sinon 2 h en LAS, 4 h en PASS. */
-export function effectiveHours(profile) {
-  if (profile?.hoursPerWeek) return profile.hoursPerWeek;
-  return profile?.voie === 'las' ? 2 : 4;
 }
 
 /** Barème indicatif de la fac du profil (d'après ses MCC), ou null. */

@@ -17,10 +17,9 @@ import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
 import { track } from '@/lib/track';
-import { getProfile, effectiveHours, momentFor, BAREMES, VOIES, HOURS } from '@/lib/profile';
+import { getProfile, momentFor, BAREMES, VOIES } from '@/lib/profile';
 import { FACS, mccFor } from '@/data/facs';
 import { computeMastery } from '@/lib/mastery';
-import { buildWeeklyPlan, doneThisWeek } from '@/lib/plan';
 import { PROGRAMME_DATA } from '@/data/programme';
 import { computeXP, gradeForXP, computeStreakWithJokers, questStatus, GRADES } from '@/lib/gamification';
 
@@ -395,22 +394,12 @@ export default function DashboardPage() {
     };
   }, [allSessions, qcmStats.sessions, examStats.sessions]);
 
-  // ---- Adaptation à l'étudiant : profil, carte de maîtrise, moment, plan de la semaine ----
+  // ---- Adaptation à l'étudiant : profil, carte de maîtrise, moment du parcours ----
   const profile = useMemo(() => getProfile(user), [user]);
   const mastery = useMemo(() => computeMastery(qcmStats.sessions || [], profile.placement), [qcmStats.sessions, profile.placement]);
   const examDateStr = user?.user_metadata?.exam_date || null;
   const moment = useMemo(() => momentFor(examDateStr), [examDateStr]);
-  const weekPlan = useMemo(() => buildWeeklyPlan({
-    profile, mastery, subjects: SUBJECTS,
-    coeffs: Object.fromEntries(PROGRAMME_DATA.map(u => [u.id, u.coeff || 3])),
-    pile: reviewDue.length, moment,
-  }), [profile, mastery, reviewDue.length, moment]);
-  const weekDone = useMemo(() => doneThisWeek(allSessions), [allSessions]);
-  // Le focus du jour suit le plan quand il existe, sinon la recommandation statistique
-  const planFocusSubject = weekPlan.focus?.subject ? SUBJECTS.find(s => s.id === weekPlan.focus.subject) : null;
-  const todaySubject = planFocusSubject
-    ? { ...planFocusSubject, avg: mastery.subjects[planFocusSubject.id]?.score ?? null, reason: weekPlan.mode === 'veille' ? 'Points clés avant le concours' : 'Prévu dans ta semaine' }
-    : (data.recommendations.length > 0 ? data.recommendations[0] : null);
+  const todaySubject = data.recommendations.length > 0 ? data.recommendations[0] : null;
 
   // ---- Gamification : XP, grade, streak à jokers, défis du jour ----
   const gam = useMemo(() => {
@@ -990,14 +979,6 @@ export default function DashboardPage() {
               )}
               {/* Parcours vers le concours */}
               <ConcoursPath examDate={user.user_metadata?.exam_date || null} />
-              <WeekPlanCard plan={weekPlan} done={weekDone} profile={profile} moment={moment} mastery={mastery}
-                onLaunch={(item) => {
-                  if (item.kind === 'pile') return launchReview();
-                  if (item.kind === 'examen') return openExamen();
-                  openQCM({ type: 'custom', subject: item.subject, subjectName: item.subjectName, title: item.subjectName, count: item.count || 10 });
-                }}
-                onOpenProfile={() => setActiveSection('account')}
-              />
               <ActionHub
                 moment={moment}
                 onLaunchMoment={(m) => {
@@ -1756,49 +1737,6 @@ function ConcoursPath({ examDate }) {
             📅 Ajoute ta date de concours →
           </button>
         )}
-      </div>
-    </div>
-  );
-}
-
-/* « Ta semaine » : le plan dérivé du profil et de la carte de maîtrise, avec l'avancement. */
-function WeekPlanCard({ plan, done = {}, profile, moment, mastery, onLaunch, onOpenProfile }) {
-  if (!plan?.items?.length) return null;
-  const hours = effectiveHours(profile);
-  const doneTotal = Object.values(done).reduce((a, b) => a + b, 0);
-  const planned = plan.items.filter(i => i.kind !== 'pile').length;
-  const remaining = { ...done };
-  const rows = plan.items.map(item => {
-    let ok = false;
-    if (item.kind === 'qcm' || item.kind === 'examen') { if ((remaining[item.subject] || 0) > 0) { remaining[item.subject] -= 1; ok = true; } }
-    return { ...item, ok };
-  });
-  const title = plan.mode === 'veille' ? 'Ta semaine · veille de concours' : plan.mode === 'rebond' ? 'Ta semaine · reprise' : 'Ta semaine';
-  return (
-    <div style={{ background: '#fff', border: '1px solid #e9e7f7', borderRadius: 16, padding: '16px 18px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-        <div>
-          <div className="font-jakarta" style={{ fontSize: 15, fontWeight: 800, color: '#0f1020' }}>{title}</div>
-          <div style={{ fontSize: 12, color: '#8a8ea8', marginTop: 2 }}>
-            {hours} h prévues{profile?.voie ? ` · ${profile.voie.toUpperCase()}` : ''} · {Math.min(doneTotal, planned)}/{planned} sessions faites
-            {!profile?.hoursPerWeek && <> · <button onClick={onOpenProfile} style={{ background: 'none', border: 'none', padding: 0, color: '#4f46e5', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>ajuster mon temps</button></>}
-          </div>
-        </div>
-        <div style={{ height: 6, width: 140, background: '#eef0f7', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${planned ? Math.min(100, Math.round(Math.min(doneTotal, planned) / planned * 100)) : 0}%`, height: '100%', background: 'linear-gradient(90deg,#4f46e5,#7c3aed)' }} /></div>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
-        {rows.map((it, i) => {
-          const m = it.subject ? mastery?.subjects?.[it.subject] : null;
-          return (
-            <button key={i} onClick={() => !it.ok && onLaunch(it)} style={{ display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', padding: '9px 11px', borderRadius: 12, border: '1px solid', borderColor: it.ok ? '#d1fae5' : '#eef0f7', background: it.ok ? '#f0fdf7' : '#fafafe', cursor: it.ok ? 'default' : 'pointer' }}>
-              <span style={{ width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0, background: it.ok ? '#10b981' : '#ece9ff', color: it.ok ? '#fff' : '#4f46e5', fontSize: 11, fontWeight: 800 }}>{it.ok ? '✓' : (it.day || '·').slice(0, 3)}</span>
-              <span style={{ minWidth: 0, flex: 1 }}>
-                <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: it.ok ? '#047857' : '#0f1020', textDecoration: it.ok ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.label}</span>
-                <span style={{ display: 'block', fontSize: 11, color: '#8a8ea8' }}>{it.minutes} min{m ? ` · ${m.level.label}` : it.kind === 'pile' ? ` · ${it.count} questions` : ''}</span>
-              </span>
-            </button>
-          );
-        })}
       </div>
     </div>
   );
@@ -4185,16 +4123,16 @@ function EmptyState({ title, description, ctaHref, ctaLabel, onCta, userName }) 
 function ProfileCard({ user }) {
   const initial = getProfile(user);
   const explicitBareme = user?.user_metadata?.profile?.bareme || null; // choisi par l'étudiant (ou pré-rempli) ?
-  const [form, setForm] = useState({ fac: initial.fac || '', voie: initial.voie || '', mineure: initial.mineure || '', hoursPerWeek: initial.hoursPerWeek || '', bareme: explicitBareme || mccFor(initial.fac)?.bareme || 'partiel' });
+  const [form, setForm] = useState({ fac: initial.fac || '', voie: initial.voie || '', mineure: initial.mineure || '', bareme: explicitBareme || mccFor(initial.fac)?.bareme || 'partiel' });
   const mcc = mccFor(form.fac);
   const onFacChange = (fac) => setForm(f => ({ ...f, fac, bareme: mccFor(fac)?.bareme || f.bareme }));
   const [saving, setSaving] = useState(false); const [msg, setMsg] = useState(null);
   const save = async () => {
     setSaving(true); setMsg(null);
     try {
-      const profile = { ...initial, fac: form.fac || null, voie: form.voie || null, mineure: form.mineure, hoursPerWeek: form.hoursPerWeek ? Number(form.hoursPerWeek) : null, bareme: form.bareme };
+      const profile = { ...initial, fac: form.fac || null, voie: form.voie || null, mineure: form.mineure, bareme: form.bareme };
       const { error } = await supabase.auth.updateUser({ data: { profile } });
-      if (error) throw error; setMsg({ ok: true, t: 'Profil enregistré — ton plan de la semaine se met à jour.' });
+      if (error) throw error; setMsg({ ok: true, t: 'Profil enregistré.' });
     } catch (e) { setMsg({ ok: false, t: e.message || 'Erreur' }); } finally { setSaving(false); }
   };
   const inputCls = 'w-full px-3.5 py-2.5 bg-[#fafafe] border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-indigo-300 focus:ring-[3px] focus:ring-indigo-100';
@@ -4202,12 +4140,11 @@ function ProfileCard({ user }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <h3 className="font-jakarta text-base font-bold text-gray-900 mb-1">Mon profil de révision</h3>
-      <p className="text-sm text-gray-500 mb-5">C&apos;est avec &ccedil;a que le site s&apos;adapte : plan de la semaine, style des questions, note au bar&egrave;me de ta fac.</p>
+      <p className="text-sm text-gray-500 mb-5">C&apos;est avec &ccedil;a que le site s&apos;adapte : style des questions et note au bar&egrave;me de ta fac.</p>
       <div className="grid sm:grid-cols-2 gap-4">
         <div><label className={labelCls}>Facult&eacute;</label><select value={form.fac} onChange={e => onFacChange(e.target.value)} className={inputCls}><option value="">Choisir…</option>{FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}</select></div>
         <div><label className={labelCls}>Voie</label><select value={form.voie} onChange={e => setForm(f => ({ ...f, voie: e.target.value }))} className={inputCls}><option value="">Choisir…</option>{VOIES.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}</select></div>
         <div><label className={labelCls}>Mineure (PASS) ou licence (LAS)</label><input value={form.mineure} onChange={e => setForm(f => ({ ...f, mineure: e.target.value }))} className={inputCls} placeholder="Droit, Biologie, Psychologie…" /></div>
-        <div><label className={labelCls}>Temps pour la sant&eacute; par semaine</label><select value={form.hoursPerWeek} onChange={e => setForm(f => ({ ...f, hoursPerWeek: e.target.value }))} className={inputCls}><option value="">Par d&eacute;faut</option>{HOURS.map(h => <option key={h.id} value={h.id}>{h.label} — {h.desc}</option>)}</select></div>
         <div className="sm:col-span-2"><label className={labelCls}>Bar&egrave;me de ta facult&eacute;</label>
           <div className="grid sm:grid-cols-2 gap-2">
             {BAREMES.map(b => (

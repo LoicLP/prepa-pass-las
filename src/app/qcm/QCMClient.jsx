@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePremium } from '@/contexts/PremiumContext';
 import { supabase } from '@/lib/supabase';
 import { track } from '@/lib/track';
-import { getProfile, styleFor, VOIES, HOURS, CONCOURS_DATES } from '@/lib/profile';
+import { getProfile, styleFor, VOIES, CONCOURS_DATES } from '@/lib/profile';
 import { FACS, mccFor } from '@/data/facs';
 import { levelOf } from '@/lib/mastery';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
@@ -209,7 +209,6 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
   const [welcomeExamDate, setWelcomeExamDate] = useState(null); // date choisie sur l'écran de bienvenue
   const [welcomeVoie, setWelcomeVoie] = useState(null);
   const [welcomeFac, setWelcomeFac] = useState('');
-  const [welcomeHours, setWelcomeHours] = useState(null);
   const qStartRef = useRef(Date.now()); // départ du chrono de la question courante (analyse des erreurs)
   const [tipIndex, setTipIndex] = useState(0);
   const [correctionOpen, setCorrectionOpen] = useState(true);
@@ -549,7 +548,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     if (!supabase || !user) return;
     const prev = getProfile(user);
     const facBareme = !user?.user_metadata?.profile?.bareme && mccFor(welcomeFac)?.bareme; // barème des MCC si l'étudiant n'en a pas choisi
-    const profile = { ...prev, ...(welcomeVoie ? { voie: welcomeVoie } : {}), ...(welcomeFac ? { fac: welcomeFac } : {}), ...(facBareme ? { bareme: facBareme } : {}), ...(welcomeHours ? { hoursPerWeek: welcomeHours } : {}), ...extra };
+    const profile = { ...prev, ...(welcomeVoie ? { voie: welcomeVoie } : {}), ...(welcomeFac ? { fac: welcomeFac } : {}), ...(facBareme ? { bareme: facBareme } : {}), ...extra };
     const data = { profile, ...(welcomeExamDate ? { exam_date: welcomeExamDate } : {}) };
     try { await supabase.auth.updateUser({ data }); } catch {}
   };
@@ -1119,16 +1118,6 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
                     {FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}
                   </select>
                   {mccFor(welcomeFac)?.bareme && <p className="mt-1.5 text-[11px] text-indigo-700 leading-snug">Bar&egrave;me de tes MCC appliqu&eacute; &agrave; tes examens blancs{mccFor(welcomeFac).confidence === 'officiel' ? '' : ' (source non officielle, à vérifier)'}. Modifiable dans Mon compte.</p>}
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Temps pour la santé, par semaine</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {HOURS.map(h => (
-                      <button key={h.id} type="button" onClick={() => setWelcomeHours(welcomeHours === h.id ? null : h.id)} className={`rounded-xl border px-2 py-2 text-center transition-colors ${welcomeHours === h.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
-                        <span className="block text-[12px] font-bold text-gray-900">{h.label.replace('/ semaine', '')}</span><span className="block text-[10px] text-gray-500">{h.desc}</span>
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
             )}

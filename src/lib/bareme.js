@@ -6,8 +6,9 @@
                     grille des MCC PASS d'Université Paris Cité
    - degressif    : même principe, grille 1 / 0,5 / 0,2 / 0 (Lyon, Marseille… d'après les tutorats)
    - degressif75  : grille 1 / 0,75 / 0,5 / 0 (Montpellier, d'après les prépas)
+   - degressif50  : grille 1 / 0,5 / 0 (Nice, MCC officielles)
    - item_02_01   : +0,2 par item juste, −0,1 par item faux, plancher zéro (Toulouse, d'après les prépas) */
-export const SCALES = { differences: [1, 0.7, 0.1], degressif: [1, 0.5, 0.2], degressif75: [1, 0.75, 0.5] };
+export const SCALES = { differences: [1, 0.7, 0.1], degressif: [1, 0.5, 0.2], degressif75: [1, 0.75, 0.5], degressif50: [1, 0.5] };
 
 export function scoreAnswer(q, a, bareme = 'partiel') {
   const opts = q?.options || []; const n = opts.length || 1;
