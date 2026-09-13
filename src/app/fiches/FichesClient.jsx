@@ -8,6 +8,7 @@ import { SUBJECTS } from '@/data/subjects';
 import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfile, programFor } from '@/lib/profile';
+import BristolHero from '@/components/fiches/BristolHero';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { SUBJECT_COLORS } from '@/data/constants';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
@@ -471,8 +472,8 @@ export default function FichesPage() {
               </div>
             </div>
 
-            {/* Right: floating cards (decorative, desktop only) */}
-            <FloatingSubjectCards />
+            {/* Right: fiches bristol annotées au surligneur (décoratif, desktop) */}
+            <BristolHero />
           </div>
         </div>
       </section>
