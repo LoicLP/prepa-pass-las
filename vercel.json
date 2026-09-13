@@ -1,8 +1,6 @@
 {
   "crons": [
-    {
-      "path": "/api/relance-inactifs",
-      "schedule": "0 17 * * *"
-    }
+    { "path": "/api/lifecycle", "schedule": "0 17 * * *" },
+    { "path": "/api/bilan-hebdo", "schedule": "0 16 * * 0" }
   ]
 }

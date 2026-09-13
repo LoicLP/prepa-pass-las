@@ -13,7 +13,7 @@ export default function PromoPriceLine({ variant = 'hero' }) {
   return (
     <p className={base}>
       Gratuit · sans carte bancaire ·{' '}
-      <strong className={accent}>2 jours de Premium offerts</strong>
+      <strong className={accent}>7 jours de Premium offerts</strong>
     </p>
   );
 }

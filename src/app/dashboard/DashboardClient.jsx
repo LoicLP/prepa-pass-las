@@ -16,6 +16,7 @@ import { downloadFichePdf } from '@/utils/fichePdf';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
+import { track } from '@/lib/track';
 import { computeXP, gradeForXP, computeStreakWithJokers, questStatus, GRADES } from '@/lib/gamification';
 
 /* ========== HELPERS ========== */
@@ -4268,6 +4269,7 @@ function AccountSection({ user, tier, accessToken }) {
    PREMIUM BLUR GATE — affiche le contenu flouté si locked=true
    ============================================================ */
 function PremiumBlurGate({ locked, title, description, children }) {
+  useEffect(() => { if (locked) track('premium_gate_shown', { title }); }, [locked, title]);
   if (!locked) return children;
   return (
     <div style={{ position: 'relative' }}>

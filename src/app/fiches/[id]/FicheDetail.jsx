@@ -101,11 +101,11 @@ export default function FicheDetail({ fiche, subject, related }) {
               </div>
             ) : (
               <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 text-center">
-                <p className="font-bold text-gray-900 mb-1">Prêt à t&apos;entraîner ?</p>
-                <p className="text-sm text-gray-500 mb-4">Crée ton compte gratuit pour accéder aux QCM, fiches et mode examen.</p>
+                <p className="font-bold text-gray-900 mb-1">Teste-toi sur cette fiche : 5 questions</p>
+                <p className="text-sm text-gray-500 mb-4">Un compte gratuit suffit : tes fiches lues sont suivies, chaque fiche a son QCM, et tu démarres avec 7 jours de Premium offerts — QCM illimités, examens blancs, PDF.</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Link href="/inscription" className="px-6 py-3 bg-primary-600 text-white text-sm font-bold rounded-xl hover:bg-primary-700 transition-colors">
-                    Créer un compte gratuit →
+                  <Link href={`/connexion?redirect=${encodeURIComponent(`/qcm?fiche=${fiche.id}`)}`} className="px-6 py-3 bg-primary-600 text-white text-sm font-bold rounded-xl hover:bg-primary-700 transition-colors">
+                    Lancer le QCM de cette fiche →
                   </Link>
                   <Link href="/connexion" className="px-6 py-3 bg-gray-100 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-200 transition-colors">
                     Se connecter

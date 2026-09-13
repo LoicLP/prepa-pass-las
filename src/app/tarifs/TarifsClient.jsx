@@ -1,4 +1,5 @@
 'use client';
+import { track } from '@/lib/track';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -42,30 +43,32 @@ function PremiumCheckIcon() {
 
 const BILLING_PERIODS = [
   { id: 'monthly', label: 'Mensuel' },
-  { id: 'yearly', label: 'Annuel', badge: '-50%' },
+  { id: 'yearly', label: 'Annuel', badge: '6 mois offerts' },
 ];
 
 // Tarifs normaux (hors offre de rentrée)
 const PREMIUM_PRICING = {
   monthly: { display: '24,99', suffix: '/mois', note: 'sans engagement, annulable à tout moment' },
-  yearly: { display: '12,50', suffix: '/mois', note: 'facturé 149,99 € par an', strike: '24,99', badge: '-150 €/an' },
+  yearly: { display: '12,50', suffix: '/mois', note: 'facturé 149,99 € par an — soit 6 mois offerts', strike: '24,99', badge: '6 mois offerts' },
 };
 
 // Tarifs pendant l'offre de rentrée (-50 % conservés tant que l'abonnement reste actif)
 const PROMO_PRICING = {
   monthly: { display: '12,49', suffix: '/mois', strike: '24,99', badge: '-50 % à vie', note: 'à vie · sans engagement, annulable à tout moment' },
-  yearly: { display: '6,25', suffix: '/mois', strike: '12,50', badge: '-75 % au total', note: 'facturé 74,99 € par an (au lieu de 149,99 €), à vie' },
+  yearly: { display: '6,25', suffix: '/mois', strike: '12,50', badge: '6 mois offerts', note: 'facturé 74,99 € par an (au lieu de 149,99 €), à vie' },
 };
 
 export default function TarifsPage() {
   const { tier, isLoaded } = usePremium();
   const { user, accessToken } = useAuth();
-  const [billing, setBilling] = useState('yearly');
+  // Mensuel par défaut : le ticket d'entrée le plus facile à accepter ; l'annuel reste à côté comme économie.
+  const [billing, setBilling] = useState('monthly');
   // Évalué dès le rendu : évite d'afficher un instant le prix plein avant le prix promo
   const [promo] = useState(() => (isPromoActive() ? { days: promoDaysLeft() } : null));
   const [loadingPlan, setLoadingPlan] = useState(null);
 
   const handleSubscribe = async (plan) => {
+    track('checkout_open', { plan, period: billing, promo: !!promo, loggedIn: !!user });
     if (!user) {
       window.location.href = '/connexion?redirect=/tarifs';
       return;
@@ -129,7 +132,7 @@ export default function TarifsPage() {
           </h1>
           <p className="text-base md:text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
             Sans engagement, annulable &agrave; tout moment — et{' '}
-            <strong className="text-gray-900">2 jours de Premium offerts</strong>{' '}
+            <strong className="text-gray-900">7 jours de Premium offerts</strong>{' '}
             &agrave; l&apos;inscription, sans carte bancaire.
           </p>
 
@@ -164,7 +167,7 @@ export default function TarifsPage() {
               {BILLING_PERIODS.map(p => (
                 <button
                   key={p.id}
-                  onClick={() => setBilling(p.id)}
+                  onClick={() => { setBilling(p.id); track('billing_toggle', { period: p.id }); }}
                   className={`flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all ${
                     billing === p.id
                       ? 'text-white shadow-lg shadow-indigo-500/30'
@@ -223,7 +226,7 @@ export default function TarifsPage() {
                 <ul className="space-y-3">
                   <li className="flex items-center gap-2 text-sm text-gray-600">
                     <CheckIcon />
-                    <span><strong>2 jours de Premium offerts</strong>{' '}&agrave; l&apos;inscription</span>
+                    <span><strong>7 jours de Premium offerts</strong>{' '}&agrave; l&apos;inscription</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-600">
                     <CheckIcon />
@@ -355,7 +358,7 @@ export default function TarifsPage() {
               <span className="text-base leading-none">↩️</span> Annulable en 2 clics
             </span>
             <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
-              <span className="text-base leading-none">🎁</span> 2 jours d&apos;essai — sans carte bancaire
+              <span className="text-base leading-none">🎁</span> 7 jours d&apos;essai — sans carte bancaire
             </span>
           </div>
 
@@ -388,7 +391,7 @@ export default function TarifsPage() {
             </div>
             <div className="space-y-4">
               <FaqItem
-                question="Que se passe-t-il à la fin des 2 jours offerts ?"
+                question="Que se passe-t-il à la fin des 7 jours offerts ?"
                 answer="Ton compte repasse automatiquement en plan Découverte — rien à faire, aucune carte bancaire n'est demandée. Tes XP, ta série et tes statistiques sont conservés, et tu peux passer Premium quand tu veux."
               />
               <FaqItem

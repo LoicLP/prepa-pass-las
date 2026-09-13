@@ -121,7 +121,10 @@ export async function POST(request) {
     const session = await stripeRequest('/checkout/sessions', {
       customer: customerId,
       mode: 'subscription',
-      'payment_method_types[0]': 'card',
+      // Méthodes de paiement gérées depuis le dashboard Stripe (carte, Link, Apple Pay, Google Pay).
+      // Récupération : Stripe génère un lien de reprise valable 30 jours quand la session expire ;
+      // le webhook `checkout.session.expired` l'envoie par e-mail.
+      'after_expiration[recovery][enabled]': 'true',
       'line_items[0][price]': priceId,
       'line_items[0][quantity]': '1',
       success_url: `${baseUrl}/payment/success`,

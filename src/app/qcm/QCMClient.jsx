@@ -13,6 +13,7 @@ import { useGeminiQuestions } from '@/hooks/useGeminiQuestions';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePremium } from '@/contexts/PremiumContext';
 import { supabase } from '@/lib/supabase';
+import { track } from '@/lib/track';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
 import UpgradeModal from '@/components/ui/UpgradeModal';
@@ -202,6 +203,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
   const [resultsFilter, setResultsFilter] = useState('all');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [welcomeExamDate, setWelcomeExamDate] = useState(null); // date choisie sur l'écran de bienvenue
   const [tipIndex, setTipIndex] = useState(0);
   const [correctionOpen, setCorrectionOpen] = useState(true);
   const [aiGenerated, setAiGenerated] = useState(false);
@@ -336,6 +338,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
       const todayCount = lastDate === today ? (profile?.qcm_today_count || 0) : 0;
 
       if (todayCount >= 1) {
+        track('daily_limit_reached', { todayCount });
         setShowUpgradeModal(true);
         return;
       }
@@ -803,7 +806,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
                 )}
                 {!user && (
                   <p className="mt-3 text-xs text-gray-400">
-                    Sans carte bancaire · <strong className="text-violet-600">2 jours de Premium offerts</strong>{' '}
+                    Sans carte bancaire · <strong className="text-violet-600">7 jours de Premium offerts</strong>{' '}
                     &agrave; l&apos;inscription
                   </p>
                 )}
@@ -1033,10 +1036,26 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
             <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' }}></div>
             <div className="w-20 h-20 mx-auto rounded-full bg-violet-100 flex items-center justify-center text-5xl mb-4 pricing-float">🦉</div>
             <h2 className="text-2xl font-black text-gray-900 mb-2">Bienvenue&nbsp;! On y va&nbsp;?</h2>
-            <p className="text-sm text-gray-500 leading-relaxed mb-6">
+            <p className="text-sm text-gray-500 leading-relaxed mb-5">
               On commence par <strong className="text-gray-900">5 questions rapides</strong>{' '}
               — deux minutes, pas plus.
             </p>
+            {/* Date de concours : Pico compte à rebours et personnalise tes rappels */}
+            {!user?.user_metadata?.exam_date && (
+              <div className="mb-6 text-left max-w-xs mx-auto">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Ton concours, c&apos;est quand&nbsp;?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[['2026-12-14', 'Déc. 2026', 'Écrits du S1'], ['2027-05-17', 'Mai 2027', 'Écrits du S2']].map(([d, l, sub]) => (
+                    <button key={d} type="button" onClick={() => setWelcomeExamDate(welcomeExamDate === d ? null : d)}
+                      className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${welcomeExamDate === d ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
+                      <span className="block text-sm font-bold text-gray-900">{l}</span>
+                      <span className="block text-[11px] text-gray-500">{sub}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-gray-400 mt-1.5">Modifiable à tout moment depuis ton tableau de bord.</p>
+              </div>
+            )}
             <div className="space-y-2.5 mb-7 text-left max-w-xs mx-auto">
               {[
                 ['🔥', <>Ta <strong>série de révisions</strong> démarre aujourd&apos;hui</>],
@@ -1050,7 +1069,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
               ))}
             </div>
             <button
-              onClick={launchWelcome}
+              onClick={async () => { if (welcomeExamDate && supabase) { try { await supabase.auth.updateUser({ data: { exam_date: welcomeExamDate } }); } catch {} } launchWelcome(); }}
               className="w-full py-4 rounded-2xl text-white font-bold text-lg hover:opacity-90 transition-opacity shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2"
               style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
             >
@@ -1934,7 +1953,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
                 Cr&eacute;er mon compte gratuit
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
               </Link>
-              <p className="mt-2.5 text-[11px] text-gray-400">Gratuit · sans carte bancaire · <strong className="text-violet-600">2 jours de Premium offerts</strong></p>
+              <p className="mt-2.5 text-[11px] text-gray-400">Gratuit · sans carte bancaire · <strong className="text-violet-600">7 jours de Premium offerts</strong></p>
             </div>
             );
           })()}

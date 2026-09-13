@@ -1,4 +1,6 @@
 'use client';
+import { useEffect } from 'react';
+import { track } from '@/lib/track';
 
 import Link from 'next/link';
 
@@ -18,6 +20,7 @@ const TIER_CONFIG = {
 };
 
 export default function UpgradeModal({ onClose, requiredTier = 'essentiel' }) {
+  useEffect(() => { track('upgrade_modal_shown', { requiredTier: typeof requiredTier !== 'undefined' ? requiredTier : null, page: typeof window !== 'undefined' ? window.location.pathname : null }); }, []);
   const config = TIER_CONFIG[requiredTier] || TIER_CONFIG.essentiel;
 
   return (

@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function QuestionDuJour() {
   const { user } = useAuth();
-  // Connecté → dashboard avec le lanceur QCM ; visiteur → inscription (2 jours de Premium offerts)
+  // Connecté → dashboard avec le lanceur QCM ; visiteur → inscription (7 jours de Premium offerts)
   const moreHref = user ? '/dashboard?open=qcm' : '/connexion';
 
   const q = useMemo(() => {
@@ -123,7 +123,7 @@ export default function QuestionDuJour() {
             </Link>
             {!user && (
               <p className="mt-2 text-center text-[11px] text-gray-400">
-                Compte gratuit &middot; <strong className="text-violet-600">2 jours de Premium offerts</strong>
+                Compte gratuit &middot; <strong className="text-violet-600">7 jours de Premium offerts</strong>
               </p>
             )}
           </>

@@ -121,7 +121,7 @@ export default function Home() {
           </div>
 
           <div className="hero-seq-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-slate-500">
-            <div className="inline-flex items-center gap-1.5"><CheckIcon /> 2 jours de Premium offerts</div>
+            <div className="inline-flex items-center gap-1.5"><CheckIcon /> 7 jours de Premium offerts</div>
             <div className="inline-flex items-center gap-1.5"><CheckIcon /> Sans carte bancaire</div>
             <div className="inline-flex items-center gap-1.5"><CheckIcon /> 150 fiches en accès libre</div>
           </div>
@@ -393,7 +393,7 @@ export default function Home() {
                   <span key={l} className={`w-6 h-6 rounded-full border-2 border-white text-[10px] font-bold text-white flex items-center justify-center ${['bg-indigo-500', 'bg-violet-500', 'bg-cyan-500', 'bg-emerald-500'][i]}`}>{l}</span>
                 ))}
               </div>
-              +2&nbsp;500 étudiants inscrits
+              150 fiches · 6 UE · QCM illimités
             </div>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-4">Ils révisent avec nous</h2>
             <p className="text-slate-500 text-lg">Ce que disent les étudiants qui préparent le concours sur la plateforme.</p>
@@ -440,7 +440,7 @@ export default function Home() {
         <div data-reveal className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6 leading-[1.05]">Prêt à réussir ta première année&nbsp;?</h2>
           <p className="text-slate-300 text-lg md:text-xl mb-10 max-w-xl mx-auto leading-relaxed">
-            Rejoins les +2&nbsp;500 étudiants qui préparent le concours PASS/LAS avec un coach dans la poche.
+            Rejoins les étudiants qui préparent le concours PASS/LAS avec un coach dans la poche.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <Link href="/inscription" className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-slate-900 font-semibold rounded-full hover:bg-slate-100 transition-colors shadow-xl shadow-black/20">
@@ -452,7 +452,7 @@ export default function Home() {
           </div>
           <div className="mb-4"><PromoPriceLine variant="dark" /></div>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-400">
-            <div className="inline-flex items-center gap-1.5"><CheckIcon className="w-4 h-4 text-emerald-400" /> 2 jours de Premium offerts</div>
+            <div className="inline-flex items-center gap-1.5"><CheckIcon className="w-4 h-4 text-emerald-400" /> 7 jours de Premium offerts</div>
             <div className="inline-flex items-center gap-1.5"><CheckIcon className="w-4 h-4 text-emerald-400" /> Sans carte bancaire</div>
             <div className="inline-flex items-center gap-1.5"><CheckIcon className="w-4 h-4 text-emerald-400" /> Résiliation en 1 clic</div>
           </div>

@@ -563,7 +563,7 @@ export default function FichesPage() {
                     </svg>
                   </Link>
                   <span className="text-[11px] text-gray-400">
-                    Sans carte bancaire &middot; <strong className="text-violet-600">2 jours de Premium offerts</strong>
+                    Sans carte bancaire &middot; <strong className="text-violet-600">7 jours de Premium offerts</strong>
                   </span>
                 </div>
               </div>

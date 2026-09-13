@@ -100,7 +100,7 @@ export default function Page() {
               </div>
               <p className="mt-3 text-xs text-gray-400">
                 Inscription gratuite · sans carte bancaire —{' '}
-                <strong className="text-violet-600">2 jours de Premium offerts</strong> pour tout
+                <strong className="text-violet-600">7 jours de Premium offerts</strong> pour tout
                 tester, mode examen inclus.
               </p>
             </div>

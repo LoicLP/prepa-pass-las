@@ -102,7 +102,7 @@ export default function CGVPage() {
 
                 <p>
                   &Agrave; la cr&eacute;ation de son compte, tout nouvel Utilisateur b&eacute;n&eacute;ficie d&rsquo;une{' '}
-                  <strong className="text-gray-900">p&eacute;riode d&rsquo;essai gratuite de 48 heures</strong>{' '}
+                  <strong className="text-gray-900">p&eacute;riode d&rsquo;essai gratuite de 7 jours</strong>{' '}
                   donnant acc&egrave;s &agrave; l&rsquo;ensemble des fonctionnalit&eacute;s Premium. Cet essai est accord&eacute;
                   automatiquement, sans communication de coordonn&eacute;es bancaires, et prend fin automatiquement
                   sans facturation ni engagement : le compte bascule alors sur la formule D&eacute;couverte.
@@ -165,7 +165,7 @@ export default function CGVPage() {
                   au prorata temporis est appliqu&eacute;.
                 </p>
                 <p>
-                  La p&eacute;riode d&rsquo;essai de 48 heures mentionn&eacute;e &agrave; l&rsquo;article 3 est enti&egrave;rement
+                  La p&eacute;riode d&rsquo;essai de 7 jours mentionn&eacute;e &agrave; l&rsquo;article 3 est enti&egrave;rement
                   gratuite&nbsp;: aucune coordonn&eacute;e bancaire n&rsquo;est demand&eacute;e et aucun montant n&rsquo;est
                   pr&eacute;lev&eacute; &agrave; son issue.
                 </p>

@@ -39,9 +39,10 @@ export function PremiumProvider({ children }) {
     loadProfile();
   }, [user]);
 
-  // Essai Premium offert : 48 h de toutes les fonctionnalités à compter de la création du compte.
+  // Essai Premium offert : 7 jours de toutes les fonctionnalités à compter de la création du compte
+  // (48 h jusqu'en septembre 2026 : trop court pour une deuxième visite).
   // Basé sur user.created_at → aucune écriture en base, impossible à « réactiver ».
-  const TRIAL_HOURS = 48;
+  const TRIAL_HOURS = 7 * 24;
   const trialEndsAt = user?.created_at
     ? new Date(new Date(user.created_at).getTime() + TRIAL_HOURS * 3600 * 1000)
     : null;

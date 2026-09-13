@@ -94,7 +94,7 @@ export default function ConnexionPage() {
         <p className="text-sm text-gray-400 text-center mb-4">pour accéder à votre espace d&apos;entraînement.</p>
         <div className="flex justify-center mb-6">
           <span className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-200 rounded-full px-3 py-1.5">
-            🎁 Nouveau compte : 2 jours de Premium offerts
+            🎁 Nouveau compte : 7 jours de Premium offerts
           </span>
         </div>
 

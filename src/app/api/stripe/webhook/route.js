@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getStripe } from '@/lib/stripe';
+import { sendMail, layout, esc } from '@/lib/mailer';
+import { isPromoActive, HEADLINE } from '@/lib/promo';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -43,6 +45,25 @@ export async function POST(request) {
 
   try {
     switch (event.type) {
+      // Panier abandonné → lien de reprise par e-mail (une heure après l'expiration, côté Stripe)
+      case 'checkout.session.expired': {
+        const session = event.data.object;
+        const url = session.after_expiration?.recovery?.url;
+        const userId = session.metadata?.user_id;
+        if (!url || !userId || session.metadata?.site !== 'prepa-pass-las') break;
+        const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
+        const u = data?.user; if (!u?.email) break;
+        const firstName = (u.user_metadata?.full_name || u.email).split(/[ @]/)[0];
+        const period = session.metadata?.billing_period === 'yearly' ? 'annuel' : 'mensuel';
+        const offer = isPromoActive()
+          ? `Ton panier ${period} est toujours là, avec l'offre de rentrée : <strong>Premium à ${HEADLINE.monthlyPromo} €/mois</strong> (${HEADLINE.yearTotal} €/an), à vie tant que tu restes abonné — jusqu'au 31 octobre.`
+          : `Ton panier ${period} est toujours là. Sans engagement, résiliable en un clic.`;
+        await sendMail({ to: u.email, subject: `${firstName}, ton panier t'attend`, html: layout({ title: 'Tu étais à un clic', emoji: '🛒', paragraphs: [
+          `Salut ${esc(firstName)} 👋`, offer,
+          `Tes XP, ta série et ton historique sont conservés : tu reprends exactement où tu en étais, avec les QCM illimités et les examens blancs en plus.`,
+        ], cta: { href: url, label: 'Reprendre mon panier' }, footnote: 'Ce lien reste valable 30 jours.' }) });
+        break;
+      }
       // Paiement réussi → activer l'abonnement
       case 'checkout.session.completed': {
         const session = event.data.object;
