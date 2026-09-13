@@ -5,6 +5,9 @@ export const coursLoaders = {
   biostats: () => import('./biostats').then(m => m.COURS_BIOSTATS),
   biophysique: () => import('./biophysique').then(m => m.COURS_BIOPHYSIQUE),
   ssh: () => import('./ssh').then(m => m.COURS_SSH),
+  physiologie: () => import('./physiologie').then(m => m.COURS_PHYSIOLOGIE),
+  medicament: () => import('./medicament').then(m => m.COURS_MEDICAMENT),
+  histo: () => import('./histo').then(m => m.COURS_HISTO),
 };
 
 export async function loadCoursForFiche(ficheId) {

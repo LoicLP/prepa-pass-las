@@ -979,8 +979,6 @@ export default function DashboardPage() {
                   </button>
                 </div>
               )}
-              {/* Ta fac : ce que le site applique */}
-              {profile.fac && profile.fac !== 'autre' && <FacCard profile={profile} prog={prog} onEdit={() => setActiveSection('account')} onExam={() => openExamen()} />}
               {/* Parcours vers le concours */}
               <ConcoursPath examDate={user.user_metadata?.exam_date || null} facId={profile.fac} />
               <ActionHub
@@ -1785,71 +1783,47 @@ function ConcoursPath({ examDate, facId = null }) {
   );
 }
 
-/* Carte « Ta fac » de l'accueil : barème, format des épreuves, programme, dates. */
-function FacCard({ profile, prog, onEdit, onExam }) {
-  const fac = facById(profile.fac); const mcc = mccFor(profile.fac); const ex = facExams(profile.fac);
-  if (!fac) return null;
-  const bar = baremeById(profile.bareme || 'partiel');
-  const nExams = (ex?.exams || []).filter(e => e.minutes).length;
-  const dates = ex?.dates; const fmtD = (d) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-  const voie = VOIES.find(v => v.id === profile.voie)?.label;
-  const tiles = [
-    { k: 'Barème', v: bar.label, s: mcc?.confidence === 'officiel' ? 'MCC officielles' : mcc?.confidence ? 'source étudiante, à confirmer' : 'choisi par toi' },
-    { k: 'Épreuves', v: nExams ? `${nExams} UE au format de ta fac` : 'format à renseigner', s: nExams ? 'durée et nombre de QCM pré-remplis' : 'depuis ton intranet' },
-    { k: 'Programme', v: prog.known ? `${prog.subjects.length} UE` : '9 UE', s: prog.known ? (prog.others.length ? `${prog.others.length} hors programme` : 'toutes nos UE') : 'programme complet' },
-    { k: 'Partiels', v: dates?.s1 ? `S1 ${fmtD(dates.s1)}${dates.s2 ? ` · S2 ${fmtD(dates.s2)}` : ''}` : ex?.threshold ? `note-seuil ${ex.threshold}/20` : 'dates à renseigner', s: dates?.approx ? 'd’après 2025-2026' : ex?.threshold ? 'éliminatoire' : 'sur ton intranet' },
-  ];
-  return (
-    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 14, border: '1px solid #ddd9fb', background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4338ca 100%)', padding: '14px 16px', color: '#fff' }}>
-      <div style={{ position: 'absolute', right: -40, top: -50, width: 180, height: 180, borderRadius: '50%', background: 'rgba(129,140,248,0.25)', filter: 'blur(30px)', pointerEvents: 'none' }} />
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.12)', display: 'grid', placeItems: 'center', fontSize: 17, flexShrink: 0 }}>🎓</div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: 'rgba(199,210,254,0.9)' }}>Ta fac</div>
-            <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fac.name}{voie ? <span style={{ fontWeight: 600, color: 'rgba(224,231,255,0.8)' }}> · {voie}</span> : null}</div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <Link href={`/facs/${fac.id}`} style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 11px', borderRadius: 9, background: 'rgba(255,255,255,0.12)', color: '#fff', textDecoration: 'none' }} className="hover:bg-white/20 transition-colors">Fiche de la fac</Link>
-          <button onClick={onExam} style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 11px', borderRadius: 9, background: '#fff', color: '#312e81', border: 'none', cursor: 'pointer' }} className="hover:bg-indigo-50 transition-colors">Épreuve au format →</button>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4" style={{ gap: 8, marginTop: 12, position: 'relative' }}>
-        {tiles.map(t => (
-          <div key={t.k} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', minWidth: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, textTransform: 'uppercase', color: 'rgba(199,210,254,0.85)' }}>{t.k}</div>
-            <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.v}</div>
-            <div style={{ fontSize: 10.5, color: 'rgba(224,231,255,0.7)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.s}</div>
-          </div>
-        ))}
-      </div>
-      <button onClick={onEdit} style={{ position: 'absolute', right: 10, bottom: 8, background: 'none', border: 'none', color: 'rgba(199,210,254,0.7)', fontSize: 10.5, fontWeight: 600, cursor: 'pointer' }} className="hover:text-white">modifier ✎</button>
-    </div>
-  );
-}
-
 /* Faculté et voie sous la salutation ; lien vers le profil si rien n'est renseigné. */
 function FacLine({ profile, onEdit, compact = false }) {
-  const fac = facName(profile);
+  const fac = facById(profile?.fac);
   const voie = VOIES.find(v => v.id === profile?.voie)?.label || null;
   const fs = compact ? 12 : 13.5;
+  const ICON = <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>;
   if (!fac) {
     return (
       <button onClick={onEdit} style={{ background: 'none', border: 'none', padding: 0, marginTop: compact ? 2 : -4, fontSize: fs, fontWeight: 600, color: '#4f46e5', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }} className="hover:underline">
-        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>
+        {ICON}
         Renseigner ma faculté
       </button>
     );
   }
+  // Faits appliqués au compte, en une ligne discrète : barème, format, programme, partiels
+  const mcc = mccFor(fac.id); const ex = facExams(fac.id); const prog = programFor(profile);
+  const bar = baremeById(profile.bareme || 'partiel');
+  const nExams = (ex?.exams || []).filter(e => e.minutes).length;
+  const d = ex?.dates; const fmtD = (x) => new Date(x).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const facts = [
+    `Barème ${bar.label.toLowerCase()}${mcc?.confidence && mcc.confidence !== 'officiel' ? ' (à confirmer)' : ''}`,
+    nExams ? `${nExams} UE au format de ta fac` : null,
+    prog.known ? `programme de ${prog.subjects.length} UE` : null,
+    d?.s1 ? `partiels S1 ${fmtD(d.s1)}${d.s2 ? ` · S2 ${fmtD(d.s2)}` : ''}` : ex?.threshold ? `note-seuil ${ex.threshold}/20` : null,
+  ].filter(Boolean);
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: compact ? 2 : -4, fontSize: fs, color: '#5f6280', minWidth: 0 }}>
-      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, color: '#4f46e5' }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>
-      <span style={{ fontWeight: 600, color: '#0f1020', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fac}</span>
-      {voie && <span style={{ color: '#8a8ea8' }}>· {voie}</span>}
-      <button onClick={onEdit} aria-label="Modifier ma faculté" style={{ background: 'none', border: 'none', padding: 2, color: '#8a8ea8', cursor: 'pointer', display: 'flex', flexShrink: 0 }} className="hover:text-indigo-600">
-        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
-      </button>
+    <div style={{ marginTop: compact ? 4 : -2, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: compact ? 13 : 15, color: '#0f1020', minWidth: 0 }}>
+        <span style={{ color: '#4f46e5', display: 'flex' }}>{ICON}</span>
+        <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fac.name}</span>
+        {voie && <span style={{ color: '#8a8ea8', fontWeight: 500 }}>· {voie}</span>}
+        <Link href={`/facs/${fac.id}`} style={{ fontSize: 11.5, fontWeight: 600, color: '#4f46e5', textDecoration: 'none', marginLeft: 4, whiteSpace: 'nowrap' }} className="hover:underline">fiche de la fac</Link>
+        <button onClick={onEdit} aria-label="Modifier ma faculté" style={{ background: 'none', border: 'none', padding: 2, color: '#8a8ea8', cursor: 'pointer', display: 'flex', flexShrink: 0 }} className="hover:text-indigo-600">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+        </button>
+      </div>
+      {!compact && facts.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px 10px', marginTop: 3, fontSize: 12, color: '#5f6280' }}>
+          {facts.map((f, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>{i > 0 && <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#c7c9d9', display: 'inline-block' }} />}{f.charAt(0).toUpperCase() + f.slice(1)}</span>)}
+        </div>
+      )}
     </div>
   );
 }
