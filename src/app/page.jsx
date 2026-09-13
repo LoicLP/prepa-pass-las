@@ -22,13 +22,14 @@ export const metadata = {
 /* ============================================================
    Briques visuelles (langage de l'accueil CRFPA, palette indigo)
 ============================================================ */
-function GridBackground({ opacity = 0.05 }) {
+function GridBackground({ opacity = 0.05, light = false }) {
+  const rgb = light ? '255,255,255' : '30,27,75';
   return (
     <div className="absolute inset-0 pointer-events-none [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" aria-hidden="true">
       <div
         className="w-full h-full"
         style={{
-          backgroundImage: `linear-gradient(to right, rgba(30,27,75,${opacity}) 1px, transparent 1px), linear-gradient(to bottom, rgba(30,27,75,${opacity}) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(to right, rgba(${rgb},${opacity}) 1px, transparent 1px), linear-gradient(to bottom, rgba(${rgb},${opacity}) 1px, transparent 1px)`,
           backgroundSize: '44px 44px',
         }}
       />
@@ -201,49 +202,49 @@ export default function Home() {
       {/* ============================================================
           TA FAC — la plateforme s'adapte à chaque université
           ============================================================ */}
-      <section id="facs" className="py-20 md:py-28 bg-white border-t border-slate-100 relative overflow-hidden">
-        <GridBackground opacity={0.035} />
-        <div className="absolute top-[10%] right-[-6%] w-[420px] h-[420px] bg-indigo-200/[0.25] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+      <section id="facs" className="py-20 md:py-28 relative overflow-hidden bg-[#12103a] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(99,102,241,0.45),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(139,92,246,0.35),transparent_55%)]" aria-hidden="true" />
+        <GridBackground opacity={0.08} light />
         <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
-          <div data-reveal className="max-w-2xl mx-auto text-center mb-14">
-            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 border border-indigo-100 px-3.5 py-1.5 text-xs font-bold text-indigo-700 uppercase tracking-wider mb-5">Nouveau · 33 facultés</span>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-5">
-              Une prépa qui s&apos;adapte<br />à <span className="text-indigo-600">ta fac</span>, pas l&apos;inverse
+          <div data-reveal className="max-w-3xl mx-auto text-center mb-14">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1.5 text-xs font-bold text-indigo-200 uppercase tracking-wider mb-6">33 facultés · MCC 2025-2026</span>
+            <h2 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.05] mb-5">
+              Ta fac a ses règles.<br /><span className="text-indigo-300">On les applique.</span>
             </h2>
-            <p className="text-slate-500 text-lg leading-relaxed">
-              Le programme est national, le concours ne l&apos;est pas. Chaque faculté a son barème, ses durées d&apos;épreuve, ses coefficients, ses dates. Nous avons lu les MCC de chaque université pour que tu révises dans les conditions de la tienne.
+            <p className="text-indigo-100/80 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto">
+              Barème, durées, coefficients, dates : le concours change d&apos;une université à l&apos;autre. Renseigne ta faculté, et tu révises dans ses conditions.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center mb-14">
-            <div data-reveal className="grid sm:grid-cols-2 gap-4">
+          <div className="grid lg:grid-cols-[1fr_0.95fr] gap-10 lg:gap-14 items-center mb-14">
+            <div data-reveal className="grid sm:grid-cols-2 gap-3.5">
               {[
-                { t: 'Le barème de tes MCC', d: 'Points négatifs, dégressif par discordance, tout ou rien… ta note sur 20 est calculée comme chez toi, pas avec un barème générique.', i: '⚖️' },
-                { t: 'Le format exact des épreuves', d: '40 QCM en 1 h 30 à Lille, 30 minutes à Bordeaux, réponse unique en biophysique : durée et nombre de questions pré-remplis par UE.', i: '⏱️' },
-                { t: 'Coefficients et note-seuil', d: 'Tes priorités sont pondérées par le poids de chaque UE dans ta fac, et tu sais tout de suite si tu passes la note éliminatoire.', i: '🎯' },
-                { t: 'Stratégie de réponse', d: 'Cocher ou s’abstenir ? La bonne réponse dépend du barème. Après chaque épreuve : ce que les cases en trop t’ont coûté.', i: '🧠' },
+                { t: 'Barème', d: 'Ta note sur 20, calculée comme dans ta fac.', c: 'from-indigo-400 to-indigo-600' },
+                { t: 'Format', d: 'La durée et le nombre de QCM de chaque UE, pré-remplis.', c: 'from-violet-400 to-violet-600' },
+                { t: 'Coefficients', d: 'Tes priorités pondérées, la note-seuil sous les yeux.', c: 'from-emerald-400 to-emerald-600' },
+                { t: 'Stratégie', d: 'Cocher ou s’abstenir ? Ça dépend du barème. On te le dit.', c: 'from-amber-300 to-amber-500' },
               ].map((c) => (
-                <div key={c.t} className="bg-white rounded-2xl border border-slate-200/70 p-5 shadow-sm shadow-slate-900/[0.03]">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-lg mb-3">{c.i}</div>
-                  <h3 className="font-bold text-slate-900 mb-1.5">{c.t}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">{c.d}</p>
+                <div key={c.t} className="relative rounded-2xl bg-white/[0.06] border border-white/10 p-5 backdrop-blur-sm overflow-hidden">
+                  <span className={`absolute left-5 top-0 h-1 w-10 rounded-b-full bg-gradient-to-r ${c.c}`} aria-hidden="true" />
+                  <h3 className="text-xl font-black tracking-tight mt-2 mb-1">{c.t}</h3>
+                  <p className="text-sm text-indigo-100/75 leading-relaxed">{c.d}</p>
                 </div>
               ))}
             </div>
             <div data-reveal className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-br from-indigo-100/60 to-violet-100/60 rounded-3xl blur-2xl pointer-events-none" aria-hidden="true" />
+              <div className="absolute -inset-6 bg-indigo-400/25 rounded-[2rem] blur-3xl pointer-events-none" aria-hidden="true" />
               <div className="relative"><MockFac /></div>
             </div>
           </div>
 
           <div data-reveal className="text-center">
-            <p className="text-sm font-semibold text-slate-500 mb-4">Paris Cité, Sorbonne, Lyon, Marseille, Lille, Toulouse, Montpellier, Bordeaux, Nantes, Strasbourg… et 23 autres, avec les sources.</p>
             <div className="flex flex-wrap justify-center gap-2 mb-8">
-              {[['paris-cite', 'Paris Cité'], ['sorbonne', 'Sorbonne'], ['lyon-est', 'Lyon Est'], ['marseille', 'Marseille'], ['lille', 'Lille'], ['toulouse', 'Toulouse'], ['montpellier', 'Montpellier'], ['bordeaux', 'Bordeaux'], ['nantes', 'Nantes'], ['strasbourg', 'Strasbourg'], ['nice', 'Nice'], ['rennes', 'Rennes']].map(([id, n]) => (
-                <Link key={id} href={`/facs/${id}`} className="rounded-full bg-white border border-slate-200 px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700 transition-colors">{n}</Link>
+              {[['paris-cite', 'Paris Cité'], ['sorbonne', 'Sorbonne'], ['lyon-est', 'Lyon'], ['marseille', 'Marseille'], ['lille', 'Lille'], ['toulouse', 'Toulouse'], ['montpellier', 'Montpellier'], ['bordeaux', 'Bordeaux'], ['nantes', 'Nantes'], ['strasbourg', 'Strasbourg'], ['nice', 'Nice'], ['rennes', 'Rennes']].map(([id, n]) => (
+                <Link key={id} href={`/facs/${id}`} className="rounded-full bg-white/[0.07] border border-white/15 px-3.5 py-1.5 text-sm font-semibold text-indigo-50 hover:bg-white hover:text-slate-900 transition-colors">{n}</Link>
               ))}
+              <Link href="/facs" className="rounded-full border border-dashed border-white/25 px-3.5 py-1.5 text-sm font-semibold text-indigo-200 hover:bg-white/10 transition-colors">+ 21 autres</Link>
             </div>
-            <Link href="/facs" className="group inline-flex items-center justify-center gap-2 px-7 py-4 bg-slate-900 text-white font-semibold rounded-full hover:bg-slate-800 transition-colors">
+            <Link href="/facs" className="group inline-flex items-center justify-center gap-2 px-7 py-4 bg-white text-slate-900 font-semibold rounded-full hover:bg-indigo-50 transition-colors shadow-lg shadow-indigo-900/40">
               Voir le barème de ma fac
               <ArrowIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
