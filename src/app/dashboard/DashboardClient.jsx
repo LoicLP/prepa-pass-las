@@ -4269,6 +4269,24 @@ function EmptyState({ title, description, ctaHref, ctaLabel, onCta, userName }) 
    ACCOUNT SECTION
    ============================================================ */
 /* Profil de révision : ce qui permet au site de s'adapter (faculté, voie, temps, barème). */
+/* Liste déroulante habillée : icône à gauche, chevron à droite, focus indigo ; le <select> natif reste
+   (accessibilité, clavier, mobile), seul son habillage change. `accent` signale une valeur pré-remplie. */
+function FancySelect({ value, onChange, placeholder, icon, accent = false, children }) {
+  const empty = !value;
+  return (
+    <div className="relative group">
+      {icon && (
+        <svg className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${empty ? 'text-gray-400' : 'text-indigo-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">{icon}</svg>
+      )}
+      <select value={value} onChange={e => onChange(e.target.value)} className={`w-full appearance-none ${icon ? 'pl-10' : 'pl-3.5'} pr-10 py-2.5 rounded-xl border text-sm font-semibold truncate cursor-pointer transition-colors focus:outline-none focus:ring-[3px] focus:ring-indigo-100 ${empty ? 'text-gray-400 font-medium' : 'text-gray-900'} ${accent ? 'border-indigo-300 bg-indigo-50/60 hover:bg-indigo-50' : 'border-gray-200 bg-[#fafafe] hover:border-indigo-300 hover:bg-white'} focus:border-indigo-400`}>
+        {placeholder && <option value="">{placeholder}</option>}
+        {children}
+      </select>
+      <svg className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+    </div>
+  );
+}
+
 function ProfileCard({ user }) {
   const initial = getProfile(user);
   const explicitBareme = user?.user_metadata?.profile?.bareme || null; // choisi par l'étudiant (ou pré-rempli) ?
@@ -4303,7 +4321,6 @@ function ProfileCard({ user }) {
   };
   const myVote = initial.baremeVote && initial.baremeVote.fac === form.fac && initial.baremeVote.bareme === form.bareme;
   const votes = stats?.votes?.[form.bareme] || 0;
-  const inputCls = 'w-full px-3.5 py-2.5 bg-[#fafafe] border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-indigo-300 focus:ring-[3px] focus:ring-indigo-100';
   const labelCls = 'block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5';
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -4315,9 +4332,18 @@ function ProfileCard({ user }) {
         {form.fac && form.fac !== 'autre' && <Link href={`/facs/${form.fac}`} className="text-xs font-bold text-indigo-600 hover:underline">Fiche de la fac →</Link>}
       </div>
       <div className="grid sm:grid-cols-3 gap-4">
-        <div><label className={labelCls}>Facult&eacute;</label><select value={form.fac} onChange={e => onFacChange(e.target.value)} className={inputCls}><option value="">Choisir…</option>{FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}</select></div>
-        <div><label className={labelCls}>Voie</label><select value={form.voie} onChange={e => setForm(f => ({ ...f, voie: e.target.value }))} className={inputCls}><option value="">Choisir…</option>{VOIES.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}</select></div>
-        <div><label className={labelCls}>Bar&egrave;me des QCM</label><select value={form.bareme} onChange={e => setForm(f => ({ ...f, bareme: e.target.value }))} className={inputCls}>{BAREMES.map(b => <option key={b.id} value={b.id}>{b.label}{mcc?.bareme === b.id ? ' — ta fac' : ''}</option>)}</select></div>
+        <div><label className={labelCls}>Facult&eacute;</label>
+          <FancySelect value={form.fac} onChange={onFacChange} placeholder="Choisir ma faculté…" icon={<path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />}>
+            {FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}
+          </FancySelect></div>
+        <div><label className={labelCls}>Voie</label>
+          <FancySelect value={form.voie} onChange={v => setForm(f => ({ ...f, voie: v }))} placeholder="PASS ou LAS ?" icon={<path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />}>
+            {VOIES.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}
+          </FancySelect></div>
+        <div><label className={labelCls}>Bar&egrave;me des QCM</label>
+          <FancySelect value={form.bareme} onChange={v => setForm(f => ({ ...f, bareme: v }))} icon={<path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.5v3.75m0 0L21 5.25m-2.25 3L16.5 5.25m-9 3v-3.75m0 0L9.75 5.25M5.25 4.5 3 5.25" />} accent={mcc?.bareme === form.bareme}>
+            {BAREMES.map(b => <option key={b.id} value={b.id}>{b.label}{mcc?.bareme === b.id ? ' — ta fac' : ''}</option>)}
+          </FancySelect></div>
       </div>
       <p className="mt-2 text-[11.5px] text-gray-500 leading-snug">
         {mcc?.bareme
