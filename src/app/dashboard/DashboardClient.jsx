@@ -17,8 +17,9 @@ import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
 import { track } from '@/lib/track';
-import { getProfile, momentFor, BAREMES, VOIES } from '@/lib/profile';
-import { FACS, mccFor } from '@/data/facs';
+import { getProfile, momentFor, BAREMES, VOIES, facName } from '@/lib/profile';
+import { FACS, mccFor, facById } from '@/data/facs';
+import { facExams, facCoeffs, fmtMinutes } from '@/data/facExams';
 import { computeMastery } from '@/lib/mastery';
 import { PROGRAMME_DATA } from '@/data/programme';
 import { computeXP, gradeForXP, computeStreakWithJokers, questStatus, GRADES } from '@/lib/gamification';
@@ -60,12 +61,6 @@ const MENU_ITEMS = [
     iconActiveClass: 'text-violet-600',
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" /></svg>,
   },
-  {
-    id: 'classement', label: 'Classement', premium: true, color: 'rose',
-    activeClasses: 'bg-rose-50 text-rose-700 border-rose-600',
-    iconActiveClass: 'text-rose-600',
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0 1 16.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 0 1-2.52.587 6.023 6.023 0 0 1-2.52-.587" /></svg>,
-  },
 ];
 
 /* ========== MAIN PAGE ========== */
@@ -85,7 +80,7 @@ export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState('overview');
   useEffect(() => {
     const s = new URLSearchParams(window.location.search).get('section');
-    if (s && ['overview', 'progress', 'goals', 'leaderboard', 'history', 'account'].includes(s)) setActiveSection(s);
+    if (s && ['overview', 'progression', 'objectifs', 'historique', 'account'].includes(s)) setActiveSection(s);
   }, []);
   const [historyFilter, setHistoryFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(10);
@@ -269,6 +264,8 @@ export default function DashboardPage() {
   }, [allSessions, user?.id, accessToken, user?.user_metadata?.full_name, user?.displayName]);
 
   // ---- Centralized data computation ----
+  const profile = useMemo(() => getProfile(user), [user]);
+  const coeffs = useMemo(() => facCoeffs(profile.fac), [profile.fac]);
   const data = useMemo(() => {
     const today = new Date();
     const sorted = [...allSessions].filter(s => s.date).sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -340,8 +337,10 @@ export default function DashboardPage() {
     const weaknesses = sortedByAvg.filter(s => !strengthIds.has(s.id)).slice(-2).reverse();
 
     // Recommendations (weakest subjects with sessions, up to 4)
+    // Priorité : l'écart à 100 pondéré par le coefficient de la fac quand on le connaît
+    const weightOf = (id) => (coeffs && coeffs[id]) || 1;
     const recommendations = [...withSessions]
-      .sort((a, b) => a.avg - b.avg)
+      .sort((a, b) => (100 - b.avg) * weightOf(b.id) - (100 - a.avg) * weightOf(a.id))
       .slice(0, 4)
       .map(s => ({
         ...s,
@@ -392,10 +391,9 @@ export default function DashboardPage() {
       hasMultipleSubjects: withSessions.length >= 2,
       recommendations,
     };
-  }, [allSessions, qcmStats.sessions, examStats.sessions]);
+  }, [allSessions, qcmStats.sessions, examStats.sessions, coeffs]);
 
-  // ---- Adaptation à l'étudiant : profil, carte de maîtrise, moment du parcours ----
-  const profile = useMemo(() => getProfile(user), [user]);
+  // ---- Adaptation à l'étudiant : carte de maîtrise, moment du parcours ----
   const mastery = useMemo(() => computeMastery(qcmStats.sessions || [], profile.placement), [qcmStats.sessions, profile.placement]);
   const examDateStr = user?.user_metadata?.exam_date || null;
   const moment = useMemo(() => momentFor(examDateStr), [examDateStr]);
@@ -710,7 +708,6 @@ export default function DashboardPage() {
                 { id: 'historique', label: 'Historique', accent: '#3eb489', accentBg: '#e5f6ee', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /> },
                 { id: 'progression', label: 'Progression', locked: !isPremiumPlus, accent: '#4f8ff7', accentBg: '#e4edff', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /> },
                 { id: 'objectifs', label: 'Objectifs', locked: !isPremiumPlus, accent: '#7c3aed', accentBg: '#f3edff', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" /> },
-                { id: 'classement', label: 'Classement', locked: !isPremiumPlus, accent: '#e8a948', accentBg: '#fdf4e2', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172" /> },
               ]},
             ].map(section => (
               <Fragment key={section.group}>
@@ -751,7 +748,7 @@ export default function DashboardPage() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0 }}>Passer Premium</p>
-                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>Progression, Objectifs & Classement</p>
+                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>Progression & Objectifs</p>
                 </div>
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.8)" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -870,6 +867,7 @@ export default function DashboardPage() {
             <h1 className="font-jakarta" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, margin: 0, color: '#0f1020' }}>
               {greetingForNow()} {user.displayName ? user.displayName.split(' ')[0] : ''}
             </h1>
+            <FacLine profile={profile} onEdit={() => setActiveSection('account')} />
           </div>
           )}
           {/* Mobile greeting (compact) — accueil uniquement */}
@@ -879,9 +877,12 @@ export default function DashboardPage() {
               {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <h1 className="font-jakarta" style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.6, margin: 0, color: '#0f1020' }}>
-                {greetingForNow()} {user.displayName ? user.displayName.split(' ')[0] : ''} 👋
-              </h1>
+              <div style={{ minWidth: 0 }}>
+                <h1 className="font-jakarta" style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.6, margin: 0, color: '#0f1020' }}>
+                  {greetingForNow()} {user.displayName ? user.displayName.split(' ')[0] : ''} 👋
+                </h1>
+                <FacLine profile={profile} onEdit={() => setActiveSection('account')} compact />
+              </div>
               {!isPaid && (
                 <Link href="/tarifs" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: trialDaysLeft > 0 ? '#eef2ff' : '#fff1f2', border: `1px solid ${trialDaysLeft > 0 ? '#c7d2fe' : '#fecdd3'}`, borderRadius: 999, padding: '4px 9px', fontSize: 11, fontWeight: 800, color: trialDaysLeft > 0 ? '#4f46e5' : '#e11d48', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   ⏱ {trialDaysLeft > 0 ? `Essai : ${trialDaysLeft}j` : 'Essai expiré'}
@@ -911,7 +912,7 @@ export default function DashboardPage() {
                         Premium offert — encore {hoursLeft >= 24 ? `${daysLeft} jour${daysLeft > 1 ? 's' : ''}` : `${hoursLeft} h`} pour tout tester
                       </div>
                       <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.75)' }}>
-                        QCM illimités, examens blancs, progression, classement… tout est débloqué.
+                        QCM illimités, examens blancs, progression, objectifs… tout est débloqué.
                       </div>
                     </div>
                     <Link href="/tarifs" style={{ flexShrink: 0, background: '#fff', color: '#4f46e5', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, textDecoration: 'none' }} className="hover:bg-indigo-50 transition-colors">
@@ -978,7 +979,7 @@ export default function DashboardPage() {
                 </div>
               )}
               {/* Parcours vers le concours */}
-              <ConcoursPath examDate={user.user_metadata?.exam_date || null} />
+              <ConcoursPath examDate={user.user_metadata?.exam_date || null} facId={profile.fac} />
               <ActionHub
                 moment={moment}
                 onLaunchMoment={(m) => {
@@ -1150,6 +1151,37 @@ export default function DashboardPage() {
                           </div>
                         )}
                       </div>
+
+                      {coeffs && (() => {
+                        const rows = SUBJECTS.map(sub => ({ ...sub, coeff: coeffs[sub.id] || null, st: data.subjectStats[sub.id] })).filter(r => r.coeff);
+                        const tot = rows.reduce((a, r) => a + r.coeff, 0);
+                        const withSess = rows.filter(r => r.st?.count > 0);
+                        const weighted = withSess.length ? Math.round(withSess.reduce((a, r) => a + r.st.avg * r.coeff, 0) / withSess.reduce((a, r) => a + r.coeff, 0)) : null;
+                        const fac = facById(profile.fac);
+                        return (
+                          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" style={{ borderTopWidth: 3, borderTopColor: '#7c3aed' }}>
+                            <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+                              <h3 className="font-jakarta text-base font-bold text-gray-900">Pond&eacute;ration de ta fac</h3>
+                              {weighted != null && <span className="inline-flex items-center rounded-full bg-violet-50 text-violet-700 text-xs font-bold px-2.5 py-1">{weighted}% pond&eacute;r&eacute;</span>}
+                            </div>
+                            <p className="text-xs text-gray-400 mb-4">Coefficients des UE &agrave; {fac?.name} d&apos;apr&egrave;s ses MCC : une matière qui p&egrave;se lourd compte davantage dans ta moyenne et dans tes priorit&eacute;s.</p>
+                            <div className="space-y-2.5">
+                              {rows.sort((a, b) => b.coeff - a.coeff).map(r => {
+                                const share = Math.round((r.coeff / tot) * 100);
+                                const bar = { indigo: '#4f46e5', emerald: '#10b981', violet: '#7c3aed', cyan: '#06b6d4', amber: '#f59e0b', rose: '#f43f5e' }[r.color] || '#4f46e5';
+                                return (
+                                  <div key={r.id} className="flex items-center gap-3">
+                                    <span className="w-40 shrink-0 text-sm font-semibold text-gray-800 truncate">{r.name}</span>
+                                    <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${share}%`, background: bar }} /></div>
+                                    <span className="w-16 text-right text-xs font-bold text-gray-500">coef {r.coeff}</span>
+                                    <span className={`w-14 text-right text-xs font-bold ${r.st?.count > 0 ? 'text-gray-900' : 'text-gray-300'}`}>{r.st?.count > 0 ? `${r.st.avg}%` : '—'}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {(() => {
                         const agg = (qcmStats.sessions || []).reduce((a, s) => { if (s.errNature) { a.lecture += s.errNature.lecture || 0; a.connaissance += s.errNature.connaissance || 0; a.idk += s.errNature.idk || 0; a.n += 1; } return a; }, { lecture: 0, connaissance: 0, idk: 0, n: 0 });
@@ -1389,12 +1421,6 @@ export default function DashboardPage() {
               </PremiumBlurGate>
             )}
 
-            {/* ===== CLASSEMENT (Premium) ===== */}
-            {activeSection === 'classement' && (
-              <PremiumBlurGate locked={!isPremiumPlus} title="Classement hebdomadaire" description="Compare tes performances des 7 derniers jours avec les autres étudiants et grimpe dans le classement de la semaine.">
-                <ClassementSection allSessions={allSessions} userId={user?.id} accessToken={accessToken} />
-              </PremiumBlurGate>
-            )}
 
             {/* ===== MON COMPTE ===== */}
             {activeSection === 'account' && (
@@ -1637,7 +1663,7 @@ function BentoFeatured({ icon, title, badge = null, description, ctaLabel, onCli
 }
 
 /* ========== PARCOURS VERS LE CONCOURS ========== */
-function ConcoursPath({ examDate }) {
+function ConcoursPath({ examDate, facId = null }) {
   /* Édition de la date directement dans la carte. La sauvegarde passe par
      supabase.auth.updateUser : l'AuthContext reçoit USER_UPDATED et `examDate`
      se met à jour tout seul, sans rechargement. */
@@ -1654,6 +1680,12 @@ function ConcoursPath({ examDate }) {
     if (err) setError(err.message); else setEditing(false);
   };
 
+  const facDates = facExams(facId)?.dates || null;
+  const facLabel = facById(facId)?.city || facById(facId)?.name || null;
+  const suggestions = (facDates ? [['S1', facDates.s1], ['S2', facDates.s2]] : [['S1', PICO_CONCOURS_DATES[0]], ['S2', PICO_CONCOURS_DATES[1]]])
+    .filter(([, d]) => d && new Date(d) >= new Date())
+    .map(([k, d]) => ({ k, d, label: new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) }));
+  const pickDate = async (d) => { if (!supabase) return; setSaving(true); const { error: err } = await supabase.auth.updateUser({ data: { exam_date: d } }); setSaving(false); if (err) setError(err.message); else setEditing(false); };
   const days = daysToNextConcours(examDate);
   if (days == null) return null;
   const WINDOW = 365; // fenêtre de « prépa » d'un an
@@ -1732,12 +1764,45 @@ function ConcoursPath({ examDate }) {
             <span style={{ fontSize: 10.5, color: '#8a8ea8', marginLeft: 6 }}>{dateLabel}</span>
             <button onClick={openEditor} title="Modifier la date du concours" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 6px', fontSize: 10.5, color: '#7c3aed', fontWeight: 700 }} className="hover:underline">modifier</button>
           </span>
+        ) : suggestions.length ? (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <span style={{ fontSize: 10.5, color: '#8a8ea8' }}>{facLabel ? `Partiels à ${facLabel}${facDates?.approx ? ' (d’après 2025-2026)' : ''} :` : 'Partiels :'}</span>
+            {suggestions.map(sg => (
+              <button key={sg.d} onClick={() => pickDate(sg.d)} disabled={saving} style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 20, border: '1px solid #c7d2fe', background: '#eef2ff', color: '#4f46e5', cursor: 'pointer' }} className="hover:bg-indigo-100">{sg.k} · {sg.label}</button>
+            ))}
+            <button onClick={openEditor} title="Autre date" style={{ fontSize: 11, fontWeight: 600, background: 'none', border: 'none', color: '#8a8ea8', cursor: 'pointer', padding: 0 }} className="hover:text-indigo-600">autre…</button>
+          </span>
         ) : (
           <button onClick={openEditor} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 700, color: '#7c3aed' }} className="hover:underline">
             📅 Ajoute ta date de concours →
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+/* Faculté et voie sous la salutation ; lien vers le profil si rien n'est renseigné. */
+function FacLine({ profile, onEdit, compact = false }) {
+  const fac = facName(profile);
+  const voie = VOIES.find(v => v.id === profile?.voie)?.label || null;
+  const fs = compact ? 12 : 13.5;
+  if (!fac) {
+    return (
+      <button onClick={onEdit} style={{ background: 'none', border: 'none', padding: 0, marginTop: compact ? 2 : -4, fontSize: fs, fontWeight: 600, color: '#4f46e5', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }} className="hover:underline">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>
+        Renseigner ma faculté
+      </button>
+    );
+  }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: compact ? 2 : -4, fontSize: fs, color: '#5f6280', minWidth: 0 }}>
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, color: '#4f46e5' }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>
+      <span style={{ fontWeight: 600, color: '#0f1020', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fac}</span>
+      {voie && <span style={{ color: '#8a8ea8' }}>· {voie}</span>}
+      <button onClick={onEdit} aria-label="Modifier ma faculté" style={{ background: 'none', border: 'none', padding: 2, color: '#8a8ea8', cursor: 'pointer', display: 'flex', flexShrink: 0 }} className="hover:text-indigo-600">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+      </button>
     </div>
   );
 }
@@ -3344,10 +3409,6 @@ function DashboardSideNav({ activeSection, setActiveSection, isPremiumPlus, tier
       icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />,
     },
     {
-      id: 'classement', label: 'Classement', locked: !isPremiumPlus,
-      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172" />,
-    },
-    {
       id: 'historique', label: 'Historique',
       icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />,
     },
@@ -4126,6 +4187,28 @@ function ProfileCard({ user }) {
   const [form, setForm] = useState({ fac: initial.fac || '', voie: initial.voie || '', mineure: initial.mineure || '', bareme: explicitBareme || mccFor(initial.fac)?.bareme || 'partiel' });
   const mcc = mccFor(form.fac);
   const onFacChange = (fac) => setForm(f => ({ ...f, fac, bareme: mccFor(fac)?.bareme || f.bareme }));
+  // Confirmation par les étudiants de la fac (agrégée côté serveur, mise en cache une heure)
+  const [stats, setStats] = useState(null);
+  useEffect(() => {
+    if (!form.fac) { setStats(null); return; }
+    let on = true;
+    fetch(`/api/fac-stats?fac=${encodeURIComponent(form.fac)}`).then(r => r.ok ? r.json() : null).then(d => { if (on) setStats(d); }).catch(() => {});
+    return () => { on = false; };
+  }, [form.fac]);
+  const [confirming, setConfirming] = useState(false);
+  const confirmBareme = async (ok) => {
+    if (!supabase) return;
+    setConfirming(true);
+    try {
+      const vote = { fac: form.fac, bareme: form.bareme, ok, at: new Date().toISOString() };
+      const profile = { ...initial, fac: form.fac || null, voie: form.voie || null, mineure: form.mineure, bareme: form.bareme, baremeVote: vote };
+      const { error } = await supabase.auth.updateUser({ data: { profile } });
+      if (error) throw error;
+      setMsg({ ok: true, t: ok ? 'Merci ! Ta confirmation aide les étudiants de ta fac.' : 'Merci, ton barème est enregistré — il compte pour les autres étudiants de ta fac.' });
+      setStats(st => st ? { ...st, votes: { ...st.votes, [form.bareme]: (st.votes?.[form.bareme] || 0) + 1 } } : st);
+    } catch (e) { setMsg({ ok: false, t: e.message || 'Erreur' }); } finally { setConfirming(false); }
+  };
+  const myVote = initial.baremeVote && initial.baremeVote.fac === form.fac ? initial.baremeVote : null;
   const [saving, setSaving] = useState(false); const [msg, setMsg] = useState(null);
   const save = async () => {
     setSaving(true); setMsg(null);
@@ -4149,17 +4232,30 @@ function ProfileCard({ user }) {
           <div className="grid sm:grid-cols-2 gap-2">
             {BAREMES.map(b => (
               <button key={b.id} type="button" onClick={() => setForm(f => ({ ...f, bareme: b.id }))} className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${form.bareme === b.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
-                <span className="block text-sm font-bold text-gray-900">{b.label}{mcc && mcc.bareme === b.id && <span className="ml-2 inline-block align-middle rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5">Ta fac</span>}</span><span className="block text-[11px] text-gray-500 leading-snug">{b.desc}</span>
+                <span className="block text-sm font-bold text-gray-900">{b.label}{mcc && mcc.bareme === b.id && <span className="ml-2 inline-block align-middle rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5">Ta fac</span>}{stats?.votes?.[b.id] > 0 && <span className="ml-2 inline-block align-middle rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5">✓ {stats.votes[b.id]} étudiant{stats.votes[b.id] > 1 ? 's' : ''}</span>}</span><span className="block text-[11px] text-gray-500 leading-snug">{b.desc}</span>
               </button>
             ))}
           </div>
           {mcc ? (
             <p className="mt-2 text-[11.5px] text-gray-500 leading-snug">
-              {mcc.confidence === 'officiel' ? 'D’après les ' : 'D’après une source non officielle ('}<a href={mcc.source} target="_blank" rel="noreferrer" className="text-indigo-600 font-semibold hover:underline">{mcc.sourceLabel}</a>{mcc.confidence === 'officiel' ? '' : ')'}{' '}: {mcc.note}{' '}Les MCC changent chaque ann&eacute;e&nbsp;: v&eacute;rifie sur ton intranet, tu peux modifier ce choix.
+              {mcc.confidence === 'officiel' ? 'D’après les ' : mcc.confidence === 'temoignage' ? 'D’après des témoignages d’étudiants (' : 'D’après une source non officielle ('}<a href={mcc.source} target="_blank" rel="noreferrer" className="text-indigo-600 font-semibold hover:underline">{mcc.sourceLabel}</a>{mcc.confidence === 'officiel' ? '' : ')'}{' '}: {mcc.note}{' '}Les MCC changent chaque ann&eacute;e&nbsp;: v&eacute;rifie sur ton intranet, tu peux modifier ce choix.
             </p>
           ) : form.fac ? (
             <p className="mt-2 text-[11.5px] text-gray-500 leading-snug">Nous n&apos;avons pas encore les MCC de cette facult&eacute;&nbsp;: choisis le bar&egrave;me indiqu&eacute; sur ton intranet.</p>
           ) : null}
+          {form.fac && form.fac !== 'autre' && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-[#fafafe] border border-gray-100 px-3.5 py-2.5">
+              <span className="text-[12px] text-gray-700">
+                {myVote && myVote.bareme === form.bareme ? <>Tu as confirm&eacute; ce bar&egrave;me pour ta fac. Merci&nbsp;!</> : <>C&apos;est bien le bar&egrave;me appliqu&eacute; dans ta fac&nbsp;? Ta r&eacute;ponse aide les autres &eacute;tudiants{stats?.students > 0 ? <> ({stats.students} inscrit{stats.students > 1 ? 's' : ''} de ta fac ici)</> : null}.</>}
+              </span>
+              {!(myVote && myVote.bareme === form.bareme) && (
+                <span className="flex gap-2 ml-auto">
+                  <button type="button" disabled={confirming} onClick={() => confirmBareme(true)} className="rounded-full bg-emerald-600 text-white text-[12px] font-bold px-3 py-1 hover:bg-emerald-700 disabled:opacity-50">Oui, c&apos;est &ccedil;a</button>
+                  <button type="button" disabled={confirming} onClick={() => confirmBareme(false)} className="rounded-full border border-gray-200 bg-white text-gray-700 text-[12px] font-bold px-3 py-1 hover:border-indigo-300 disabled:opacity-50" title="Sélectionne d’abord le bon barème ci-dessus, puis clique">Non, c&apos;est celui que j&apos;ai s&eacute;lectionn&eacute;</button>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-3 mt-5 flex-wrap">
@@ -4321,7 +4417,7 @@ function AccountSection({ user, tier, accessToken }) {
             </div>
             <div className="flex-1 min-w-[200px]">
               <p className="font-jakarta text-base font-bold text-gray-900">Abonnement Premium actif</p>
-              <p className="text-sm text-gray-500">QCM illimités, examens blancs, cours complets, progression et classement.</p>
+              <p className="text-sm text-gray-500">QCM illimités, examens blancs, cours complets, progression et objectifs.</p>
             </div>
             <div className="shrink-0 text-right">
               <button type="button" onClick={handlePortal} disabled={portalLoading} className="text-xs font-semibold text-amber-700 hover:underline disabled:opacity-50">
@@ -4796,261 +4892,4 @@ function generateFakeUsers() {
   }
 
   return [...namedUsers, ...extraUsers];
-}
-
-/* ============================================================
-   SCORE LISSÉ (moyenne bayésienne)
-   Pondère le score par le nombre de sessions pour éviter qu'un
-   utilisateur avec 1 seul QCM parfait se retrouve en tête.
-   Formule : (n * avg + C * globalAvg) / (n + C)
-   C = 20 sessions de confiance, globalAvg = 52 %
-   ============================================================ */
-const BAYES_C = 20;       // sessions de confiance
-const BAYES_AVG = 52;     // moyenne globale estimée
-
-function smoothedScore(avg, sessions) {
-  if (sessions === 0) return 0;
-  const bayes = (sessions * avg + BAYES_C * BAYES_AVG) / (sessions + BAYES_C);
-  return Math.min(avg, bayes); // jamais au-dessus de la vraie moyenne
-}
-
-/* ============================================================
-   CLASSEMENT SECTION
-   ============================================================ */
-function ClassementSection({ allSessions, userId, accessToken }) {
-  // Classement hebdomadaire : seules les sessions des 7 derniers jours comptent
-  const weekSessions = useMemo(() => {
-    const cutoff = Date.now() - 7 * 24 * 3600 * 1000;
-    return allSessions.filter(s => s.date && new Date(s.date).getTime() >= cutoff);
-  }, [allSessions]);
-  const userAvg = weekSessions.length > 0 ? Math.round(weekSessions.reduce((sum, s) => sum + (s.percentage || 0), 0) / weekSessions.length) : 0;
-  const userSessionCount = weekSessions.length;
-  const [expandedGaps, setExpandedGaps] = useState(new Set());
-  const [realUsers, setRealUsers] = useState([]);
-
-  // Charger les vrais utilisateurs depuis Supabase (authentifié)
-  useEffect(() => {
-    if (!accessToken) return;
-    fetch('/api/leaderboard', {
-      headers: { 'Authorization': `Bearer ${accessToken}` },
-    })
-      .then(r => r.json())
-      .then(d => setRealUsers(d.users || []))
-      .catch(() => {});
-  }, [accessToken]);
-
-  const fakeUsers = useMemo(() => generateFakeUsers(), []);
-
-  // Formater les vrais utilisateurs (prénom + initiale) en excluant l'utilisateur courant
-  const realFormatted = realUsers
-    .filter(u => u.id !== userId)
-    .map(u => {
-      const parts = (u.display_name || 'Anonyme').trim().split(' ');
-      const firstName = parts[0];
-      const initial = parts[1] ? parts[1][0].toUpperCase() + '.' : '';
-      return {
-        name: initial ? `${firstName} ${initial}` : firstName,
-        avg: Math.round(u.avg_score || 0),
-        sessions: u.session_count || 0,
-        isReal: true,
-      };
-    });
-
-  // Fusionner faux + vrais utilisateurs, calculer le score lissé une seule fois
-  const allRanked = [...fakeUsers, ...realFormatted, { name: 'Vous', avg: userAvg, sessions: userSessionCount, isUser: true }]
-    .map(u => ({ ...u, score: Math.round(smoothedScore(u.avg, u.sessions)) }))
-    .sort((a, b) => b.score - a.score);
-  const userRank = allRanked.findIndex(u => u.isUser) + 1;
-  const totalParticipants = allRanked.length;
-  const percentile = Math.round(((totalParticipants - userRank) / totalParticipants) * 100);
-  const medals = ['🥇', '🥈', '🥉'];
-
-  // Le top 3 est affiché sur le podium ; la liste démarre au rang 4
-  // Afficher les rangs 4-10 + les 5 autour de l'utilisateur + les 3 derniers
-  const baseVisible = new Set();
-  for (let i = 3; i < Math.min(10, allRanked.length); i++) baseVisible.add(i);
-  const userIdx = userRank - 1;
-  for (let i = Math.max(0, userIdx - 3); i <= Math.min(allRanked.length - 1, userIdx + 3); i++) baseVisible.add(i);
-  for (let i = Math.max(0, allRanked.length - 3); i < allRanked.length; i++) baseVisible.add(i);
-  const baseIndices = [...baseVisible].sort((a, b) => a - b);
-
-  // Identifier les gaps et ajouter les indices des gaps expandés
-  const gaps = [];
-  for (let p = 1; p < baseIndices.length; p++) {
-    if (baseIndices[p] - baseIndices[p - 1] > 1) {
-      const from = baseIndices[p - 1] + 1;
-      const to = baseIndices[p] - 1;
-      gaps.push({ from, to, key: `${from}-${to}` });
-    }
-  }
-
-  const visibleSet = new Set(baseVisible);
-  for (const gap of gaps) {
-    if (expandedGaps.has(gap.key)) {
-      for (let i = gap.from; i <= gap.to; i++) visibleSet.add(i);
-    }
-  }
-  const visibleIndices = [...visibleSet].sort((a, b) => a - b);
-
-  const toggleGap = (gapKey) => {
-    setExpandedGaps(prev => {
-      const next = new Set(prev);
-      if (next.has(gapKey)) next.delete(gapKey);
-      else next.add(gapKey);
-      return next;
-    });
-  };
-
-  // Construire les lignes du tableau
-  const rows = [];
-  let gapIdx = 0;
-  for (let pos = 0; pos < visibleIndices.length; pos++) {
-    const idx = visibleIndices[pos];
-    // Vérifier s'il y a un gap avant cette ligne
-    if (pos > 0 && visibleIndices[pos - 1] < idx - 1) {
-      const gap = gaps.find(g => g.from === visibleIndices[pos - 1] + 1);
-      if (gap) {
-        rows.push({ type: 'gap', gap });
-      }
-    }
-    rows.push({ type: 'user', idx, user: allRanked[idx] });
-  }
-
-  const podium = allRanked.slice(0, 3);
-  const nextUp = userRank > 1 ? allRanked[userRank - 2] : null;
-  const gapToNext = nextUp ? Math.max(0, nextUp.score - allRanked[userRank - 1].score) : 0;
-  const AVATAR_COLORS = ['#4f46e5', '#7c3aed', '#059669', '#0891b2', '#d97706', '#e11d48', '#2563eb', '#db2777', '#0d9488'];
-  const avatarFor = (name) => {
-    const initials = (name || '?').split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase();
-    let h = 0; for (const c of (name || '?')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-    return { initials, color: AVATAR_COLORS[h % AVATAR_COLORS.length] };
-  };
-  const Avatar = ({ name, isUser, size = 32 }) => {
-    const { initials, color } = avatarFor(name);
-    return (
-      <span style={{ width: size, height: size, borderRadius: '50%', background: isUser ? '#4f46e5' : color, color: '#fff', display: 'inline-grid', placeItems: 'center', fontSize: size * 0.4, fontWeight: 800, flexShrink: 0 }}>{initials}</span>
-    );
-  };
-  const podiumStyles = [
-    { bar: 'linear-gradient(180deg,#fde68a,#f59e0b)', ring: '#f59e0b', h: 68 }, // or
-    { bar: 'linear-gradient(180deg,#e5e7eb,#9ca3af)', ring: '#9ca3af', h: 50 }, // argent
-    { bar: 'linear-gradient(180deg,#fcd9b6,#c2803f)', ring: '#c2803f', h: 40 }, // bronze
-  ];
-
-  return (
-    <div className="space-y-5">
-      <SectionHeader
-        lead="Ton" word="classement"
-        chips={[
-          { label: `${userRank}e sur ${totalParticipants}` },
-          { label: `Top ${Math.max(1, 100 - percentile)}%`, tone: 'emerald' },
-          { label: `${userAvg}% de moyenne · 7 j`, tone: 'amber' },
-        ]}
-      />
-      <p className="text-xs text-gray-400 -mt-2">
-        Ton score combine <strong className="text-gray-600">précision et régularité sur tes 7 derniers jours</strong> — le classement est remis en jeu chaque jour.
-      </p>
-
-      {/* Podium top 3 */}
-      {podium.length === 3 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" style={{ borderTopWidth: 3, borderTopColor: '#4f46e5' }}>
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-jakarta text-base font-bold text-gray-900">Top de la semaine</h3>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-2.5 py-1">
-              📈 Évolue chaque jour
-            </span>
-          </div>
-          <div className="flex items-end justify-center gap-3 sm:gap-6">
-            {[{ u: podium[1], rank: 2 }, { u: podium[0], rank: 1 }, { u: podium[2], rank: 3 }].map(({ u, rank }) => {
-              const ps = podiumStyles[rank - 1];
-              return (
-                <div key={rank} className="flex flex-col items-center" style={{ width: rank === 1 ? 108 : 92 }}>
-                  <div className="relative mb-2">
-                    <span style={{ display: 'block', borderRadius: '50%', padding: 2, background: '#fff', boxShadow: `0 0 0 2.5px ${ps.ring}` }}>
-                      <Avatar name={u.name} isUser={u.isUser} size={rank === 1 ? 52 : 42} />
-                    </span>
-                    <span style={{ position: 'absolute', bottom: -4, right: -4, fontSize: rank === 1 ? 22 : 18 }}>{medals[rank - 1]}</span>
-                  </div>
-                  <div className={`text-[13px] font-bold text-center leading-tight truncate w-full ${u.isUser ? 'text-indigo-700' : 'text-gray-900'}`}>{u.isUser ? 'Vous' : u.name}</div>
-                  <div className={`text-sm font-black tabular-nums ${scoreClass(u.avg)}`}>{u.avg}%</div>
-                  <div className="text-[10px] text-gray-400 mb-2 tabular-nums">{u.sessions} sessions</div>
-                  <div className="w-full rounded-t-xl flex items-start justify-center pt-1.5 text-white font-black text-sm" style={{ height: ps.h, background: ps.bar }}>{rank}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Accroche : écart au rang supérieur */}
-      {userRank === 1 ? (
-        <div className="bg-gradient-to-r from-amber-50 to-white border border-amber-200 rounded-2xl px-5 py-3.5 flex items-center gap-3">
-          <span className="text-xl">🏆</span>
-          <span className="text-sm font-semibold text-amber-800">Tu es en tête du classement cette semaine — reste régulier pour garder ta place&nbsp;!</span>
-        </div>
-      ) : nextUp && (
-        <div className="bg-gradient-to-r from-indigo-50 to-white border border-indigo-100 rounded-2xl px-5 py-3.5 flex items-center gap-3">
-          <span className="text-xl">🎯</span>
-          <span className="text-sm text-gray-700">
-            {gapToNext > 0
-              ? <>Plus que <strong className="text-indigo-700">{gapToNext} pt{gapToNext > 1 ? 's' : ''}</strong> pour dépasser <strong>{nextUp.isUser ? 'toi' : nextUp.name}</strong> et passer <strong>{userRank - 1}<sup>e</sup></strong>.</>
-              : <>Tu es au coude-à-coude avec <strong>{nextUp.name}</strong> pour la <strong>{userRank - 1}<sup>e</sup></strong> place&nbsp;!</>}
-          </span>
-        </div>
-      )}
-
-      {/* Liste (rang 4 et suivants) */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50/80 border-b border-gray-100">
-                <th className="text-center py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider w-14">Rang</th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Étudiant</th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Score</th>
-                <th className="text-right py-3 px-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sessions · 7 j</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                if (row.type === 'gap') {
-                  const isExpanded = expandedGaps.has(row.gap.key);
-                  const hiddenCount = row.gap.to - row.gap.from + 1;
-                  return (
-                    <tr key={`gap-${row.gap.key}`} onClick={() => toggleGap(row.gap.key)} className="cursor-pointer hover:bg-gray-50 transition-colors">
-                      <td colSpan="4" className="py-2 text-center text-xs text-gray-400">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                          {isExpanded ? (
-                            <><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>Masquer</>
-                          ) : (
-                            <><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>Afficher {hiddenCount} étudiant{hiddenCount > 1 ? 's' : ''}</>
-                          )}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                }
-                const u = row.user;
-                const rank = row.idx + 1;
-                return (
-                  <tr key={row.idx} className={`border-b last:border-0 transition-colors ${u.isUser ? 'bg-indigo-50/70 border-indigo-100' : 'border-gray-50 hover:bg-gray-50/50'}`} style={u.isUser ? { boxShadow: 'inset 3px 0 0 #4f46e5' } : undefined}>
-                    <td className="py-2.5 px-4 text-center"><span className={`text-sm font-bold tabular-nums ${u.isUser ? 'text-indigo-700' : 'text-gray-500'}`}>{rank}</span></td>
-                    <td className="py-2.5 px-4">
-                      <div className="flex items-center gap-2.5">
-                        <Avatar name={u.name} isUser={u.isUser} size={30} />
-                        <span className={`text-sm ${u.isUser ? 'text-indigo-700 font-bold' : 'text-gray-800 font-medium'}`}>{u.isUser ? 'Vous' : u.name}</span>
-                        {u.isUser && <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded-md">TOI</span>}
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-4"><span className={`text-sm font-bold tabular-nums ${scoreClass(u.avg)}`}>{u.avg}%</span></td>
-                    <td className="py-2.5 px-5 text-right text-sm text-gray-500 tabular-nums">{u.sessions}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
 }

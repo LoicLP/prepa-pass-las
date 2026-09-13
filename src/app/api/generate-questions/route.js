@@ -167,16 +167,21 @@ export async function POST(request) {
 
     const validQuestions = questions
       .filter(q => {
-        if (!q.question || !Array.isArray(q.options) || q.options.length !== 4) return false;
+        // 4 options par défaut ; 2 (vrai/faux), 5 ou 6 (item F) selon le format de la faculté
+        if (!q.question || !Array.isArray(q.options) || q.options.length < 2 || q.options.length > 6) return false;
         const correctCount = q.options.filter(o => o.correct === true).length;
+        if (correctCount >= q.options.length) return false;
         // QCM : une seule bonne réponse (boucle rapide). Examen : format concours, 1 à 3 bonnes réponses.
-        if (mode === 'examen') { if (correctCount < 1 || correctCount > 3) return false; }
+        if (mode === 'examen') { if (correctCount < 1 || correctCount > Math.max(3, q.options.length - 1)) return false; }
         else if (correctCount !== 1) return false;
         if (!q.options.every(o => typeof o.text === 'string' && o.text.length > 0)) return false;
         return true;
       })
       .map((q, index) => {
-        const options = shuffleArray(q.options.map(o => ({ text: o.text, correct: o.correct === true })));
+        const raw = q.options.map(o => ({ text: o.text, correct: o.correct === true }));
+        const isF = (o) => /toutes les propositions pr[ée]c[ée]dentes/i.test(o.text);
+        const isVF = raw.length === 2 && raw.every(o => /^(vrai|faux)$/i.test(o.text.trim()));
+        const options = isVF ? raw : (raw.some(isF) ? [...shuffleArray(raw.filter(o => !isF(o))), raw.find(isF)] : shuffleArray(raw));
         return {
           id: index + 1,
           subject: subject || q.subject || 'custom',

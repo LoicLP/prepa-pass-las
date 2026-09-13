@@ -353,7 +353,7 @@ export default function Home() {
                 {[
                   { title: 'Pico connaît ta date de concours', desc: 'Il célèbre tes progrès, te rappelle ta pile « À consolider » et te souffle un conseil par jour. Toujours là, jamais lourd.' },
                   { title: 'Des grades de carabin, de Bizuth à Major de promo', desc: 'Chaque bonne réponse rapporte des XP. Ton grade reflète le travail accompli, avec une série de jours et des jokers pour les jours sans.' },
-                  { title: 'Un classement hebdomadaire', desc: 'Ton score combine précision et régularité sur 7 jours — pas le volume. Remis en jeu chaque jour, pour que chacun ait sa chance.' },
+                  { title: 'Des épreuves au format de ta fac', desc: 'Renseigne ta faculté : durée, nombre de QCM et barème de tes MCC s’appliquent à tes examens blancs, avec une note sur 20 comparable à la vraie.' },
                 ].map((f) => (
                   <li key={f.title} className="flex gap-3">
                     <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">

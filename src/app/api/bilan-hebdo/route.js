@@ -38,7 +38,6 @@ export async function GET(request) {
       paragraphs.push(`Aucune session cette semaine — ta série est en pause, pas perdue. Une session de cinq minutes la relance.`);
     }
     if (week.pile > 0) paragraphs.push(`<strong>${week.pile} question${week.pile > 1 ? 's' : ''}</strong> t'attendent dans « À consolider ».`);
-    paragraphs.push(`Le classement de la semaine repart de zéro demain : c'est le bon moment pour prendre de l'avance.`);
     try {
       await sendMail({ to: u.email, subject: week.recent > 0 ? `Ta semaine : ${week.recent} session${week.recent > 1 ? 's' : ''}${week.avg != null ? `, ${week.avg} %` : ''} 📊` : `Ta série est en pause — cinq minutes pour la relancer`, html: layout({ title: 'Ton bilan de la semaine', emoji: '📊', paragraphs, cta: { href: `${SITE}/dashboard`, label: 'Voir mon tableau de bord' } }) });
       sent++;

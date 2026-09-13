@@ -1,4 +1,5 @@
 import { facById, mccFor } from '@/data/facs';
+import { facExams } from '@/data/facExams';
 
 /* Profil de révision, stocké dans user.user_metadata.profile.
    Tout est optionnel : le site fonctionne sans, il s'adapte avec. */
@@ -57,5 +58,6 @@ export function styleFor(profile) {
   if (!profile) return null;
   const fac = facName(profile);
   if (!fac && !profile.bareme) return null;
-  return { fac, bareme: profile.bareme || 'partiel', voie: profile.voie || null };
+  const formats = facExams(profile.fac)?.formats || null;
+  return { fac, bareme: profile.bareme || 'partiel', voie: profile.voie || null, formats };
 }

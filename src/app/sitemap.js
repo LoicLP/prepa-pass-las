@@ -1,5 +1,6 @@
 import { FICHES_DATA } from '@/data/fiches';
 import { BLOG_ARTICLES } from '@/data/blog';
+import { FACS } from '@/data/facs';
 
 export default function sitemap() {
   const baseUrl = 'https://prepa-pass-las.fr';
@@ -18,6 +19,8 @@ export default function sitemap() {
     priority: 0.8,
   }));
 
+  const facRoutes = FACS.filter((f) => f.id !== 'autre').map((f) => ({ url: `${baseUrl}/facs/${f.id}`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 }));
+
   return [
     { url: baseUrl, lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
     { url: `${baseUrl}/qcm`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
@@ -25,11 +28,13 @@ export default function sitemap() {
     { url: `${baseUrl}/examen`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
     { url: `${baseUrl}/cours`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/programme`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/facs`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/tarifs`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${baseUrl}/contact`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.5 },
     { url: `${baseUrl}/cgv`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${baseUrl}/cgu`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
+    ...facRoutes,
     ...fichesPages,
     ...blogRoutes,
   ];

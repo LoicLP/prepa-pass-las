@@ -25,6 +25,7 @@ export default function Footer() {
             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Ressources Santé</h4>
             <ul className="space-y-2.5 text-sm">
               <li><Link href="/programme" className="hover:text-primary-400 transition-colors">Programme PASS 2025-2026</Link></li>
+              <li><Link href="/facs" className="hover:text-primary-400 transition-colors">Bar&egrave;me des QCM par facult&eacute;</Link></li>
               <li><Link href="/blog" className="hover:text-primary-400 transition-colors">Guide PASS vs LAS</Link></li>
               <li><Link href="/qcm" className="hover:text-primary-400 transition-colors">QCM d&apos;entraînement</Link></li>
               <li><Link href="/fiches" className="hover:text-primary-400 transition-colors">Fiches de révision</Link></li>

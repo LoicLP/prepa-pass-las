@@ -2,7 +2,8 @@
    contrôle des connaissances) quand un document a pu être consulté. Le barème reste
    modifiable par l'étudiant : les MCC changent chaque année et les universités
    ne publient pas toutes le détail. `confidence` : 'officiel' (document de
-   l'université) ou 'secondaire' (prépa, blog — à confirmer sur l'intranet). */
+   l'université), 'secondaire' (prépa, tutorat) ou 'temoignage' (étudiants, forums)
+   — dans les deux derniers cas, à confirmer sur l'intranet. */
 export const FACS = [
   { id: 'paris-cite', name: 'Université Paris Cité', city: 'Paris' },
   { id: 'sorbonne', name: 'Sorbonne Université', city: 'Paris' },
@@ -87,11 +88,11 @@ export const MCC = {
     note: 'Deux formats coexistent : QIM à points négatifs par item avec plancher 0 (chimie-biochimie, bio cellulaire, histologie) et QCM tout ou rien (les autres UE). Aucun MCCC 2025-2026 du bloc santé n’est public.',
   },
   strasbourg: {
-    bareme: null, year: '2025-2026', confidence: 'officiel',
-    source: 'https://www.unistra.fr/sites/default/files/2026-01/D%C3%A9lib%20108-2025%20-%20MCC%202025-2026%20-%20LSPS.pdf',
-    sourceLabel: 'MECC 2025-2026 de la Licence Sciences pour la Santé, Université de Strasbourg',
-    quote: 'Aucune note ne contribue pour plus de 50 % de la moyenne de l’UE.',
-    note: 'Pas de PASS à Strasbourg : l’accès passe par la L1 Sciences pour la Santé, en contrôle continu (deux écrits de 40 min par UE santé). Le barème des QCM n’est pas publié : choisis-le d’après ton intranet.',
+    bareme: 'tout_ou_rien', year: '2025-2026', confidence: 'officiel',
+    source: 'https://en.unistra.fr/sites/default/files/2026-01/D%C3%A9lib%20107-2025%20-%20MCC%202025-2026%20-%20MED.pdf',
+    sourceLabel: 'MECC 2025-2026 de la faculté de médecine de Strasbourg (§ notation)',
+    quote: 'La validation de chaque QCM est binaire : si l’ensemble de la réponse donnée est exact : 1 ; si toute ou partie de la réponse donnée est inexacte : 0. Notation des QCD : +1 si exact, 0 si abstention, −1 si inexact.',
+    note: 'Pas de PASS à Strasbourg : l’accès passe par la L1 Sciences pour la Santé, en contrôle continu (deux écrits de 40 min par UE). La règle de la faculté, constante depuis la PACES : QCM tout ou rien, QCD vrai/faux à +1 / 0 / −1 avec plancher 0. Les MECC de la L1 ne la reprennent pas explicitement.',
   },
   toulouse: {
     bareme: 'item_02_01', year: '2026-2027', confidence: 'secondaire',
@@ -101,18 +102,18 @@ export const MCC = {
     note: 'Les MCC officielles fixent le nombre de QCM et les durées par UE (de 30 min à 1 h 30) sans publier le barème ; plusieurs prépas décrivent des QCM à 5 propositions vrai/faux notées +0,2 / −0,1 par item, plancher 0.',
   },
   lille: {
-    bareme: null, year: '2025-2026', confidence: 'officiel',
-    source: 'https://ufr3s.univ-lille.fr/fileufr3s/user_upload/ufr3s-formations/pass-las/generalites/2025-26_pass-las_reglement-des-etudes.pdf',
-    sourceLabel: 'Règlement des études PASS-LAS 2025-2026, Université de Lille',
-    quote: 'Les étudiants sont informés au début de chaque semestre de la nature et des modalités du contrôle continu (nombre d’épreuves, type d’épreuves, coefficients, modalités de correction).',
-    note: 'Le règlement 2025-2026 fixe le nombre de QCM et les durées (ex. chimie-biochimie 40 QCM en 1 h 30, biologie cellulaire 30 QCM en 1 h) mais laisse le barème aux enseignants : il est diffusé sur Moodle, choisis-le d’après ton intranet.',
+    bareme: 'degressif', year: '2025-2026', confidence: 'temoignage',
+    source: 'https://web.archive.org/web/20101116124624/http://www.tutorat-medecine-lille.com/forum/general/comptage-des-points-examen-t2066.html',
+    sourceLabel: 'forum du tutorat de la faculté de médecine de Lille, et référentiel docimologie UFR3S 2023',
+    quote: 'Bonne réponse : 1 point ; 1 divergence : 0,5 ; 2 divergences : 0,2 ; 3 divergences et plus : 0 (pas de négatif).',
+    note: 'Le règlement 2025-2026 fixe le nombre de QCM et les durées sans publier le barème. Le tutorat décrit une notation 1 / 0,5 / 0,2 / 0 par discordance, que l’UFR3S applique aussi en 2e cycle ; les QCM à réponse unique (biophysique, statistiques) seraient notés +1 / −0,25 avec plancher 0.',
   },
   bordeaux: {
     bareme: null, year: '2025-2026', confidence: 'officiel',
     source: 'https://sante.u-bordeaux.fr/application/files/5717/6526/8587/MCCC_PASS_2025-26_vote_au_23-09-2025_V2.pdf',
     sourceLabel: 'MCCC PASS 2025-2026, Université de Bordeaux',
     quote: 'Les évaluations se déroulent sous forme d’épreuves écrites : QCM de 30 minutes, coefficient 1 pour chacune des UE.',
-    note: 'Toutes les UE santé sont évaluées par un QCM de 30 minutes, coefficient 1, compensables entre elles. Le barème des QCM n’est pas publié : choisis-le d’après ton intranet.',
+    note: 'Toutes les UE santé sont évaluées par un QCM de 30 minutes (de 9 à 25 questions selon l’UE), coefficient 1, compensables entre elles. Ni la faculté, ni le tutorat, ni les prépas ne publient le barème : choisis-le d’après ton intranet.',
   },
   sorbonne: {
     bareme: 'degressif', year: '2025-2026', confidence: 'secondaire',
@@ -126,14 +127,14 @@ export const MCC = {
     source: 'https://acces-sante.univ-rennes.fr/sites/acces-sante.univ-rennes.fr/files/medias/files/Syllabus%20PASS%2025-26%20def.pdf',
     sourceLabel: 'Syllabus PASS 2025-2026, Université de Rennes',
     quote: 'Biologie cellulaire : QCM de 90 min · Biostatistiques : QCM et QCROC de 90 min · Anatomie générale : QCM de 30 min.',
-    note: 'Le syllabus donne les durées par UE (de 30 à 90 min) ; les MCC détaillées ne sont accessibles que sur l’ENT. Choisis le barème indiqué sur ton intranet.',
+    note: 'Le syllabus donne les durées par UE (de 30 à 90 min) ; les MCC détaillées ne sont accessibles que sur l’ENT et aucune source publique, même ancienne (MCC PACES 2012-2019), ne donne le barème. Choisis-le d’après ton intranet.',
   },
   grenoble: {
     bareme: null, year: '2025-2026', confidence: 'officiel',
     source: 'https://medecine.univ-grenoble-alpes.fr/pass-las/pass/mccc-pass-874267.kjsp',
     sourceLabel: 'MCCC PASS 2025-2026, Université Grenoble Alpes',
     quote: 'Les épreuves sont dématérialisées sur tablettes numériques (questions à choix multiples et/ou questions rédactionnelles).',
-    note: 'Examen terminal à 100 % sur tablette, 60 min pour la plupart des UE ; le barème des QCM n’est pas publié. Choisis-le d’après ton intranet.',
+    note: 'Examen terminal à 100 % sur tablette, 60 min pour la plupart des UE, en QCM/QRM « avec discordances » d’après le tutorat, mais les valeurs de la grille ne sont publiées nulle part. Choisis un barème dégressif d’après ton intranet.',
   },
   nice: {
     bareme: 'degressif50', year: '2025-2026', confidence: 'officiel',
@@ -154,14 +155,14 @@ export const MCC = {
     source: 'https://sante.u-pec.fr/medias/fichier/re-glement-mmop-2025-2026_1760711874913-pdf',
     sourceLabel: 'règlement MMOP 2025-2026, Université Paris-Est Créteil',
     quote: 'Les épreuves sont organisées sur tablettes et/ou sur copie d’examen.',
-    note: 'Pas de PASS à l’UPEC : l’accès passe par la LSPS1 ou une LAS. Le barème n’est pas publié et les prépas se contredisent (1 / 0,5 / 0,25 / 0 ou 1 / 0,75 / 0,5 / 0, sans point négatif) : choisis-le d’après ton intranet.',
+    note: 'Pas de PASS à l’UPEC : l’accès passe par la LSPS1 ou une LAS, sur tablette. Le barème n’est pas publié et trois prépas donnent trois grilles dégressives différentes (1 / 0,5 / 0,25 / 0 ; 1 / 0,75 / 0,5 / 0 ; 1 / 0,7 / 0,5 / 0,2 / 0), sans point négatif et QRU notés 1 ou 0 : choisis d’après ton intranet ou le tutorat TSP12.',
   },
   nancy: {
     bareme: null, year: '2025-2026', confidence: 'secondaire',
     source: 'https://www.tutoweb.net/fr/presentation-du-pass.html',
     sourceLabel: 'Tutorat Santé Lorraine',
     quote: 'Les épreuves se présentent essentiellement sous la forme de QRM, avec pour chacun 5 items, sur les tablettes de la faculté.',
-    note: 'Le règlement PASS n’est pas en ligne (le M3C du Collégium Santé renvoie au département PASS/LAS). Les sources étudiantes décrivent des QRM à 5 items sans point négatif, sans préciser la grille : choisis-la d’après ton intranet.',
+    note: 'Le règlement PASS n’est pas en ligne. Épreuves sur tablette (plateforme UNESS) en QRM à 5 items sans point négatif, avec QROC et schémas à pointer ; la grille n’est pas publiée pour le PASS. La même université applique en odontologie la règle UNESS 1 / 0,5 / 0,2 / 0 par discordance : choisis d’après ton intranet.',
   },
   rouen: {
     bareme: null, year: '2025-2026', confidence: 'officiel',
@@ -175,21 +176,21 @@ export const MCC = {
     source: 'https://www.tutorats-pass-las.fr/amiens/',
     sourceLabel: 'Tutorat Santé Amiens',
     quote: 'La majorité des épreuves se déroulent sous forme de QCM composés de cinq items, sans points négatifs.',
-    note: 'Aucune MCC PASS de l’UPJV n’est publiée en ligne ; le tutorat indique des QCM à 5 items sans point négatif, sans préciser la grille. Choisis-la d’après ton intranet.',
+    note: 'Aucune MCC PASS de l’UPJV n’est publiée en ligne. Sources concordantes : QCM à 5 items, sans point négatif, sans note éliminatoire, toutes les UE au même coefficient. Le tutorat corrigeait ses concours blancs PACES en tout ou rien : choisis d’après ton intranet.',
   },
   'saint-etienne': {
     bareme: null, year: '2025-2026', confidence: 'officiel',
     source: 'https://www.univ-st-etienne.fr/_attachment/nouvelle-faqthemes-15/R%C3%A8glement%20des%20%C3%A9tudes%20de%20la%20facult%C3%A9%20de%20M%C3%A9decine%202025-2026.pdf?download=true',
     sourceLabel: 'règlement des études de la faculté de médecine 2025-2026, Université Jean Monnet',
     quote: '1re session : un contrôle continu et un examen final au cours du semestre sous forme de QCM.',
-    note: 'Contrôle continu + examen terminal en QCM à 5 propositions (avec des QCS), SHS en question rédactionnelle ; le barème est fixé par UE et communiqué en cours. Choisis-le d’après ton intranet.',
+    note: 'Contrôle continu (30 %) + examen terminal (70 %) sur tablette, en QCM à 5 propositions avec des QCS, SHS en question rédactionnelle ; le barème est fixé par UE et communiqué en cours. Choisis-le d’après ton intranet.',
   },
   antilles: {
-    bareme: null, year: '2020-2021', confidence: 'officiel',
-    source: 'http://www.univ-ag.fr/sites/default/files/medias/201013_cacp_-_mcc_pass_las_et_maquettes_pass.pdf',
-    sourceLabel: 'MCC PASS/LAS 2020-2021, Université des Antilles',
-    quote: 'Les examens écrits (20 à 30 QCM par UE) des UE du corpus santé se dérouleront la première quinzaine de janvier.',
-    note: '20 à 30 QCM en 30 min par UE, toutes au même coefficient ; les MCC récentes ne sont pas publiées en ligne et le barème n’y figure pas. Choisis-le d’après ton intranet.',
+    bareme: 'degressif50', year: '2019-2020', confidence: 'officiel',
+    source: 'http://formation.univ-antilles.fr/sites/formation.aegirprod.martinique.univ-antilles.fr/files/paces_reglement_du_concours.pdf',
+    sourceLabel: 'règlement du concours PACES 2019-2020, Université des Antilles',
+    quote: 'Les QCM sont corrigés de façon classique (0 / 0,5 / 1).',
+    note: 'Dernière règle publiée par l’université, avant la réforme : QCM notés 1 / 0,5 / 0. En PASS, 20 à 30 QCM en 30 min par UE, à 5 propositions ; les MCC récentes ne reprennent pas le barème, donc à confirmer.',
   },
   reunion: {
     bareme: null, year: '2025-2026', confidence: 'officiel',
@@ -217,14 +218,14 @@ export const MCC = {
     source: 'https://www.univ-angers.fr/_attachment/nouveau-contenu-simple-44/Livret%20PluriPASS%202025-2026.pdf?download=true',
     sourceLabel: 'livret PluriPASS 2025-2026, Université d’Angers',
     quote: 'Chaque UE du tronc commun vaut 100 points. Chaque UE transversale vaut 20 points selon le principe du tout ou rien.',
-    note: 'Dispositif PluriPASS : cinq examens dans l’année (jusqu’à 40 QCM et 60 min par UE), validation à 600 points sur 1 320, sans note éliminatoire. Le barème par QCM n’est pas publié : choisis-le d’après ton intranet.',
+    note: 'Dispositif PluriPASS : cinq examens dans l’année (jusqu’à 40 QCM et 60 min par UE, anglais en QCU), validation à 600 points sur 1 320. Le « tout ou rien » ne concerne que la validation des UE transversales ; le barème par QCM n’est publié nulle part : choisis-le d’après ton intranet.',
   },
   brest: {
     bareme: null, year: '2025-2026', confidence: 'officiel',
     source: 'https://www.univ-brest.fr/faculte-medecine/fr/page/modalites-de-controle-de-connaissances-et-de-competences-calendrier',
     sourceLabel: 'MCC 2025-2026 de l’UFR Médecine et Sciences de la santé, Université de Bretagne Occidentale',
     quote: 'La correction des grilles de QCM est automatisée et fait l’objet d’un double passage au scanner. Chaque épreuve est notée sur 20.',
-    note: 'Épreuves QCM d’une heure (tronc commun + SHS, puis spécialité), notées sur 20 avec ligne « remords » ; 70 % écrit, 30 % oral. Le barème par QCM n’est pas publié : choisis-le d’après ton intranet.',
+    note: 'QCM à 5 propositions (A à E) sur grille à lecture optique avec ligne « remord », épreuves d’une heure notées sur 20 ; 70 % écrit, 30 % oral. Ni la faculté ni le tutorat ne publient le barème par QCM : choisis-le d’après ton intranet.',
   },
   poitiers: {
     bareme: null, year: '2025-2026', confidence: 'secondaire',
@@ -255,18 +256,18 @@ export const MCC = {
     note: 'Épreuves terminales en QCM et/ou QROC, de 30 min à 1 h par UE ; le barème des QCM n’est pas publié. Choisis-le d’après ton intranet.',
   },
   besancon: {
-    bareme: null, year: '2025-2026', confidence: 'officiel',
-    source: 'https://www.umlp.fr/m3c-2025-2026',
-    sourceLabel: 'M3C PASS 2025-2026, Université Marie et Louis Pasteur (Besançon)',
-    quote: 'UE1 Chimie-Biochimie-Génome : QCM, fin S1, 1 h 30 ; UE7 Santé Société Humanité : QCM + QR, fin S2, 1 h 30.',
-    note: 'QCM de 1 h à 2 h par UE (QR à double correction en SHS), note éliminatoire à 8/20 ; le barème des QCM n’est pas publié. Choisis-le d’après ton intranet.',
+    bareme: 'degressif', year: '2024-2025', confidence: 'temoignage',
+    source: 'https://tutosantebezak.com/forum/topic/notation-qcm-et-partiels/',
+    sourceLabel: 'forum du Tutorat Santé Besançon (réponse d’un tuteur, octobre 2024)',
+    quote: 'Il n’y a pas de points négatifs : si tu as tout faux à un QCM tu as zéro. Si tu as tout juste tu as 1 point, si tu coches un item de trop ou de moins tu as 1 − 0,x, deux items 1 − 0,x − 0,y…',
+    note: 'QCM de 1 h à 2 h par UE (QR à double correction en SHS), note éliminatoire à 8/20. Le tutorat confirme une notation dégressive par item discordant sans point négatif, valeurs non divulguées ; un témoignage ancien donne 0,2 pour deux erreurs, d’où la grille 1 / 0,5 / 0,2 / 0 proposée ici.',
   },
   reims: {
-    bareme: null, year: '2026-2027', confidence: 'officiel',
-    source: 'https://www.univ-reims.fr/ufrpharmacie/offres-de-formation/licences-acces-sante-las/licences-acces-sante-urca,18204,43461.html',
-    sourceLabel: 'MCCC Licence Sciences pour la santé – Accès Santé, Université de Reims',
-    quote: 'UE 1.3 Santé 1 : anatomie – histologie – physiologie, écrit terminal 2 h 30.',
-    note: 'Pas de PASS à Reims : voie unique en LAS Sciences pour la santé, avec des écrits terminaux de 2 h 30 sur les UE santé. Le barème des QCM n’est pas publié : choisis-le d’après ton intranet.',
+    bareme: 'degressif', year: '2020-2021', confidence: 'secondaire',
+    source: 'https://web.archive.org/web/20210324045737/https://tutoratsante.univ-reims.fr/pass/',
+    sourceLabel: 'Tutorat Santé de Reims (page PASS 2020-2021)',
+    quote: 'Un QCM possède 5 items et répond à un système de discordance : vous répondez AB alors que la réponse est ABC, vous obtiendrez 0,5. Un QCM vaut 1, 0,5, 0,2 ou 0 point selon le nombre d’items discordants.',
+    note: 'Pas de PASS à Reims : voie unique en LAS Sciences pour la santé, écrits terminaux de 2 h 30 sur les UE santé (plateforme THEIA). Le tutorat décrivait en 2020-2021 une notation 1 / 0,5 / 0,2 / 0 par discordance ; les MCCC actuelles ne la reprennent pas.',
   },
   marseille: {
     bareme: 'degressif', year: '2025-2026', confidence: 'secondaire',

@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getProfile, styleFor, BAREMES } from '@/lib/profile';
-import { noteSur20 } from '@/lib/bareme';
+import { noteSur20, strategyFor, analyzeAnswers } from '@/lib/bareme';
+import { facById } from '@/data/facs';
+import { facExams, examFor, fmtMinutes } from '@/data/facExams';
 import Link from 'next/link';
 import { useTimer } from '@/hooks/useTimer';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
@@ -857,6 +859,11 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
   if (view === 'ueSelection') {
     const prof = getProfile(user);
     const bar = BAREMES.find(b => b.id === (prof.bareme || 'partiel')) || BAREMES[0];
+    const fac = facById(prof.fac);
+    const facEx = ueSubject ? examFor(prof.fac, ueSubject) : null;
+    const countOptions = [...new Set([20, 30, 40, 50, facEx?.questions].filter(Boolean))].sort((a, b) => a - b);
+    const durationOptions = [...new Set([30, 45, 60, 90, facEx?.minutes].filter(Boolean))].sort((a, b) => a - b);
+    const pickSubject = (id) => { setUeSubject(id); const ex = examFor(prof.fac, id); if (ex?.questions) setUeCount(ex.questions); if (ex?.minutes) setUeDuration(ex.minutes); };
     return (
       <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -871,18 +878,27 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
               const colors = getColors(sub.color);
               const sel = ueSubject === sub.id;
               return (
-                <button key={sub.id} onClick={() => setUeSubject(sub.id)} className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all ${sel ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
+                <button key={sub.id} onClick={() => pickSubject(sub.id)} className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all ${sel ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
                   <div className={`w-9 h-9 rounded-xl ${colors.bg} flex items-center justify-center shrink-0`}><SubjectIcon subjectId={sub.id} className={`w-4 h-4 ${colors.icon}`} /></div>
                   <span className="text-sm font-bold text-gray-900">{sub.name}</span>
                 </button>
               );
             })}
           </div>
+          {fac && ueSubject && (
+            <div className={`mb-4 rounded-xl border px-4 py-3 text-[13px] leading-snug ${facEx ? 'border-indigo-200 bg-indigo-50 text-indigo-900' : 'border-gray-200 bg-white text-gray-500'}`}>
+              {facEx ? (
+                <><strong>Format {fac.name}</strong> — {facEx.label}{facEx.questions ? ` : ${facEx.questions} QCM` : ''}{facEx.minutes ? `${facEx.questions ? ' en' : ' :'} ${fmtMinutes(facEx.minutes)}` : ''}{facEx.format === 'qru' ? ' (réponse unique)' : facEx.format?.includes('qr') ? ' (+ partie rédactionnelle, non simulée)' : ''}.{!facEx.questions && ' Nombre de questions non publié : choisis-le.'} D&apos;apr&egrave;s les MCC, &agrave; v&eacute;rifier sur ton intranet.</>
+              ) : (
+                <>Nous n&apos;avons pas le format de cette UE &agrave; {fac.name} : choisis le nombre de questions et la dur&eacute;e de ton intranet.</>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <label className="block"><span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Questions</span>
-              <select value={ueCount} onChange={e => setUeCount(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">{[20, 30, 40, 50].map(n => <option key={n} value={n}>{n} questions</option>)}</select></label>
+              <select value={ueCount} onChange={e => setUeCount(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">{countOptions.map(n => <option key={n} value={n}>{n} questions{facEx?.questions === n ? ' — ta fac' : ''}</option>)}</select></label>
             <label className="block"><span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Dur&eacute;e</span>
-              <select value={ueDuration} onChange={e => setUeDuration(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">{[30, 45, 60, 90].map(n => <option key={n} value={n}>{n} min</option>)}</select></label>
+              <select value={ueDuration} onChange={e => setUeDuration(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">{durationOptions.map(n => <option key={n} value={n}>{fmtMinutes(n)}{facEx?.minutes === n ? ' — ta fac' : ''}</option>)}</select></label>
           </div>
           <button disabled={!ueSubject} onClick={() => { const sub = SUBJECTS.find(x => x.id === ueSubject); launchExam({ type: 'ue', subject: sub.id, subjectName: sub.name, title: sub.name, count: ueCount, duration: ueDuration }); }} className="w-full py-3.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-40">
             Lancer l&apos;&eacute;preuve
@@ -1230,7 +1246,7 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
           {/* Question card */}
           <div className={`question-in rounded-2xl border-2 p-6 md:p-8 shadow-sm ${dk ? 'bg-[#1a1b2e] border-[#2a2c44]' : 'bg-white border-gray-200'}`} key={currentQ}>
             <div className="flex items-center justify-between mb-5">
-              <span className={`text-sm font-medium ${dk ? 'text-gray-400' : 'text-gray-500'}`}>Question {currentQ + 1}/{total}</span>
+              <span className={`text-sm font-medium ${dk ? 'text-gray-400' : 'text-gray-500'}`}>Question {currentQ + 1}/{total}{selectedTopic?.type === 'ue' && q.multi && <span className={`hidden sm:inline ml-2 text-[11px] font-semibold ${dk ? 'text-violet-300' : 'text-indigo-600'}`}>· {strategyFor(getProfile(user).bareme).title}</span>}</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={toggleFlag}
@@ -1401,11 +1417,35 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
           {selectedTopic?.type === 'ue' && (() => {
             const prof = getProfile(user); const bar = BAREMES.find(b => b.id === (prof.bareme || 'partiel')) || BAREMES[0];
             const n20 = noteSur20(questions, answers, bar.id);
+            const fac = facById(prof.fac); const threshold = facExams(prof.fac)?.threshold || null;
+            const strat = strategyFor(bar.id); const an = analyzeAnswers(questions, answers, bar.id);
+            const fmt = (x) => String(x).replace('.', ',');
             return (
-              <div className="max-w-md mx-auto mb-8 bg-white border-2 border-indigo-200 rounded-2xl px-6 py-5 text-center">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">Note au bar&egrave;me &laquo;&nbsp;{bar.label.toLowerCase()}&nbsp;&raquo;</p>
-                <p className="text-4xl font-black text-gray-900">{String(n20).replace('.', ',')}<span className="text-lg text-gray-400 font-bold"> / 20</span></p>
-                <p className="text-xs text-gray-500 mt-2">{bar.desc} Le pourcentage ci-dessous compte les questions enti&egrave;rement justes.</p>
+              <div className="max-w-2xl mx-auto mb-8 space-y-4">
+                <div className="bg-white border-2 border-indigo-200 rounded-2xl px-6 py-5 text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">Note au bar&egrave;me &laquo;&nbsp;{bar.label.toLowerCase()}&nbsp;&raquo;{fac ? ` · ${fac.name}` : ''}</p>
+                  <p className="text-4xl font-black text-gray-900">{fmt(n20)}<span className="text-lg text-gray-400 font-bold"> / 20</span></p>
+                  {threshold ? (
+                    <p className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${n20 >= threshold ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                      {n20 >= threshold ? `Au-dessus de la note-seuil (${threshold}/20) de ta fac` : `Sous la note-seuil de ta fac (${threshold}/20) : à ce niveau, l’UE serait éliminatoire`}
+                    </p>
+                  ) : null}
+                  <p className="text-xs text-gray-500 mt-2">{bar.desc} Le pourcentage ci-dessous compte les questions enti&egrave;rement justes.</p>
+                </div>
+                {an.multi > 0 && (an.over > 0 || an.missed > 0) && (
+                  <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">O&ugrave; sont partis les points</p>
+                    <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-xl bg-rose-50 border border-rose-100 px-4 py-3"><p className="font-bold text-rose-800">{an.over} case{an.over > 1 ? 's' : ''} coch&eacute;e{an.over > 1 ? 's' : ''} en trop</p><p className="text-xs text-rose-700 mt-0.5">{an.lostToOver > 0 ? <>Sans ces cases, tu aurais gagn&eacute; <strong>{fmt(an.lostToOver)} pt{an.lostToOver > 1 ? 's' : ''}</strong> sur {questions.length}.</> : <>&Agrave; ton bar&egrave;me, elles ne t&apos;ont rien co&ucirc;t&eacute; ici.</>}</p></div>
+                      <div className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3"><p className="font-bold text-amber-800">{an.missed} proposition{an.missed > 1 ? 's' : ''} juste{an.missed > 1 ? 's' : ''} oubli&eacute;e{an.missed > 1 ? 's' : ''}</p><p className="text-xs text-amber-700 mt-0.5">{an.lostToMissed > 0 ? <>En les cochant, tu aurais gagn&eacute; <strong>{fmt(an.lostToMissed)} pt{an.lostToMissed > 1 ? 's' : ''}</strong>.</> : <>Sans effet sur ta note ici.</>}</p></div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-3">{an.perfect}/{an.multi} question{an.multi > 1 ? 's' : ''} &agrave; r&eacute;ponses multiples sans aucune discordance.</p>
+                  </div>
+                )}
+                <div className="bg-indigo-50 border border-indigo-100 rounded-2xl px-5 py-4">
+                  <p className="text-sm font-bold text-indigo-900 mb-1.5">{strat.title}</p>
+                  <ul className="space-y-1 text-[13px] text-indigo-900/80 list-disc pl-5">{strat.tips.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                </div>
               </div>
             );
           })()}

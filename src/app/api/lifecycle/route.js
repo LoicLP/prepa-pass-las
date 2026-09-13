@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { sendMail, layout, summarize, SITE, esc } from '@/lib/mailer';
 import { isPromoActive, HEADLINE } from '@/lib/promo';
+import { facById } from '@/data/facs';
+import { facExams, fmtMinutes } from '@/data/facExams';
 
 /* Cron quotidien (vercel.json, 17 h UTC). Une séquence d'e-mails alignée sur
    l'essai de 7 jours, plus deux rappels indépendants de l'âge du compte.
@@ -63,6 +65,15 @@ function build(stage, firstName, st) {
       `Jusqu'au 31 octobre, le Premium est à <strong>${HEADLINE.monthlyPromo} €/mois</strong> au lieu de ${HEADLINE.monthlyFull} € — et ce prix reste le tien tant que tu restes abonné. Après, il repasse au tarif plein.`,
       `Sans engagement, résiliable en un clic. Tes XP, ta série et ton historique restent tels quels.`,
     ], cta: { href: `${SITE}/tarifs`, label: 'Profiter de l’offre' } }) };
+    case 'j30': {
+      const fac = facById(st.facId); const ex = facExams(st.facId)?.exams?.filter((e) => e.minutes) || [];
+      const fmt = fac && ex.length ? ` À ${fac.name}, ${ex.slice(0, 3).map((e) => `${e.label.toLowerCase()} en ${fmtMinutes(e.minutes)}`).join(', ')}… : entraîne-toi dans ce format avec les épreuves par UE.` : '';
+      return { subject: `J-30 avant tes partiels${fac?.city ? ` à ${fac.city}` : ''} ⏳`, html: layout({ title: 'Un mois avant tes partiels', emoji: '⏳', paragraphs: [
+        `Salut ${esc(n)} 👋`,
+        `Tes partiels sont dans <strong>30 jours</strong> (${esc(st.examLabel)}).${esc(fmt)}`,
+        `Le bon rythme pour le dernier mois : une épreuve par UE par semaine au barème de ta fac, et ta pile « À consolider » vidée chaque soir. Les points clés, pas les détails.`,
+      ], cta: { href: `${SITE}/examen`, label: 'Lancer une épreuve par UE' } }) };
+    }
     case 'fac': return { subject: `${n}, dans quelle fac prépares-tu le concours ?`, html: layout({ title: 'Une info pour noter tes examens blancs comme ta fac', emoji: '🎓', paragraphs: [
       `Salut ${esc(n)} 👋`,
       `Nouveau sur Prépa PASS/LAS : les <strong>examens blancs par UE</strong> sont notés sur 20 <strong>au barème de ta faculté</strong> (points négatifs, différences, tout ou rien…), et les questions s'adaptent au style de ses annales.`,
@@ -106,6 +117,12 @@ export async function GET(request) {
       else if (!lc.post3 && age >= TRIAL_DAYS + 3 && age < TRIAL_DAYS + 5 && st.total > 0) stage = 'post3';
       else if (isPromoActive() && PROMO_REMINDERS.includes(today) && !lc[`promo_${today}`] && age >= TRIAL_DAYS) stage = 'promo';
     }
+    // J-30 avant la date de concours renseignée (tous les comptes, une fois par date)
+    const exam = u.user_metadata?.exam_date;
+    if (!stage && exam) {
+      const dTo = Math.round((new Date(exam).getTime() - now) / DAY);
+      if (dTo >= 29 && dTo <= 31 && !lc[`j30_${exam}`]) { stage = 'j30'; st.facId = u.user_metadata?.profile?.fac || null; st.examLabel = new Date(exam).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }); }
+    }
     if (!stage && st.pile >= 10 && (!lc.pile || now - new Date(lc.pile).getTime() > 7 * DAY) && age >= 2) stage = 'pile';
     // Comptes sans faculté renseignée (créés avant le profil de révision) : une seule fois, aux comptes qui ont déjà révisé ou récents.
     if (!stage && !lc.fac && !u.user_metadata?.profile?.fac && age >= 1 && ((p.session_count || 0) > 0 || age < 30)) stage = 'fac';
@@ -119,7 +136,7 @@ export async function GET(request) {
     const mail = build(stage, firstName, st); if (!mail) continue;
     try {
       await sendMail({ to: u.email, ...mail });
-      const key = stage === 'promo' ? `promo_${today}` : stage;
+      const key = stage === 'promo' ? `promo_${today}` : stage === 'j30' ? `j30_${u.user_metadata?.exam_date}` : stage;
       await admin.auth.admin.updateUserById(u.id, { app_metadata: { ...u.app_metadata, lifecycle: { ...(u.app_metadata?.lifecycle || {}), [key]: new Date().toISOString() } } });
       sent++;
     } catch (e) { erreurs.push(`${u.email} (${stage}): ${e.message}`); }

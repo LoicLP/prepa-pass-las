@@ -15,7 +15,9 @@ import { usePremium } from '@/contexts/PremiumContext';
 import { supabase } from '@/lib/supabase';
 import { track } from '@/lib/track';
 import { getProfile, styleFor, VOIES, CONCOURS_DATES } from '@/lib/profile';
-import { FACS, mccFor } from '@/data/facs';
+import { FACS, mccFor, facById } from '@/data/facs';
+import { facExams } from '@/data/facExams';
+import { strategyFor } from '@/lib/bareme';
 import { levelOf } from '@/lib/mastery';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
@@ -1088,7 +1090,12 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
               <div className="mb-6 text-left max-w-xs mx-auto">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Ton concours, c&apos;est quand&nbsp;?</p>
                 <div className="grid grid-cols-2 gap-2">
-                  {[['2026-12-14', 'Déc. 2026', 'Écrits du S1'], ['2027-05-17', 'Mai 2027', 'Écrits du S2']].map(([d, l, sub]) => (
+                  {(() => {
+                    const fd = facExams(welcomeFac || user?.user_metadata?.profile?.fac)?.dates; const fname = facById(welcomeFac || user?.user_metadata?.profile?.fac)?.city;
+                    const lab = (d) => new Date(d).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }).replace(/^./, c => c.toUpperCase());
+                    if (fd?.s1 || fd?.s2) return [fd.s1 && [fd.s1, lab(fd.s1), `Partiels S1 · ${fname}${fd.approx ? ' (à confirmer)' : ''}`], fd.s2 && [fd.s2, lab(fd.s2), `Partiels S2 · ${fname}${fd.approx ? ' (à confirmer)' : ''}`]].filter(Boolean);
+                    return [['2026-12-14', 'Déc. 2026', 'Écrits du S1'], ['2027-05-17', 'Mai 2027', 'Écrits du S2']];
+                  })().map(([d, l, sub]) => (
                     <button key={d} type="button" onClick={() => setWelcomeExamDate(welcomeExamDate === d ? null : d)}
                       className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${welcomeExamDate === d ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
                       <span className="block text-sm font-bold text-gray-900">{l}</span>
@@ -1912,6 +1919,16 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
             </div>
           )}
 
+          {/* Conseil de stratégie au barème de la fac — après un QCM à réponses multiples */}
+          {!isPlacement && questions.some(q => q.multi) && user?.user_metadata?.profile?.bareme && (() => {
+            const st = strategyFor(user.user_metadata.profile.bareme);
+            return (
+              <div className="max-w-md mx-auto mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl px-5 py-3.5 text-left">
+                <p className="text-[13px] font-bold text-indigo-900">{st.title}</p>
+                <p className="text-[12px] text-indigo-900/80 mt-0.5">{st.tips[0]}</p>
+              </div>
+            );
+          })()}
           {/* Score circle — jamais pour le positionnement : pas de note, pas de rouge */}
           {!isPlacement && (
           <div className="flex flex-col items-center justify-center mb-8">

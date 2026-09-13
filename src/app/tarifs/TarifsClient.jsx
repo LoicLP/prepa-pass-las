@@ -254,7 +254,7 @@ export default function TarifsPage() {
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-400">
                     <CrossIcon />
-                    Progression, Objectifs &amp; Classement
+                    Progression &amp; Objectifs
                   </li>
                 </ul>
               </div>
@@ -337,7 +337,7 @@ export default function TarifsPage() {
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-300">
                     <PremiumCheckIcon />
-                    <strong className="text-white">Progression, Objectifs &amp; Classement</strong>
+                    <strong className="text-white">Progression &amp; Objectifs</strong>
                   </li>
                   <li className="flex items-center gap-2 text-sm text-gray-300">
                     <PremiumCheckIcon />

@@ -7,7 +7,7 @@ import Link from 'next/link';
 // Plan unique : quel que soit le palier requis, on pr\u00e9sente Premium.
 const PREMIUM_CONFIG = {
   title: 'Passe Premium',
-  description: 'Cette fonctionnalit\u00e9 est r\u00e9serv\u00e9e aux membres Premium. D\u00e9bloque tout : QCM illimit\u00e9s par IA, examens blancs, cours complets, progression et classement.',
+  description: 'Cette fonctionnalit\u00e9 est r\u00e9serv\u00e9e aux membres Premium. D\u00e9bloque tout : QCM illimit\u00e9s par IA, examens blancs, cours complets, progression et objectifs.',
   buttonText: 'D\u00e9couvrir Premium',
   iconBg: 'bg-primary-100',
   iconColor: 'text-primary-600',

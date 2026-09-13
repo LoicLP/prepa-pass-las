@@ -84,7 +84,20 @@ function stripHtml(html) {
 
 /* Style de faculté : on décrit l'esprit des annales de première année sans
    affirmer de détail propre à une faculté (formats et barèmes changent). */
-export function styleBlock(style) {
+/* Formats de questions propres à la fac : nombre de propositions, item F, vrai/faux, QRU par matière. */
+function formatLines(formats, subject) {
+  if (!formats) return '';
+  const n = formats.propositions && formats.propositions !== 4 ? formats.propositions : null;
+  const lines = [];
+  if (formats.itemF) lines.push(`- FORMAT DE LA FACULTÉ : chaque question a exactement 6 options ; la 6e option est toujours « Toutes les propositions précédentes sont fausses » et n'est correcte (correct: true) que si les 5 autres sont fausses (environ 1 question sur 6). Cette règle remplace la règle des 4 options.`);
+  else if (n) lines.push(`- FORMAT DE LA FACULTÉ : chaque question a exactement ${n} options (A à ${String.fromCharCode(64 + n)}), au moins une vraie et au moins une fausse. Cette règle remplace la règle des 4 options.`);
+  if (formats.qcd) lines.push(`- FORMAT DE LA FACULTÉ : environ une question sur trois est une question à choix double (QCD) : une affirmation à juger, avec exactement 2 options « Vrai » et « Faux » dont une seule est correcte. Cette règle prévaut sur le nombre d'options pour ces questions.`);
+  if (subject && Array.isArray(formats.qru) && formats.qru.includes(subject)) lines.push(`- FORMAT DE LA FACULTÉ : dans cette matière, les questions sont à réponse UNIQUE (QRU) : exactement une option correcte par question.`);
+  if (subject && Array.isArray(formats.toutOuRien) && formats.toutOuRien.includes(subject)) lines.push(`- Dans cette matière la faculté note en tout ou rien : propositions nettes, sans ambiguïté.`);
+  return lines.length ? `\n${lines.join('\n')}` : '';
+}
+
+export function styleBlock(style, subject = null) {
   if (!style) return '';
   const bar = { partiel: 'points partiels par proposition', differences: 'par nombre de différences avec la bonne réponse (1 / 0,7 / 0,1 / 0), sans point négatif', degressif: 'dégressif selon le nombre d’erreurs (1 / 0,5 / 0,2 / 0), sans point négatif', degressif75: 'dégressif selon le nombre d’erreurs (1 / 0,75 / 0,5 / 0), sans point négatif', degressif50: 'dégressif selon le nombre d’erreurs (1 / 0,5 / 0), sans point négatif', degressif80: 'dégressif selon le nombre d’erreurs (1 / 0,8 / 0,25 / 0), sans point négatif', item_02_01: '+0,2 par proposition juste, −0,1 par proposition fausse, plancher zéro', negatif: 'points négatifs (une proposition fausse retire des points)', tout_ou_rien: 'tout ou rien (le point exige toutes les propositions justes)' }[style.bareme] || 'points partiels';
   return `
@@ -92,11 +105,11 @@ export function styleBlock(style) {
 STYLE ATTENDU :
 ${style.fac ? `- L'étudiant prépare le concours à ${style.fac}. Rédige dans l'esprit des annales de première année de santé de cette faculté : énoncés parfois contextualisés (situation clinique simple, valeurs numériques), propositions à juger indépendamment.` : ''}
 - Barème de l'étudiant : ${bar}. Chaque proposition doit donc être tranchable sans ambiguïté, avec des pièges de lecture réalistes (négations, unités, ordres de grandeur, inversions).
-${style.voie === 'las' ? '- Étudiant en LAS : privilégie les notions structurantes du programme santé plutôt que les détails périphériques.' : ''}`;
+${style.voie === 'las' ? '- Étudiant en LAS : privilégie les notions structurantes du programme santé plutôt que les détails périphériques.' : ''}${formatLines(style.formats, subject)}`;
 }
 
 export function buildQCMPrompt(subject, subjectName, count, ficheTopic = null, ficheContent = null, style = null) {
-  return buildQCMPromptRaw(subject, subjectName, count, ficheTopic, ficheContent) + styleBlock(style);
+  return buildQCMPromptRaw(subject, subjectName, count, ficheTopic, ficheContent) + styleBlock(style, subject);
 }
 
 function buildQCMPromptRaw(subject, subjectName, count, ficheTopic = null, ficheContent = null) {
@@ -192,7 +205,7 @@ Génère exactement ${count} questions.`;
 export function buildExamenPrompt(subject, subjectName, count, ficheTopic = null, ficheContent = null, style = null) {
   // L'examen suit le format concours : on injecte le format multi-réponses partout
   return buildExamenPromptRaw(subject, subjectName, count, ficheTopic, ficheContent)
-    .split(JSON_FORMAT_INSTRUCTIONS).join(EXAMEN_FORMAT_INSTRUCTIONS) + styleBlock(style);
+    .split(JSON_FORMAT_INSTRUCTIONS).join(EXAMEN_FORMAT_INSTRUCTIONS) + styleBlock(style, subject);
 }
 
 function buildExamenPromptRaw(subject, subjectName, count, ficheTopic = null, ficheContent = null) {
