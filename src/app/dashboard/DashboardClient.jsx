@@ -2722,6 +2722,11 @@ function ficheReadingTime(html) {
 }
 
 // Accent hex par couleur de matière (pour les cartes de matières)
+/* Couleurs « surligneur » par UE, pour les mini-fiches bristol du dashboard. */
+const FLUO_HEX = {
+  indigo: '#a5b4ff', primary: '#a5b4ff', emerald: '#7dffa0', violet: '#d69bff', cyan: '#6ff2ff',
+  amber: '#ffd84a', rose: '#ff7ac3', sky: '#7cd4ff', teal: '#6ff5d8', fuchsia: '#ff8ae8',
+};
 const FICHES_ACCENT_HEX = {
   indigo: '#4f46e5', primary: '#4f46e5', emerald: '#059669',
   violet: '#7c3aed', cyan: '#0891b2', amber: '#d97706', rose: '#e11d48',
@@ -2938,6 +2943,7 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
 
   return (
     <div style={{ minHeight: 0 }}>
+      <style>{`.fiche-bristol-mini:hover { transform: translateY(-3px) rotate(-0.6deg); box-shadow: 0 1px 0 #fff inset, 0 14px 28px -14px rgba(66,50,10,0.35); }`}</style>
       {selectedFiche ? (
         <FicheBristolPage
           fiche={selectedFiche}
@@ -3006,22 +3012,36 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
       ) : (() => {
         const renderCard = (fiche) => {
           const sub = SUBJECTS.find(s => s.id === fiche.subject);
-          const cols = FICHES_SUBJECT_COLORS[sub?.color] || FICHES_SUBJECT_COLORS.primary;
+          const accent = FICHES_ACCENT_HEX[sub?.color] || FICHES_ACCENT_HEX.primary;
+          const fluo = FLUO_HEX[sub?.color] || FLUO_HEX.primary;
           const isRead = readIds.has(fiche.id);
           const mins = ficheReadingTime(fiche.content);
           const open = () => openFiche(fiche);
+          // Petite fiche bristol : papier crème ligné, onglet de couleur, titre surligné au fluo, ruban adhésif.
           return (
             <div key={fiche.id} role="button" tabIndex={0} onClick={open} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }}
-              style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7f0', cursor: 'pointer', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'all .2s' }}
-              className="hover:shadow-md hover:border-indigo-200 transition-all group">
+              className="fiche-bristol-mini group"
+              style={{ position: 'relative', background: '#fffdf6', borderRadius: 14, border: '1px solid #ece6d3', cursor: 'pointer', padding: '18px 16px 12px 22px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'transform .18s, box-shadow .18s', boxShadow: '0 1px 0 #fff inset, 0 2px 6px rgba(66,50,10,0.06)', backgroundImage: 'repeating-linear-gradient(transparent 0, transparent 21px, #ece8da 21px, #ece8da 22px)', backgroundPosition: '0 14px', overflow: 'visible' }}>
+              {/* marge rouge */}
+              <span aria-hidden="true" style={{ position: 'absolute', left: 12, top: 0, bottom: 0, width: 1.5, background: '#f4c2c2', borderRadius: 1 }} />
+              {/* onglet de couleur (index) */}
+              <span aria-hidden="true" style={{ position: 'absolute', left: -1, top: 14, width: 5, height: 34, borderRadius: '0 4px 4px 0', background: accent }} />
+              {/* ruban adhésif */}
+              <span aria-hidden="true" style={{ position: 'absolute', top: -7, left: '50%', width: 62, height: 14, transform: 'translateX(-50%) rotate(-2deg)', background: `linear-gradient(90deg, ${fluo}88, ${fluo}cc)`, opacity: 0.85, borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }} />
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: isRead ? '#5f6280' : '#0f1020', lineHeight: 1.35, margin: 0 }} className="group-hover:text-indigo-700 transition-colors">{fiche.title}</h3>
-                {isRead && <span title="Lue" style={{ flexShrink: 0, width: 18, height: 18, borderRadius: '50%', background: '#e0f3eb', color: '#1d7a4f', display: 'grid', placeItems: 'center' }}><svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg></span>}
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f1020', lineHeight: '22px', margin: 0 }} className="group-hover:text-indigo-800 transition-colors">
+                  <span style={{ background: `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}d9 2.4%, ${fluo}99 5.8%, ${fluo}33 93%, ${fluo}b3 96%, ${fluo}00 98%)`, backgroundSize: '100% 72%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{fiche.title}</span>
+                </h3>
+                {isRead && (
+                  <span title="Lue" style={{ flexShrink: 0, width: 22, height: 22, borderRadius: '50%', background: '#7dffa0', border: '2px solid #fff', boxShadow: '0 1px 3px rgba(0,0,0,0.15)', color: '#14532d', display: 'grid', placeItems: 'center', transform: 'rotate(-8deg)' }}>
+                    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                  </span>
+                )}
               </div>
-              <p style={{ fontSize: 12.5, color: '#5f6280', lineHeight: 1.5, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{fiche.summary}</p>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2, fontSize: 11.5 }}>
-                <span className={cols.icon} style={{ fontWeight: 700 }}>{currentSubject === 'all' ? '' : ''}{isRead ? 'Relire' : 'Lire'} →</span>
-                <span style={{ color: '#9ca3af' }}>{mins} min</span>
+              <p style={{ fontSize: 12.5, color: '#4b4a40', lineHeight: '22px', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{fiche.summary}</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2, fontSize: 11.5, lineHeight: '22px' }}>
+                <span style={{ fontWeight: 800, color: accent }}>{isRead ? 'Relire' : 'Lire'} →</span>
+                <span style={{ color: '#9a978a' }}>{mins} min</span>
               </div>
             </div>
           );
@@ -3042,10 +3062,10 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
                       <span className={`w-6 h-6 rounded-lg ${cols.light} ${cols.border} border flex items-center justify-center shrink-0`}>
                         <svg className={`w-3.5 h-3.5 ${cols.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d={FICHES_SUBJECT_ICONS[sub.id] || ''} /></svg>
                       </span>
-                      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#0f1020', margin: 0 }}>{sub.name}</h3>
+                      <h3 style={{ fontSize: 14, fontWeight: 800, color: '#0f1020', margin: 0 }}><span style={{ background: `linear-gradient(104deg, ${FLUO_HEX[sub?.color] || FLUO_HEX.primary}00 1%, ${FLUO_HEX[sub?.color] || FLUO_HEX.primary}cc 3%, ${FLUO_HEX[sub?.color] || FLUO_HEX.primary}66 96%, ${FLUO_HEX[sub?.color] || FLUO_HEX.primary}00 99%)`, backgroundSize: '100% 60%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 70%', padding: '0 4px', margin: '0 -4px' }}>{sub.name}</span></h3>
                       <span style={{ fontSize: 11.5, color: '#8a8ea8' }}>{items.length} fiche{items.length > 1 ? 's' : ''}</span>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 10 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 14, paddingTop: 6 }}>
                       {items.map(renderCard)}
                     </div>
                   </div>
@@ -3056,7 +3076,7 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
         }
 
         return (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 14, paddingTop: 6 }}>
             {filteredFiches.map(renderCard)}
           </div>
         );
