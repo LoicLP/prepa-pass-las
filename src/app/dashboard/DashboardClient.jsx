@@ -8,7 +8,7 @@ import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { SUBJECTS } from '@/data/subjects';
 import { SUBJECT_COLORS, getSubjectName } from '@/data/constants';
-import { formatDate, formatDuration, scoreClass, scoreBarClass } from '@/utils/format';
+import { formatDate, formatDuration, scoreClass } from '@/utils/format';
 import QCMPage from '@/app/qcm/QCMClient';
 import ExamenPage from '@/app/examen/ExamenClient';
 import { FICHES_DATA } from '@/data/fiches';
@@ -27,16 +27,6 @@ import { PROGRAMME_DATA } from '@/data/programme';
 import { computeXP, gradeForXP, computeStreakWithJokers, questStatus, GRADES } from '@/lib/gamification';
 
 /* ========== HELPERS ========== */
-function getSubjectBadgeColors(subjectId) {
-  const subject = SUBJECTS.find(s => s.id === subjectId);
-  return SUBJECT_COLORS[subject?.color] || SUBJECT_COLORS.primary;
-}
-
-const TYPE_BADGE = {
-  QCM: 'bg-primary-100 text-primary-700',
-  Examen: 'bg-violet-100 text-violet-700',
-};
-
 /* ========== SIDEBAR MENU ITEMS ========== */
 const MENU_ITEMS = [
   {
@@ -1020,83 +1010,101 @@ export default function DashboardPage() {
               const fmtTot = (sec) => { if (!sec) return null; const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60); return h ? `${h}h${m ? String(m).padStart(2, '0') : ''}` : `${m} min`; };
               const relDate = (iso) => { if (!iso) return '—'; const d = new Date(iso), now = new Date(); const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate()), nn = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const diff = Math.round((nn - dd) / 86400000); if (diff === 0) return "Aujourd'hui"; if (diff === 1) return 'Hier'; if (diff < 7) return d.toLocaleDateString('fr-FR', { weekday: 'long' }); return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); };
               const timeOf = (iso) => { try { return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
+              const note20 = (pct) => String(Math.round(pct * 2) / 10).replace('.', ',');
+              const inkOf = (pct) => (pct >= 70 ? '#15803d' : pct >= 50 ? '#3b3a4f' : '#dc2626');
+              const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
               return (
               <div>
+                <PencilDefs />
                 <SectionHeader
-                  lead="Ton" word="historique"
+                  lead="Ton" word="registre d'entraînement"
                   chips={[
                     { label: `${allSessions.length} session${allSessions.length > 1 ? 's' : ''}` },
                     valid.length > 0 && { label: `${avg}% de moyenne` },
                     fmtTot(totalSec) && { label: `${fmtTot(totalSec)} d'entraînement`, tone: 'amber' },
                   ]}
                 />
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" style={{ borderTopWidth: 3, borderTopColor: '#4f46e5' }}>
-                  <div className="p-6 pb-4">
-                    <SegmentedPills
-                      value={historyFilter} onChange={setHistoryFilter}
-                      options={[
-                        { key: 'all', label: `Tout (${allSessions.length})` },
-                        { key: 'qcm', label: `QCM (${data.qcmCount})` },
-                        { key: 'examen', label: `Examens (${data.examCount})` },
-                      ]}
-                    />
+                <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7f0', boxShadow: '0 2px 6px rgba(15,16,32,0.04)' }}>
+                 <div style={{ margin: 10, border: '1px solid #c7c9dc', outline: '1px solid #e9eaf3', outlineOffset: 3, borderRadius: 10, padding: '20px 24px 16px' }}>
+                  <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+                    <div className="min-w-0">
+                      <p style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#8a8ea8', margin: 0 }}>Pr&eacute;pa PASS/LAS · Registre des s&eacute;ances</p>
+                      <h3 className="font-jakarta text-base font-bold text-gray-900" style={{ marginTop: 4 }}>Sessions d&rsquo;entra&icirc;nement</h3>
+                      <p style={{ fontSize: 12.5, color: '#5f6280', margin: '2px 0 12px' }}>{filteredHistory.length} s&eacute;ance{filteredHistory.length > 1 ? 's' : ''} consign&eacute;e{filteredHistory.length > 1 ? 's' : ''}{fmtTot(totalSec) ? ` · ${fmtTot(totalSec)} au total` : ''} · arr&ecirc;t&eacute; le {today}</p>
+                      <SegmentedPills
+                        value={historyFilter} onChange={setHistoryFilter}
+                        options={[
+                          { key: 'all', label: `Tout (${allSessions.length})` },
+                          { key: 'qcm', label: `QCM (${data.qcmCount})` },
+                          { key: 'examen', label: `Examens (${data.examCount})` },
+                        ]}
+                      />
+                    </div>
+                    <Stamp top="Moyenne" big={valid.length ? note20(avg) : '—'} sub="/ 20" color={valid.length && avg >= 70 ? '#15803d' : '#4f46e5'} size={104} />
                   </div>
                   {filteredHistory.length === 0 ? (
-                    <div className="px-6 pb-6">
-                      <EmptyState title="Aucune session" description="Aucune session trouvée pour ce filtre." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
-                    </div>
+                    <EmptyState title="Aucune session" description="Aucune session trouvée pour ce filtre." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
                   ) : (
                     <>
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                           <thead>
-                            <tr className="bg-gray-50/80 border-b border-gray-100">
-                              {['Date', 'Type', 'Session', 'Score'].map(h => <th key={h} className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">{h}</th>)}
-                              <th className="text-right py-3 px-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Durée</th>
+                            <tr style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#8a8ea8', borderBottom: '2px solid #0f1020' }}>
+                              <th style={{ textAlign: 'left', padding: '6px 8px 8px 0', whiteSpace: 'nowrap' }}>Date</th>
+                              <th style={{ textAlign: 'left', padding: '6px 8px 8px' }}>&Eacute;preuve</th>
+                              <th style={{ textAlign: 'left', padding: '6px 8px 8px', minWidth: 150 }}>R&eacute;sultat</th>
+                              <th style={{ textAlign: 'right', padding: '6px 8px 8px' }}>Note</th>
+                              <th style={{ textAlign: 'right', padding: '6px 0 8px 8px', whiteSpace: 'nowrap' }}>Dur&eacute;e</th>
                             </tr>
                           </thead>
                           <tbody>
                             {filteredHistory.slice(0, visibleCount).map((s, i) => {
-                              const colors = getSubjectBadgeColors(s.subject);
                               const pct = pctOf(s);
                               const name = s.subjectName || getSubjectName(s.subject);
                               const hasTopic = s.topic && s.topic !== name;
+                              const isExam = s._type !== 'QCM';
                               return (
-                                <tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-indigo-50/40 transition-colors">
-                                  <td className="py-3 px-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-700">{relDate(s.date)}</div>
-                                    <div className="text-[11px] text-gray-400 tabular-nums">{timeOf(s.date)}</div>
+                                <tr key={i} style={{ borderBottom: '1px dashed #e5e7f0' }} className="hover:bg-indigo-50/30 transition-colors">
+                                  <td style={{ padding: '9px 8px 9px 0', whiteSpace: 'nowrap' }}>
+                                    <div style={{ fontWeight: 600, color: '#0f1020' }}>{relDate(s.date)}</div>
+                                    <div style={{ fontSize: 11, color: '#8a8ea8', fontVariantNumeric: 'tabular-nums' }}>{timeOf(s.date)}</div>
                                   </td>
-                                  <td className="py-3 px-4"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${TYPE_BADGE[s._type] || TYPE_BADGE.QCM}`}>{s._type}</span></td>
-                                  <td className="py-3 px-4">
-                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${colors.badge}`}>{name}</span>
-                                    {hasTopic && <div className="text-[11px] text-gray-400 mt-1 truncate max-w-[220px]">{s.topic}</div>}
+                                  <td style={{ padding: '9px 8px' }}>
+                                    <div style={{ fontWeight: 700, color: '#0f1020', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                      <span>{name}</span>
+                                      <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: isExam ? '#7c3aed' : '#4f46e5', border: `1px solid ${isExam ? '#7c3aed' : '#4f46e5'}`, borderRadius: 4, padding: '1px 5px', opacity: 0.85 }}>{isExam ? 'Examen' : 'QCM'}</span>
+                                    </div>
+                                    {hasTopic && <div style={{ fontSize: 11, color: '#8a8ea8', marginTop: 2, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.topic}</div>}
                                   </td>
-                                  <td className="py-3 px-4">
-                                    {pct == null ? <span className="text-sm text-gray-300">&mdash;</span> : (
+                                  <td style={{ padding: '9px 8px' }}>
+                                    {pct == null ? <span style={{ color: '#c3c5d5' }}>&mdash;</span> : (
                                       <div className="flex items-center gap-2">
-                                        <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden shrink-0"><div className={`h-full rounded-full ${scoreBarClass(pct)}`} style={{ width: `${pct}%` }} /></div>
-                                        <span className={`text-sm font-bold tabular-nums ${scoreClass(pct)}`}>{pct}%</span>
-                                        {s.total > 0 && <span className="text-[11px] text-gray-400 tabular-nums hidden sm:inline">{s.correct}/{s.total}</span>}
+                                        <div style={{ width: 96, flexShrink: 0 }}><PencilBar pct={pct} done={pct >= 70} height={10} /></div>
+                                        {s.total > 0 && <span style={{ fontSize: 11, color: '#8a8ea8', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{s.correct}/{s.total}</span>}
                                       </div>
                                     )}
                                   </td>
-                                  <td className="py-3 px-5 text-sm text-gray-500 text-right whitespace-nowrap tabular-nums">{formatDuration(s.duration)}</td>
+                                  <td style={{ padding: '9px 8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                                    {pct == null ? <span style={{ color: '#c3c5d5' }}>&mdash;</span> : <><span className="font-jakarta" style={{ fontSize: 16, fontWeight: 800, color: inkOf(pct) }}>{note20(pct)}</span><span style={{ fontSize: 11, color: '#8a8ea8' }}> /20</span></>}
+                                  </td>
+                                  <td style={{ padding: '9px 0 9px 8px', textAlign: 'right', color: '#5f6280', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{formatDuration(s.duration)}</td>
                                 </tr>
                               );
                             })}
                           </tbody>
                         </table>
                       </div>
-                      {visibleCount < filteredHistory.length && (
-                        <div className="p-4 text-center border-t border-gray-100">
-                          <button onClick={() => setVisibleCount(v => v + 10)} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-full hover:border-indigo-200 hover:text-indigo-600 transition-colors">
+                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: '2px solid #0f1020', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                        <span style={{ fontSize: 11.5, color: '#8a8ea8' }}>Note sur 20 calcul&eacute;e depuis le pourcentage de bonnes r&eacute;ponses. En vert : 14/20 et plus, en rouge : sous la moyenne.</span>
+                        {visibleCount < filteredHistory.length && (
+                          <button onClick={() => setVisibleCount(v => v + 10)} className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:border-indigo-200 hover:text-indigo-600 transition-colors">
                             Voir plus ({Math.min(visibleCount + 10, filteredHistory.length)} / {filteredHistory.length})
                           </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </>
                   )}
+                 </div>
                 </div>
               </div>
               );
