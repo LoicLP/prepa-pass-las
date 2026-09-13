@@ -4695,7 +4695,7 @@ function ScoreLineChart({ points, target = 70 }) {
 
   const maxLabels = points.length <= 10 ? points.length : Math.min(points.length, 8);
   const labelStep = Math.max(1, Math.ceil(points.length / maxLabels));
-  const INK = '#4338ca'; const GRID = '#c7cbe8';
+  const INK = '#4338ca'; const GRID = '#c7cbe8'; const PENCIL = '#3b3a4f';
 
   return (
     <div className="w-full overflow-hidden" style={{ borderRadius: 12, border: '1px solid #e5e7f0', background: '#fff' }}>
@@ -4708,10 +4708,18 @@ function ScoreLineChart({ points, target = 70 }) {
             <rect width={cell * 5} height={cell * 5} fill="url(#mmMinor)" />
             <path d={`M ${cell * 5} 0 L 0 0 0 ${cell * 5}`} fill="none" stroke={GRID} strokeWidth="1" />
           </pattern>
-          <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={INK} stopOpacity="0.16" />
-            <stop offset="100%" stopColor={INK} stopOpacity="0.01" />
-          </linearGradient>
+          {/* trait de crayon : léger tremblement du tracé et grain */}
+          <filter id="pencil" x="-5%" y="-5%" width="110%" height="110%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="3" seed="7" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.4" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+          <filter id="pencilSoft" x="-5%" y="-5%" width="110%" height="110%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+          <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+            <line x1="0" y1="0" x2="0" y2="6" stroke={PENCIL} strokeWidth="0.9" opacity="0.32" />
+          </pattern>
         </defs>
 
         {/* papier millimétré */}
@@ -4728,17 +4736,18 @@ function ScoreLineChart({ points, target = 70 }) {
         ))}
         <text x={W - padRight + 6} y={padTop - 6} textAnchor="start" fontSize="8.5" fontWeight="800" fill={INK} letterSpacing="1">/20</text>
 
-        {/* aire + tracé */}
-        <path d={areaPath} fill="url(#chartFill)" />
-        <path d={linePath} fill="none" stroke={INK} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
+        {/* aire hachurée au crayon + tracé en deux passes (mine appuyée puis reprise plus claire) */}
+        <path d={areaPath} fill="url(#hatch)" filter="url(#pencilSoft)" />
+        <path d={linePath} fill="none" stroke={PENCIL} strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" opacity="0.85" filter="url(#pencil)" />
+        <path d={linePath} fill="none" stroke={PENCIL} strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round" opacity="0.55" filter="url(#pencilSoft)" />
 
         {/* seuil objectif */}
-        <line x1={padLeft} y1={objY} x2={W - padRight} y2={objY} stroke="#e11d48" strokeWidth="1.3" strokeDasharray="6 4" opacity="0.7" />
+        <line x1={padLeft} y1={objY} x2={W - padRight} y2={objY} stroke="#dc2626" strokeWidth="1.6" strokeDasharray="7 4" opacity="0.7" filter="url(#pencil)" />
         <rect x={padLeft + 6} y={objY - 16} width="78" height="13" rx="3" fill="#fff" stroke="#e11d48" strokeWidth="0.8" opacity="0.95" />
         <text x={padLeft + 45} y={objY - 6.5} textAnchor="middle" fontSize="8.5" fontWeight="800" fill="#e11d48" letterSpacing="0.5">SEUIL {target} %</text>
 
         {/* dernier point : halo pulsé */}
-        <circle cx={last[0]} cy={last[1]} r="9" fill={INK} opacity="0.12">
+        <circle cx={last[0]} cy={last[1]} r="9" fill={PENCIL} opacity="0.12">
           <animate attributeName="r" values="6;12;6" dur="2.2s" repeatCount="indefinite" />
           <animate attributeName="opacity" values="0.22;0.04;0.22" dur="2.2s" repeatCount="indefinite" />
         </circle>
@@ -4751,7 +4760,7 @@ function ScoreLineChart({ points, target = 70 }) {
           return (
             <g key={i} onMouseEnter={() => setHoveredIndex(i)} style={{ cursor: 'pointer' }}>
               <circle cx={cx} cy={cy} r={16} fill="transparent" />
-              <circle cx={cx} cy={cy} r={isHovered ? 5 : isLast ? 4 : 3} fill={isHovered || isLast ? INK : '#fff'} stroke={INK} strokeWidth="2" />
+              <circle cx={cx} cy={cy} r={isHovered ? 5 : isLast ? 4.2 : 3.2} fill={isHovered || isLast ? PENCIL : '#fff'} stroke={PENCIL} strokeWidth="1.8" filter="url(#pencil)" />
               {isHovered && (
                 <g>
                   <rect x={cx - 30} y={cy - 32} width="60" height="22" rx="5" fill="#0f1020" />
