@@ -82,7 +82,24 @@ function stripHtml(html) {
     .trim();
 }
 
-export function buildQCMPrompt(subject, subjectName, count, ficheTopic = null, ficheContent = null) {
+/* Style de faculté : on décrit l'esprit des annales de première année sans
+   affirmer de détail propre à une faculté (formats et barèmes changent). */
+export function styleBlock(style) {
+  if (!style) return '';
+  const bar = { partiel: 'points partiels par proposition', negatif: 'points négatifs (une proposition fausse retire des points)', tout_ou_rien: 'tout ou rien (le point exige toutes les propositions justes)' }[style.bareme] || 'points partiels';
+  return `
+
+STYLE ATTENDU :
+${style.fac ? `- L'étudiant prépare le concours à ${style.fac}. Rédige dans l'esprit des annales de première année de santé de cette faculté : énoncés parfois contextualisés (situation clinique simple, valeurs numériques), propositions à juger indépendamment.` : ''}
+- Barème de l'étudiant : ${bar}. Chaque proposition doit donc être tranchable sans ambiguïté, avec des pièges de lecture réalistes (négations, unités, ordres de grandeur, inversions).
+${style.voie === 'las' ? '- Étudiant en LAS : privilégie les notions structurantes du programme santé plutôt que les détails périphériques.' : ''}`;
+}
+
+export function buildQCMPrompt(subject, subjectName, count, ficheTopic = null, ficheContent = null, style = null) {
+  return buildQCMPromptRaw(subject, subjectName, count, ficheTopic, ficheContent) + styleBlock(style);
+}
+
+function buildQCMPromptRaw(subject, subjectName, count, ficheTopic = null, ficheContent = null) {
   // When fiche content is available, build a focused prompt from the actual course notes
   if (ficheTopic && ficheContent) {
     const cleanContent = stripHtml(ficheContent).slice(0, 8000); // limit tokens
@@ -172,10 +189,10 @@ ${JSON_FORMAT_INSTRUCTIONS}
 Génère exactement ${count} questions.`;
 }
 
-export function buildExamenPrompt(subject, subjectName, count, ficheTopic = null, ficheContent = null) {
+export function buildExamenPrompt(subject, subjectName, count, ficheTopic = null, ficheContent = null, style = null) {
   // L'examen suit le format concours : on injecte le format multi-réponses partout
   return buildExamenPromptRaw(subject, subjectName, count, ficheTopic, ficheContent)
-    .split(JSON_FORMAT_INSTRUCTIONS).join(EXAMEN_FORMAT_INSTRUCTIONS);
+    .split(JSON_FORMAT_INSTRUCTIONS).join(EXAMEN_FORMAT_INSTRUCTIONS) + styleBlock(style);
 }
 
 function buildExamenPromptRaw(subject, subjectName, count, ficheTopic = null, ficheContent = null) {

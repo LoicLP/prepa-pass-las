@@ -82,7 +82,7 @@ export async function POST(request) {
     );
   }
 
-  const { subject, subjectName, count, mode = 'qcm', ficheTopic = null, ficheContent = null } = body;
+  const { subject, subjectName, count, mode = 'qcm', ficheTopic = null, ficheContent = null, style = null } = body;
 
   // Validate params
   if (subject && !VALID_SUBJECTS.includes(subject)) {
@@ -114,9 +114,9 @@ export async function POST(request) {
   // Build prompt
   let prompt;
   if (mode === 'examen') {
-    prompt = buildExamenPrompt(subject, resolvedSubjectName, questionCount, ficheTopic, ficheContent);
+    prompt = buildExamenPrompt(subject, resolvedSubjectName, questionCount, ficheTopic, ficheContent, style);
   } else {
-    prompt = buildQCMPrompt(subject, resolvedSubjectName, questionCount, ficheTopic, ficheContent);
+    prompt = buildQCMPrompt(subject, resolvedSubjectName, questionCount, ficheTopic, ficheContent, style);
   }
 
   // Call Gemini

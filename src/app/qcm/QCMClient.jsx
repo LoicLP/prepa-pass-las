@@ -14,6 +14,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePremium } from '@/contexts/PremiumContext';
 import { supabase } from '@/lib/supabase';
 import { track } from '@/lib/track';
+import { getProfile, styleFor, VOIES, HOURS, CONCOURS_DATES } from '@/lib/profile';
+import { FACS } from '@/data/facs';
+import { levelOf } from '@/lib/mastery';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
 import UpgradeModal from '@/components/ui/UpgradeModal';
@@ -204,6 +207,10 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [welcomeExamDate, setWelcomeExamDate] = useState(null); // date choisie sur l'écran de bienvenue
+  const [welcomeVoie, setWelcomeVoie] = useState(null);
+  const [welcomeFac, setWelcomeFac] = useState('');
+  const [welcomeHours, setWelcomeHours] = useState(null);
+  const qStartRef = useRef(Date.now()); // départ du chrono de la question courante (analyse des erreurs)
   const [tipIndex, setTipIndex] = useState(0);
   const [correctionOpen, setCorrectionOpen] = useState(true);
   const [aiGenerated, setAiGenerated] = useState(false);
@@ -362,7 +369,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     const effectiveCount = topic.count || questionCount;
 
     if (topic.subject || ficheTopic) {
-      const result = await generateAIQuestions(topic.subject, subjectName, effectiveCount, 'qcm', ficheTopic, ficheContent);
+      const result = await generateAIQuestions(topic.subject, subjectName, effectiveCount, 'qcm', ficheTopic, ficheContent, styleFor(getProfile(user)));
       // result is either { questions, aiGenerated, topic } or null
       const aiQuestions = result?.questions ?? result;
       if (Array.isArray(aiQuestions) && aiQuestions.length > 0) {
@@ -507,9 +514,12 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
   // ----- Premier QCM de bienvenue (nouvel inscrit) -----
   // 5 questions statiques → démarrage instantané, session réelle (stats + série lancées).
   const launchWelcome = useCallback(() => {
-    setSelectedTopic({ type: 'custom', subject: null, subjectName: 'Bienvenue', title: 'Tes 5 premières questions' });
+    // Positionnement doux : deux questions par matière, sans note — juste un point de départ
+    setSelectedTopic({ type: 'custom', subject: null, subjectName: 'Bienvenue', title: 'Faisons connaissance', placement: true });
     setAiGenerated(false);
-    launchWithQuestions(shuffleArray([...QUESTIONS]).slice(0, 5));
+    const bySub = {};
+    shuffleArray([...QUESTIONS]).forEach(q => { (bySub[q.subject] ||= []); if (bySub[q.subject].length < 2) bySub[q.subject].push(q); });
+    launchWithQuestions(shuffleArray(Object.values(bySub).flat()));
   }, [launchWithQuestions]);
 
   // ----- Démo découverte (page publique, sans compte) -----
@@ -531,13 +541,25 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     });
   }, [customText, startQuiz]);
 
+  useEffect(() => { qStartRef.current = Date.now(); }, [currentIndex, view]);
+  const qElapsed = () => Math.max(1, Math.round((Date.now() - qStartRef.current) / 1000));
+
+  // Écran de bienvenue : date, voie, faculté, heures → métadonnées du compte (best effort)
+  const saveWelcomeProfile = async (extra = {}) => {
+    if (!supabase || !user) return;
+    const prev = getProfile(user);
+    const profile = { ...prev, ...(welcomeVoie ? { voie: welcomeVoie } : {}), ...(welcomeFac ? { fac: welcomeFac } : {}), ...(welcomeHours ? { hoursPerWeek: welcomeHours } : {}), ...extra };
+    const data = { profile, ...(welcomeExamDate ? { exam_date: welcomeExamDate } : {}) };
+    try { await supabase.auth.updateUser({ data }); } catch {}
+  };
+
   // ----- « Je ne sais pas » : comptée ratée (→ À consolider), streak intact -----
   const answerDontKnow = useCallback(() => {
     if (isValidated) return;
     const q = questions[currentIndex];
     const correctIndex = q.options.findIndex(o => o.correct);
     const newAnswers = [...answers];
-    newAnswers[currentIndex] = { question: q, selected: null, correct: false, correctIndex, idk: true };
+    newAnswers[currentIndex] = { question: q, selected: null, correct: false, correctIndex, idk: true, t: qElapsed() };
     setAnswers(newAnswers);
     setIsValidated(true);
   }, [isValidated, questions, currentIndex, answers]);
@@ -563,7 +585,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     }
 
     const newAnswers = [...answers];
-    newAnswers[currentIndex] = { question: q, selected: optionIndex, correct: isCorrect, correctIndex };
+    newAnswers[currentIndex] = { question: q, selected: optionIndex, correct: isCorrect, correctIndex, t: qElapsed() };
     setAnswers(newAnswers);
     setIsValidated(true);
   }, [isValidated, questions, currentIndex, score, streak, maxStreak, answers, selectedTopic]);
@@ -601,6 +623,25 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     const correctCount = validAnswers.filter(a => a.correct).length;
     const pct = validAnswers.length > 0 ? Math.round((correctCount / validAnswers.length) * 100) : 0;
 
+    // Nature des erreurs : réponse rapide et fausse → lecture ; fausse au rythme normal → connaissance ; « je ne sais pas » → idk
+    const ts = validAnswers.map(a => a.t).filter(Number.isFinite).sort((a, b) => a - b);
+    const medianT = ts.length ? ts[Math.floor(ts.length / 2)] : 0;
+    const avgT = ts.length ? Math.round(ts.reduce((a, b) => a + b, 0) / ts.length) : null;
+    const errNature = validAnswers.reduce((acc, a) => {
+      if (a.correct) return acc;
+      if (a.idk) acc.idk += 1; else if (Number.isFinite(a.t) && a.t < Math.max(6, medianT * 0.45)) acc.lecture += 1; else acc.connaissance += 1;
+      return acc;
+    }, { lecture: 0, connaissance: 0, idk: 0 });
+
+    // Positionnement : score par matière enregistré dans le profil (jamais affiché comme une note)
+    if (selectedTopic?.placement && supabase && user) {
+      const per = {};
+      validAnswers.forEach(a => { const sub = a.question?.subject; if (!sub) return; (per[sub] ||= { c: 0, n: 0 }); per[sub].n += 1; if (a.correct) per[sub].c += 1; });
+      const placement = Object.fromEntries(Object.entries(per).map(([k, v]) => [k, Math.round((v.c / v.n) * 100)]));
+      const profile = { ...getProfile(user), placement, placementAt: new Date().toISOString(), level: 'positionne' };
+      supabase.auth.updateUser({ data: { profile } }).catch(() => {});
+    }
+
     // Save session + mise à jour de la file de révisions espacées (jamais en mode démo)
     const isReviewSession = selectedTopic?.type === 'review';
     if (!selectedTopic?.demo) setStats(prev => {
@@ -614,6 +655,8 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
         duration: timer.seconds,
         date: new Date().toISOString(),
         ...(selectedTopic?.flash ? { flash: true } : {}),
+        ...(selectedTopic?.placement ? { placement: true } : {}),
+        errNature, avgT,
       };
       const sessions = [newSession, ...(prev.sessions || [])].slice(0, 50);
       const reviewQueue = updateReviewQueue(prev.reviewQueue || [], validAnswers, selectedTopic);
@@ -1037,8 +1080,8 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
             <div className="w-20 h-20 mx-auto rounded-full bg-violet-100 flex items-center justify-center text-5xl mb-4 pricing-float">🦉</div>
             <h2 className="text-2xl font-black text-gray-900 mb-2">Bienvenue&nbsp;! On y va&nbsp;?</h2>
             <p className="text-sm text-gray-500 leading-relaxed mb-5">
-              On commence par <strong className="text-gray-900">5 questions rapides</strong>{' '}
-              — deux minutes, pas plus.
+              Douze questions, <strong className="text-gray-900">deux par matière</strong>, pour savoir par où commencer.
+              Pas de note, pas de classement : si tu débutes, tu vas en rater — c&apos;est prévu.
             </p>
             {/* Date de concours : Pico compte à rebours et personnalise tes rappels */}
             {!user?.user_metadata?.exam_date && (
@@ -1056,6 +1099,37 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
                 <p className="text-[11px] text-gray-400 mt-1.5">Modifiable à tout moment depuis ton tableau de bord.</p>
               </div>
             )}
+            {!user?.user_metadata?.profile?.voie && (
+              <div className="mb-6 text-left max-w-xs mx-auto space-y-3">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Ta voie</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {VOIES.map(v => (
+                      <button key={v.id} type="button" onClick={() => setWelcomeVoie(welcomeVoie === v.id ? null : v.id)} className={`rounded-xl border px-3 py-2 text-left transition-colors ${welcomeVoie === v.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
+                        <span className="block text-sm font-bold text-gray-900">{v.label}</span><span className="block text-[11px] text-gray-500">{v.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Ta faculté</p>
+                  <select value={welcomeFac} onChange={e => setWelcomeFac(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-indigo-400">
+                    <option value="">Choisir…</option>
+                    {FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Temps pour la santé, par semaine</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {HOURS.map(h => (
+                      <button key={h.id} type="button" onClick={() => setWelcomeHours(welcomeHours === h.id ? null : h.id)} className={`rounded-xl border px-2 py-2 text-center transition-colors ${welcomeHours === h.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
+                        <span className="block text-[12px] font-bold text-gray-900">{h.label.replace('/ semaine', '')}</span><span className="block text-[10px] text-gray-500">{h.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-2.5 mb-7 text-left max-w-xs mx-auto">
               {[
                 ['🔥', <>Ta <strong>série de révisions</strong> démarre aujourd&apos;hui</>],
@@ -1069,7 +1143,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
               ))}
             </div>
             <button
-              onClick={async () => { if (welcomeExamDate && supabase) { try { await supabase.auth.updateUser({ data: { exam_date: welcomeExamDate } }); } catch {} } launchWelcome(); }}
+              onClick={async () => { await saveWelcomeProfile(); launchWelcome(); }}
               className="w-full py-4 rounded-2xl text-white font-bold text-lg hover:opacity-90 transition-opacity shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2"
               style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
             >
@@ -1077,11 +1151,12 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
             </button>
             <button
-              onClick={() => { onBack ? onBack() : setView('hero'); }}
-              className="mt-3 text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors"
+              onClick={async () => { await saveWelcomeProfile({ level: 'debutant' }); onBack ? onBack() : setView('hero'); }}
+              className="mt-3 text-sm text-gray-500 hover:text-gray-800 font-semibold transition-colors"
             >
-              Plus tard
+              Je débute, je passe les questions
             </button>
+            <p className="mt-2 text-[11px] text-gray-400">Tu pourras faire ce point de départ plus tard, quand tu auras vu quelques cours.</p>
           </div>
         </div>
       </section>
@@ -1773,8 +1848,14 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
 
     const filteredResults = resultsFilter === 'incorrect' ? validAnswers.filter(a => !a.correct) : validAnswers;
 
-    const scoreMessage = pct >= 90 ? 'Excellent !' : pct >= 70 ? 'Très bien !' : pct >= 50 ? 'Pas mal !' : 'Courage !';
-    const showConfetti = pct >= 70;
+    const isPlacement = !!selectedTopic?.placement;
+    const scoreMessage = isPlacement ? 'Ton point de départ' : pct >= 90 ? 'Excellent !' : pct >= 70 ? 'Très bien !' : pct >= 50 ? 'Pas mal !' : 'Courage !';
+    const showConfetti = !isPlacement && pct >= 70;
+    const placementMap = isPlacement ? SUBJECTS.map(sub => {
+      const qs = validAnswers.filter(a => a.question?.subject === sub.id);
+      const score = qs.length ? Math.round(qs.filter(a => a.correct).length / qs.length * 100) : null;
+      return { sub, score, level: levelOf(score) };
+    }) : [];
 
     return (
       <section className={`bg-slate-50 ${onBack ? 'py-10' : 'py-24 md:py-28 min-h-screen'}`}>
@@ -1815,13 +1896,33 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
           ) : incorrectCount > 0 && (
             <div className="max-w-md mx-auto mb-8 bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-3.5 text-center">
               <p className="text-sm text-indigo-900 font-semibold">
-                🔁 {incorrectCount} question{incorrectCount > 1 ? 's' : ''} ajoutée{incorrectCount > 1 ? 's' : ''} à ta pile « À consolider »
+                {isPlacement ? `🔁 ${incorrectCount} question${incorrectCount > 1 ? 's' : ''} gardée${incorrectCount > 1 ? 's' : ''} au chaud dans ta pile « À consolider »` : `🔁 ${incorrectCount} question${incorrectCount > 1 ? 's' : ''} ajoutée${incorrectCount > 1 ? 's' : ''} à ta pile « À consolider »`}
               </p>
-              <p className="text-xs text-indigo-500 mt-1">Retrouve-les sur ton tableau de bord — réponds juste pour les retirer</p>
+              <p className="text-xs text-indigo-500 mt-1">{isPlacement ? 'Tu les reverras après avoir lu les fiches — sans pression, à ton rythme.' : 'Retrouve-les sur ton tableau de bord — réponds juste pour les retirer'}</p>
             </div>
           )}
 
-          {/* Score circle */}
+          {isPlacement && (
+            <div className="max-w-lg mx-auto mb-8 bg-white border border-indigo-100 rounded-2xl p-5 text-left">
+              <p className="text-sm font-bold text-gray-900 mb-1">Voici par où on commence</p>
+              <p className="text-xs text-gray-500 mb-4">Ce n&apos;est pas une note : c&apos;est la carte de ton point de départ. Elle bougera à chaque session.</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {placementMap.map(({ sub, level }) => {
+                  const tone = { rose: 'bg-rose-50 text-rose-700 border-rose-100', amber: 'bg-amber-50 text-amber-700 border-amber-100', emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100' }[level.tone];
+                  return (
+                    <div key={sub.id} className={`rounded-xl border px-3 py-2 ${tone}`}>
+                      <span className="block text-[11px] font-semibold truncate">{sub.name}</span>
+                      <span className="block text-sm font-black">{level.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-gray-500 mt-4">Pico va commencer par les matières en <strong>Découverte</strong> — deux questions par matière, c&apos;est un premier repère, pas un verdict.</p>
+            </div>
+          )}
+
+          {/* Score circle — jamais pour le positionnement : pas de note, pas de rouge */}
+          {!isPlacement && (
           <div className="flex flex-col items-center justify-center mb-8">
             <div className={`relative ${showConfetti ? 'celebrate-pulse' : ''}`}>
               <svg className="w-36 h-36 sm:w-44 sm:h-44" viewBox="0 0 140 140">
@@ -1842,6 +1943,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
               ✨ +{xpForSession({ correct: correctCount, subject: selectedTopic?.type === 'review' ? 'review' : selectedTopic?.subject, flash: !!selectedTopic?.flash })} XP
             </div>
           </div>
+          )}
 
           {/* Stats grid */}
           <div className={`grid ${maxStreak >= 2 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} gap-3 mb-8`}>

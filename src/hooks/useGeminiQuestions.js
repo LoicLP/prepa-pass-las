@@ -6,12 +6,12 @@ export function useGeminiQuestions() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
 
-  const generateQuestions = useCallback(async (subject, subjectName, count, mode = 'qcm', ficheTopic = null, ficheContent = null) => {
+  const generateQuestions = useCallback(async (subject, subjectName, count, mode = 'qcm', ficheTopic = null, ficheContent = null, style = null) => {
     setIsGenerating(true);
     setError(null);
 
     try {
-      const payload = { subject, subjectName, count, mode };
+      const payload = { style, subject, subjectName, count, mode };
       if (ficheTopic) payload.ficheTopic = ficheTopic;
       if (ficheContent) payload.ficheContent = ficheContent;
 

@@ -17,6 +17,11 @@ import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
 import { track } from '@/lib/track';
+import { getProfile, effectiveHours, momentFor, BAREMES, VOIES, HOURS } from '@/lib/profile';
+import { FACS } from '@/data/facs';
+import { computeMastery } from '@/lib/mastery';
+import { buildWeeklyPlan, doneThisWeek } from '@/lib/plan';
+import { PROGRAMME_DATA } from '@/data/programme';
 import { computeXP, gradeForXP, computeStreakWithJokers, questStatus, GRADES } from '@/lib/gamification';
 
 /* ========== HELPERS ========== */
@@ -382,6 +387,23 @@ export default function DashboardPage() {
     };
   }, [allSessions, qcmStats.sessions, examStats.sessions]);
 
+  // ---- Adaptation à l'étudiant : profil, carte de maîtrise, moment, plan de la semaine ----
+  const profile = useMemo(() => getProfile(user), [user]);
+  const mastery = useMemo(() => computeMastery(qcmStats.sessions || [], profile.placement), [qcmStats.sessions, profile.placement]);
+  const examDateStr = user?.user_metadata?.exam_date || null;
+  const moment = useMemo(() => momentFor(examDateStr), [examDateStr]);
+  const weekPlan = useMemo(() => buildWeeklyPlan({
+    profile, mastery, subjects: SUBJECTS,
+    coeffs: Object.fromEntries(PROGRAMME_DATA.map(u => [u.id, u.coeff || 3])),
+    pile: reviewDue.length, moment,
+  }), [profile, mastery, reviewDue.length, moment]);
+  const weekDone = useMemo(() => doneThisWeek(allSessions), [allSessions]);
+  // Le focus du jour suit le plan quand il existe, sinon la recommandation statistique
+  const planFocusSubject = weekPlan.focus?.subject ? SUBJECTS.find(s => s.id === weekPlan.focus.subject) : null;
+  const todaySubject = planFocusSubject
+    ? { ...planFocusSubject, avg: mastery.subjects[planFocusSubject.id]?.score ?? null, reason: weekPlan.mode === 'veille' ? 'Points clés avant le concours' : 'Prévu dans ta semaine' }
+    : (data.recommendations.length > 0 ? data.recommendations[0] : null);
+
   // ---- Gamification : XP, grade, streak à jokers, défis du jour ----
   const gam = useMemo(() => {
     const todayKey = new Date().toISOString().split('T')[0];
@@ -508,7 +530,6 @@ export default function DashboardPage() {
     return `${seg.color} ${start}% ${end}%`;
   }).join(', ');
 
-  const todaySubject = data.recommendations.length > 0 ? data.recommendations[0] : null;
 
   // ---- Étapes de l'onboarding (présentent chacune une fonction du dashboard) ----
   const onboardSteps = onboardOn ? [
@@ -947,7 +968,20 @@ export default function DashboardPage() {
               )}
               {/* Parcours vers le concours */}
               <ConcoursPath examDate={user.user_metadata?.exam_date || null} />
+              <WeekPlanCard plan={weekPlan} done={weekDone} profile={profile} moment={moment} mastery={mastery}
+                onLaunch={(item) => {
+                  if (item.kind === 'pile') return launchReview();
+                  if (item.kind === 'examen') return openExamen();
+                  openQCM({ type: 'custom', subject: item.subject, subjectName: item.subjectName, title: item.subjectName, count: item.count || 10 });
+                }}
+                onOpenProfile={() => setActiveSection('account')}
+              />
               <ActionHub
+                moment={moment}
+                onLaunchMoment={(m) => {
+                  if (m === 'veille') { const s = SUBJECTS.find(x => x.id === mastery.strongest) || SUBJECTS[0]; return openQCM({ type: 'custom', subject: s.id, subjectName: s.name, title: `Points clés · ${s.name}`, count: 8, flash: true }); }
+                  const w = SUBJECTS.find(x => x.id === mastery.weakest) || SUBJECTS[0]; return openQCM({ type: 'custom', subject: w.id, subjectName: w.name, title: `Rebond · ${w.name}`, count: 8 });
+                }}
                 todaySubject={todaySubject}
                 reviewDue={reviewDue}
                 subjects={SUBJECTS}
@@ -1114,6 +1148,25 @@ export default function DashboardPage() {
                         )}
                       </div>
 
+                      {(() => {
+                        const agg = (qcmStats.sessions || []).reduce((a, s) => { if (s.errNature) { a.lecture += s.errNature.lecture || 0; a.connaissance += s.errNature.connaissance || 0; a.idk += s.errNature.idk || 0; a.n += 1; } return a; }, { lecture: 0, connaissance: 0, idk: 0, n: 0 });
+                        const tot = agg.lecture + agg.connaissance + agg.idk;
+                        if (!tot) return null;
+                        const pctL = Math.round(agg.lecture / tot * 100), pctC = Math.round(agg.connaissance / tot * 100), pctI = 100 - pctL - pctC;
+                        const advice = pctL >= 35 ? 'Une erreur sur trois vient d’une lecture trop rapide : relis chaque proposition en cherchant la négation ou l’unité avant de répondre.' : pctI >= 35 ? 'Beaucoup de « je ne sais pas » : c’est honnête et utile — ce sont des chapitres à lire avant de les rejouer, pas des pièges.' : 'Tes erreurs sont surtout des notions à revoir : la pile « À consolider » est faite pour ça.';
+                        return (
+                          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                            <h3 className="font-jakarta text-base font-bold text-gray-900 mb-1">Tes erreurs, par nature</h3>
+                            <p className="text-xs text-gray-400 mb-4">Sur {agg.n} session{agg.n > 1 ? 's' : ''} chronom&eacute;tr&eacute;e{agg.n > 1 ? 's' : ''} par question.</p>
+                            <div className="grid grid-cols-3 gap-3 mb-4">
+                              {[['Lecture', pctL, 'réponse rapide et fausse', 'text-amber-600', 'bg-amber-50'], ['Connaissance', pctC, 'fausse au rythme normal', 'text-rose-600', 'bg-rose-50'], ['Non su', pctI, '« je ne sais pas »', 'text-slate-600', 'bg-slate-100']].map(([l, v, d, tc, bc]) => (
+                                <div key={l} className={`rounded-xl p-3 text-center ${bc}`}><p className={`font-jakarta text-2xl font-black ${tc}`}>{v} %</p><p className="text-xs font-semibold text-gray-800 mt-0.5">{l}</p><p className="text-[11px] text-gray-400">{d}</p></div>
+                              ))}
+                            </div>
+                            <p className="text-sm text-gray-600">{advice}</p>
+                          </div>
+                        );
+                      })()}
                       {data.hasMultipleSubjects && (
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                           <h3 className="font-jakarta text-base font-bold text-gray-900 mb-4">Points forts &amp; axes d&rsquo;am&eacute;lioration</h3>
@@ -1686,7 +1739,50 @@ function ConcoursPath({ examDate }) {
   );
 }
 
-function ActionHub({ todaySubject, reviewDue = [], subjects = [], onLaunchQCM, onLaunchExamen, onOpenFiches, onLaunchReview, quests = [], showQuests = false }) {
+/* « Ta semaine » : le plan dérivé du profil et de la carte de maîtrise, avec l'avancement. */
+function WeekPlanCard({ plan, done = {}, profile, moment, mastery, onLaunch, onOpenProfile }) {
+  if (!plan?.items?.length) return null;
+  const hours = effectiveHours(profile);
+  const doneTotal = Object.values(done).reduce((a, b) => a + b, 0);
+  const planned = plan.items.filter(i => i.kind !== 'pile').length;
+  const remaining = { ...done };
+  const rows = plan.items.map(item => {
+    let ok = false;
+    if (item.kind === 'qcm' || item.kind === 'examen') { if ((remaining[item.subject] || 0) > 0) { remaining[item.subject] -= 1; ok = true; } }
+    return { ...item, ok };
+  });
+  const title = plan.mode === 'veille' ? 'Ta semaine · veille de concours' : plan.mode === 'rebond' ? 'Ta semaine · reprise' : 'Ta semaine';
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e9e7f7', borderRadius: 16, padding: '16px 18px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+        <div>
+          <div className="font-jakarta" style={{ fontSize: 15, fontWeight: 800, color: '#0f1020' }}>{title}</div>
+          <div style={{ fontSize: 12, color: '#8a8ea8', marginTop: 2 }}>
+            {hours} h prévues{profile?.voie ? ` · ${profile.voie.toUpperCase()}` : ''} · {Math.min(doneTotal, planned)}/{planned} sessions faites
+            {!profile?.hoursPerWeek && <> · <button onClick={onOpenProfile} style={{ background: 'none', border: 'none', padding: 0, color: '#4f46e5', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>ajuster mon temps</button></>}
+          </div>
+        </div>
+        <div style={{ height: 6, width: 140, background: '#eef0f7', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${planned ? Math.min(100, Math.round(Math.min(doneTotal, planned) / planned * 100)) : 0}%`, height: '100%', background: 'linear-gradient(90deg,#4f46e5,#7c3aed)' }} /></div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
+        {rows.map((it, i) => {
+          const m = it.subject ? mastery?.subjects?.[it.subject] : null;
+          return (
+            <button key={i} onClick={() => !it.ok && onLaunch(it)} style={{ display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', padding: '9px 11px', borderRadius: 12, border: '1px solid', borderColor: it.ok ? '#d1fae5' : '#eef0f7', background: it.ok ? '#f0fdf7' : '#fafafe', cursor: it.ok ? 'default' : 'pointer' }}>
+              <span style={{ width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0, background: it.ok ? '#10b981' : '#ece9ff', color: it.ok ? '#fff' : '#4f46e5', fontSize: 11, fontWeight: 800 }}>{it.ok ? '✓' : (it.day || '·').slice(0, 3)}</span>
+              <span style={{ minWidth: 0, flex: 1 }}>
+                <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: it.ok ? '#047857' : '#0f1020', textDecoration: it.ok ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.label}</span>
+                <span style={{ display: 'block', fontSize: 11, color: '#8a8ea8' }}>{it.minutes} min{m ? ` · ${m.level.label}` : it.kind === 'pile' ? ` · ${it.count} questions` : ''}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ActionHub({ todaySubject, reviewDue = [], subjects = [], onLaunchQCM, onLaunchExamen, onOpenFiches, onLaunchReview, quests = [], showQuests = false, moment = null, onLaunchMoment = null }) {
   const [flashMenu, setFlashMenu] = useState(false);
   const hasReview = reviewDue.length > 0;
   // Sans recommandation calculée (compte neuf), on retombe sur une matière par défaut
@@ -1701,6 +1797,17 @@ function ActionHub({ todaySubject, reviewDue = [], subjects = [], onLaunchQCM, o
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
 
+      {moment && onLaunchMoment && (
+        <button onClick={() => onLaunchMoment(moment.id)} style={{ marginTop: 18, width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', borderRadius: 16, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, color: '#fff', background: moment.id === 'veille' ? 'linear-gradient(135deg, #b45309, #d97706)' : 'linear-gradient(135deg, #0f766e, #14b8a6)', boxShadow: '0 10px 24px rgba(15,16,32,0.12)' }}>
+          <span style={{ fontSize: 26, lineHeight: 1 }}>{moment.id === 'veille' ? '🎯' : '🌱'}</span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: 11, fontWeight: 800, letterSpacing: 0.8, opacity: 0.85, textTransform: 'uppercase' }}>{moment.id === 'veille' ? `J-${moment.days} · veille de concours` : 'Après le partiel'}</span>
+            <span style={{ display: 'block', fontSize: 15, fontWeight: 800 }}>{moment.id === 'veille' ? 'Consolider, pas découvrir' : 'On repart en douceur'}</span>
+            <span style={{ display: 'block', fontSize: 12, opacity: 0.9, marginTop: 2 }}>{moment.id === 'veille' ? 'Points clés de ta matière la plus solide et ta pile — rien de nouveau avant le jour J.' : 'Huit questions sur la matière qui t’a coûté le plus, sans chrono, pour reprendre pied.'}</span>
+          </span>
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+        </button>
+      )}
       <div style={{ fontSize: 13, fontWeight: 600, color: '#5f6280', marginTop: 18 }}>Que veux-tu faire&nbsp;?</div>
 
       <div className="flex flex-col md:flex-row" style={{ gap: 12, alignItems: 'stretch' }}>
@@ -4052,6 +4159,48 @@ function EmptyState({ title, description, ctaHref, ctaLabel, onCta, userName }) 
 /* ============================================================
    ACCOUNT SECTION
    ============================================================ */
+/* Profil de révision : ce qui permet au site de s'adapter (faculté, voie, temps, barème). */
+function ProfileCard({ user }) {
+  const initial = getProfile(user);
+  const [form, setForm] = useState({ fac: initial.fac || '', voie: initial.voie || '', mineure: initial.mineure || '', hoursPerWeek: initial.hoursPerWeek || '', bareme: initial.bareme || 'partiel' });
+  const [saving, setSaving] = useState(false); const [msg, setMsg] = useState(null);
+  const save = async () => {
+    setSaving(true); setMsg(null);
+    try {
+      const profile = { ...initial, fac: form.fac || null, voie: form.voie || null, mineure: form.mineure, hoursPerWeek: form.hoursPerWeek ? Number(form.hoursPerWeek) : null, bareme: form.bareme };
+      const { error } = await supabase.auth.updateUser({ data: { profile } });
+      if (error) throw error; setMsg({ ok: true, t: 'Profil enregistré — ton plan de la semaine se met à jour.' });
+    } catch (e) { setMsg({ ok: false, t: e.message || 'Erreur' }); } finally { setSaving(false); }
+  };
+  const inputCls = 'w-full px-3.5 py-2.5 bg-[#fafafe] border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-indigo-300 focus:ring-[3px] focus:ring-indigo-100';
+  const labelCls = 'block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5';
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <h3 className="font-jakarta text-base font-bold text-gray-900 mb-1">Mon profil de révision</h3>
+      <p className="text-sm text-gray-500 mb-5">C&apos;est avec &ccedil;a que le site s&apos;adapte : plan de la semaine, style des questions, note au bar&egrave;me de ta fac.</p>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div><label className={labelCls}>Facult&eacute;</label><select value={form.fac} onChange={e => setForm(f => ({ ...f, fac: e.target.value }))} className={inputCls}><option value="">Choisir…</option>{FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}</select></div>
+        <div><label className={labelCls}>Voie</label><select value={form.voie} onChange={e => setForm(f => ({ ...f, voie: e.target.value }))} className={inputCls}><option value="">Choisir…</option>{VOIES.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}</select></div>
+        <div><label className={labelCls}>Mineure (PASS) ou licence (LAS)</label><input value={form.mineure} onChange={e => setForm(f => ({ ...f, mineure: e.target.value }))} className={inputCls} placeholder="Droit, Biologie, Psychologie…" /></div>
+        <div><label className={labelCls}>Temps pour la sant&eacute; par semaine</label><select value={form.hoursPerWeek} onChange={e => setForm(f => ({ ...f, hoursPerWeek: e.target.value }))} className={inputCls}><option value="">Par d&eacute;faut</option>{HOURS.map(h => <option key={h.id} value={h.id}>{h.label} — {h.desc}</option>)}</select></div>
+        <div className="sm:col-span-2"><label className={labelCls}>Bar&egrave;me de ta facult&eacute;</label>
+          <div className="grid sm:grid-cols-3 gap-2">
+            {BAREMES.map(b => (
+              <button key={b.id} type="button" onClick={() => setForm(f => ({ ...f, bareme: b.id }))} className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${form.bareme === b.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
+                <span className="block text-sm font-bold text-gray-900">{b.label}</span><span className="block text-[11px] text-gray-500 leading-snug">{b.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mt-5 flex-wrap">
+        <button onClick={save} disabled={saving} className="inline-flex items-center px-5 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-full hover:bg-indigo-700 transition-colors disabled:opacity-50">{saving ? 'Enregistrement…' : 'Enregistrer mon profil'}</button>
+        {msg && <span className={`text-xs font-semibold ${msg.ok ? 'text-emerald-700' : 'text-red-600'}`}>{msg.t}</span>}
+      </div>
+    </div>
+  );
+}
+
 /* Page « Mon compte », calquée sur le dashboard CRFPA : identité, e-mail,
    mot de passe, abonnement, suppression. La date du concours se modifie
    depuis le parcours de l'accueil ; grade, XP et série vivent dans Progression. */
@@ -4152,6 +4301,8 @@ function AccountSection({ user, tier, accessToken }) {
           </div>
         </div>
       </div>
+
+      <ProfileCard user={user} />
 
       {/* Identifiants */}
       <div className="grid lg:grid-cols-2 gap-5 items-start">

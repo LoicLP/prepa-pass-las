@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { getProfile, styleFor, BAREMES } from '@/lib/profile';
+import { noteSur20 } from '@/lib/bareme';
 import Link from 'next/link';
 import { useTimer } from '@/hooks/useTimer';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
@@ -237,6 +239,9 @@ function ExamTimerRing({ seconds, totalSeconds, dark = false }) {
 export default function ExamenPage({ onBack = null, onViewChange = null }) {
   // ----- State machine -----
   const [view, setView] = useState('hero');
+  const [ueSubject, setUeSubject] = useState(null);
+  const [ueCount, setUeCount] = useState(30);
+  const [ueDuration, setUeDuration] = useState(45);
   // Remonte la vue courante au parent (le dashboard masque la sidebar pendant l'épreuve)
   useEffect(() => { onViewChange?.(view); }, [view, onViewChange]);
   const [subjectFilter, setSubjectFilter] = useState('all');
@@ -397,6 +402,10 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
     if (source.type === 'mixed') {
       duration = 60;
       qCount = 40;
+    } else if (source.type === 'ue') {
+      // Épreuve par UE : format choisi par l'étudiant, noté au barème de sa faculté
+      duration = source.duration || 45;
+      qCount = source.count || 30;
     }
     setExamDuration(duration);
     setExamQuestionCount(qCount);
@@ -409,7 +418,7 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
       : (source.title || source.subjectName || 'Toutes les matières PASS/LAS');
     const ficheTopic = source.type === 'mixed' ? null : (source.title || null);
 
-    const aiResult = await generateAIQuestions(subjectId, subjectName, qCount, 'examen', ficheTopic);
+    const aiResult = await generateAIQuestions(subjectId, subjectName, qCount, 'examen', ficheTopic, null, styleFor(getProfile(user)));
     if (aiResult?.questions?.length > 0) {
       startWithQuestions(aiResult.questions.slice(0, qCount));
       return;
@@ -549,6 +558,8 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
       subjectName = 'Examen complet';
     }
 
+    const profileBareme = getProfile(user).bareme || 'partiel';
+    const note20 = selectedTopic?.type === 'ue' ? noteSur20(questions, answers, profileBareme) : null;
     setStats(prev => {
       const newSession = {
         subject: subjectId,
@@ -558,6 +569,7 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
         percentage: pct,
         duration: elapsed,
         date: new Date().toISOString(),
+        ...(note20 != null ? { ue: true, note20, bareme: profileBareme } : {}),
       };
       const sessions = [newSession, ...(prev.sessions || [])].slice(0, 50);
       return { ...prev, sessions, totalCorrect: (prev.totalCorrect || 0) + correct, totalAnswered: (prev.totalAnswered || 0) + questions.length };
@@ -790,6 +802,17 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
             </div>
           </button>
 
+          {/* Épreuve par UE, au barème de la faculté */}
+          <button onClick={() => setView('ueSelection')} className="group w-full bg-white rounded-2xl border-2 border-indigo-200 p-5 text-left hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/10 transition-all hover:-translate-y-0.5 mb-4 flex items-start gap-4">
+            <div className="w-11 h-11 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <svg className="w-5.5 h-5.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-gray-900 mb-1">&Eacute;preuve par UE, au bar&egrave;me de ta fac</h3>
+              <p className="text-[13px] text-gray-500 leading-relaxed">Une seule mati&egrave;re, la dur&eacute;e et le nombre de questions de ton concours, et une <strong className="text-gray-700">note sur 20</strong> calcul&eacute;e avec ton bar&egrave;me ({(BAREMES.find(b => b.id === (getProfile(user).bareme || 'partiel')) || BAREMES[0]).label.toLowerCase()}).</p>
+            </div>
+          </button>
+
           {/* Modes ciblés (secondaires) */}
           <div className="grid sm:grid-cols-2 gap-4">
             {/* Fiches-based */}
@@ -824,6 +847,47 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
             onCancel={() => setShowMixedModal(false)}
           />
         )}
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier={upgradeTier} onClose={() => setShowUpgradeModal(false)} />}
+      </section>
+    );
+  }
+
+  // ===== ÉPREUVE PAR UE =====
+  if (view === 'ueSelection') {
+    const prof = getProfile(user);
+    const bar = BAREMES.find(b => b.id === (prof.bareme || 'partiel')) || BAREMES[0];
+    return (
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+            Retour
+          </button>
+          <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">&Eacute;preuve par UE</h2>
+          <p className="text-gray-500 mb-6">Choisis la mati&egrave;re et le format de ton concours. Note sur 20 au bar&egrave;me <strong className="text-gray-800">{bar.label.toLowerCase()}</strong> — modifiable dans <span className="whitespace-nowrap">Mon compte</span>.</p>
+          <div className="grid sm:grid-cols-2 gap-3 mb-6">
+            {SUBJECTS.map(sub => {
+              const colors = getColors(sub.color);
+              const sel = ueSubject === sub.id;
+              return (
+                <button key={sub.id} onClick={() => setUeSubject(sub.id)} className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all ${sel ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
+                  <div className={`w-9 h-9 rounded-xl ${colors.bg} flex items-center justify-center shrink-0`}><SubjectIcon subjectId={sub.id} className={`w-4 h-4 ${colors.icon}`} /></div>
+                  <span className="text-sm font-bold text-gray-900">{sub.name}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <label className="block"><span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Questions</span>
+              <select value={ueCount} onChange={e => setUeCount(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">{[20, 30, 40, 50].map(n => <option key={n} value={n}>{n} questions</option>)}</select></label>
+            <label className="block"><span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Dur&eacute;e</span>
+              <select value={ueDuration} onChange={e => setUeDuration(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">{[30, 45, 60, 90].map(n => <option key={n} value={n}>{n} min</option>)}</select></label>
+          </div>
+          <button disabled={!ueSubject} onClick={() => { const sub = SUBJECTS.find(x => x.id === ueSubject); launchExam({ type: 'ue', subject: sub.id, subjectName: sub.name, title: sub.name, count: ueCount, duration: ueDuration }); }} className="w-full py-3.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-40">
+            Lancer l&apos;&eacute;preuve
+          </button>
+        </div>
         {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
         {showUpgradeModal && <UpgradeModal requiredTier={upgradeTier} onClose={() => setShowUpgradeModal(false)} />}
       </section>
@@ -1334,6 +1398,17 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
             <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">R&eacute;sultats de l&apos;&eacute;preuve</h2>
             <p className="text-gray-500">{subjectName} &mdash; Mode Examen</p>
           </div>
+          {selectedTopic?.type === 'ue' && (() => {
+            const prof = getProfile(user); const bar = BAREMES.find(b => b.id === (prof.bareme || 'partiel')) || BAREMES[0];
+            const n20 = noteSur20(questions, answers, bar.id);
+            return (
+              <div className="max-w-md mx-auto mb-8 bg-white border-2 border-indigo-200 rounded-2xl px-6 py-5 text-center">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">Note au bar&egrave;me &laquo;&nbsp;{bar.label.toLowerCase()}&nbsp;&raquo;</p>
+                <p className="text-4xl font-black text-gray-900">{String(n20).replace('.', ',')}<span className="text-lg text-gray-400 font-bold"> / 20</span></p>
+                <p className="text-xs text-gray-500 mt-2">{bar.desc} Le pourcentage ci-dessous compte les questions enti&egrave;rement justes.</p>
+              </div>
+            );
+          })()}
 
           {/* Score circle */}
           <div className="flex flex-col items-center justify-center mb-8">
