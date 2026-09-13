@@ -2918,24 +2918,6 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
   const { isEssentiel } = usePremium();
   const { user } = useAuth();
 
-  // Téléchargement PDF (réservé Premium)
-  const [downloadingId, setDownloadingId] = useState(null);
-  const [pdfGate, setPdfGate] = useState(false);
-
-  const handleCardDownload = async (fiche) => {
-    if (!isEssentiel) { setPdfGate(true); return; }
-    if (downloadingId) return;
-    setDownloadingId(fiche.id);
-    try {
-      await downloadFichePdf(fiche, SUBJECTS.find(sb => sb.id === fiche.subject));
-    } catch (err) {
-      console.error('PDF generation error:', err);
-    } finally {
-      setDownloadingId(null);
-    }
-  };
-
-
   // Sync subject filter when prop changes (e.g. clicking different UEs in sidebar)
   useEffect(() => {
     setCurrentSubject(initialSubject || 'all');
@@ -2994,7 +2976,7 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ marginBottom: 16 }}>
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f1020', margin: 0, letterSpacing: -0.4 }}>Fiches &amp; Cours</h2>
-          <p style={{ fontSize: 13, color: '#5f6280', margin: '4px 0 0' }}>{filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''}{currentSubject !== 'all' && activeSubjectObj ? ` · ${activeSubjectObj.name}` : ' · toutes les matières'}</p>
+          <p style={{ fontSize: 13, color: '#5f6280', margin: '4px 0 0' }}>{filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''}{currentSubject !== 'all' && activeSubjectObj ? ` · ${activeSubjectObj.name}` : ''}{readIds.size > 0 ? ` · ${[...readIds].filter(id => filteredFiches.some(f => f.id === id)).length} lue${[...readIds].filter(id => filteredFiches.some(f => f.id === id)).length > 1 ? 's' : ''}` : ''}</p>
         </div>
         {/* Search */}
         <div style={{ position: 'relative' }}>
@@ -3012,53 +2994,26 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
         </div>
       </div>
 
-      {/* Cartes de matières */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7" style={{ gap: 10, marginBottom: 20 }}>
-        {/* Toutes */}
+      {/* Matières : pastilles compactes, UE de la fac d'abord */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
         {(() => {
-          const totalAll = FICHES_DATA.length;
-          const readAll = FICHES_DATA.filter(f => readIds.has(f.id)).length;
-          const isSel = currentSubject === 'all';
-          const pct = totalAll ? Math.round((readAll / totalAll) * 100) : 0;
+          const totalAll = FICHES_DATA.length; const isSel = currentSubject === 'all';
           return (
-            <button
-              onClick={() => setCurrentSubject('all')}
-              style={{ background: '#fff', borderRadius: 14, padding: 12, cursor: 'pointer', textAlign: 'left', border: `1.5px solid ${isSel ? '#4f46e5' : '#eef0f7'}`, boxShadow: isSel ? '0 0 0 3px #ece9ff' : 'none', transition: 'all .15s' }}
-              className="hover:-translate-y-0.5 hover:shadow-md transition-all"
-            >
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: '#ece9ff', display: 'grid', placeItems: 'center', marginBottom: 8 }}>
-                <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
-              </div>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0f1020', lineHeight: 1.2 }}>Toutes</div>
-              <div style={{ fontSize: 10, color: '#8a8ea8', marginTop: 1 }}>{totalAll} fiches{readAll > 0 ? ` · ${readAll} lues` : ''}</div>
-              <div style={{ height: 4, background: '#eef0f7', borderRadius: 3, overflow: 'hidden', marginTop: 8 }}>
-                <div style={{ width: `${pct}%`, height: '100%', background: '#4f46e5', borderRadius: 3 }} />
-              </div>
+            <button onClick={() => setCurrentSubject('all')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${isSel ? '#4f46e5' : '#e5e7f0'}`, background: isSel ? '#4f46e5' : '#fff', color: isSel ? '#fff' : '#2a2c44' }} className="transition-colors hover:border-indigo-300">
+              Toutes <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.7 }}>{totalAll}</span>
             </button>
           );
         })()}
         {SUBJECT_ORDER.map(id => SUBJECTS.find(s => s.id === id)).filter(Boolean).map(sub => {
           const accent = FICHES_ACCENT_HEX[sub.color] || FICHES_ACCENT_HEX.primary;
-          const cols = FICHES_SUBJECT_COLORS[sub.color] || FICHES_SUBJECT_COLORS.primary;
-          const iconPath = FICHES_SUBJECT_ICONS[sub.id] || '';
           const st = subjectStats[sub.id] || { total: 0, read: 0 };
-          const pct = st.total ? Math.round((st.read / st.total) * 100) : 0;
           const isSel = currentSubject === sub.id;
+          const done = st.total > 0 && st.read === st.total;
           return (
-            <button
-              key={sub.id}
-              onClick={() => setCurrentSubject(sub.id)}
-              style={{ background: '#fff', borderRadius: 14, padding: 12, cursor: 'pointer', textAlign: 'left', border: `1.5px solid ${isSel ? accent : '#eef0f7'}`, boxShadow: isSel ? `0 0 0 3px ${accent}22` : 'none', transition: 'all .15s' }}
-              className="hover:-translate-y-0.5 hover:shadow-md transition-all"
-            >
-              <div className={`${cols.light} ${cols.border} border`} style={{ width: 34, height: 34, borderRadius: 10, display: 'grid', placeItems: 'center', marginBottom: 8 }}>
-                <svg className={`w-4 h-4 ${cols.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" strokeLinejoin="round" d={iconPath} /></svg>
-              </div>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0f1020', lineHeight: 1.2 }}>{sub.name}</div>
-              <div style={{ fontSize: 10, color: '#8a8ea8', marginTop: 1 }}>{st.total} fiche{st.total > 1 ? 's' : ''}{st.read > 0 ? ` · ${st.read} lue${st.read > 1 ? 's' : ''}` : ''}</div>
-              <div style={{ height: 4, background: '#eef0f7', borderRadius: 3, overflow: 'hidden', marginTop: 8 }}>
-                <div style={{ width: `${pct}%`, height: '100%', background: accent, borderRadius: 3 }} />
-              </div>
+            <button key={sub.id} onClick={() => setCurrentSubject(sub.id)} title={`${st.read}/${st.total} lues`} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '6px 12px 6px 10px', borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${isSel ? accent : '#e5e7f0'}`, background: isSel ? accent : '#fff', color: isSel ? '#fff' : '#2a2c44' }} className="transition-colors hover:border-indigo-300">
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.85)' : accent, flexShrink: 0 }} />
+              {sub.name}
+              <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.7 }}>{done ? '✓' : st.read > 0 ? `${st.read}/${st.total}` : st.total}</span>
             </button>
           );
         })}
@@ -3074,61 +3029,21 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
         const renderCard = (fiche) => {
           const sub = SUBJECTS.find(s => s.id === fiche.subject);
           const cols = FICHES_SUBJECT_COLORS[sub?.color] || FICHES_SUBJECT_COLORS.primary;
-          const iconPath = FICHES_SUBJECT_ICONS[fiche.subject] || '';
           const isRead = readIds.has(fiche.id);
           const mins = ficheReadingTime(fiche.content);
+          const open = () => { markRead(fiche.id); setSelectedFiche(fiche); };
           return (
-            <div
-              key={fiche.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => { markRead(fiche.id); setSelectedFiche(fiche); }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); markRead(fiche.id); setSelectedFiche(fiche); } }}
-              style={{ position: 'relative', background: '#fff', borderRadius: 16, border: '1px solid #e5e7f0', overflow: 'hidden', cursor: 'pointer', textAlign: 'left', padding: 0, transition: 'all .2s', display: 'flex', flexDirection: 'column' }}
-              className="hover:shadow-lg hover:border-gray-300 transition-all group"
-            >
-              <div className={`h-1 ${cols.bar}`} />
-              {isRead && (
-                <span style={{ position: 'absolute', top: 12, right: 12, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9.5, fontWeight: 700, color: '#1d7a4f', background: '#e0f3eb', border: '1px solid #b5e3ca', padding: '2px 7px', borderRadius: 10 }}>
-                  <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                  Lue
-                </span>
-              )}
-              <div style={{ padding: '16px 18px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                  <div className={`w-8 h-8 rounded-xl ${cols.light} ${cols.border} border flex items-center justify-center shrink-0`}>
-                    <svg className={`w-4 h-4 ${cols.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
-                    </svg>
-                  </div>
-                  <span className={`text-[11px] font-bold uppercase tracking-wider ${cols.icon}`}>{sub?.name || ''}</span>
-                </div>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f1020', lineHeight: 1.35, marginBottom: 8, flex: 1 }} className="group-hover:text-indigo-700 transition-colors">{fiche.title}</h3>
-                <p style={{ fontSize: 12.5, color: '#5f6280', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 12 }}>{fiche.summary}</p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: '#4f46e5' }}>
-                    {isRead ? 'Relire' : 'Lire la fiche'}
-                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                  </span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 11, color: '#9ca3af' }}>⏱ {mins} min</span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleCardDownload(fiche); }}
-                      title={isEssentiel ? 'Télécharger cette fiche en PDF' : 'Téléchargement PDF réservé aux membres Premium'}
-                      aria-label={`Télécharger la fiche ${fiche.title} en PDF`}
-                      style={{ display: 'inline-flex', padding: 5, borderRadius: 7, background: '#f4f5f9', border: 'none', cursor: 'pointer', color: isEssentiel ? '#5f6280' : '#b6bacb' }}
-                      className="hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                    >
-                      {downloadingId === fiche.id ? (
-                        <span style={{ width: 13, height: 13, border: '2px solid #d7d9e6', borderTopColor: '#4f46e5', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
-                      ) : isEssentiel ? (
-                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                      ) : (
-                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
-                      )}
-                    </button>
-                  </span>
-                </div>
+            <div key={fiche.id} role="button" tabIndex={0} onClick={open} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }}
+              style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7f0', cursor: 'pointer', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'all .2s' }}
+              className="hover:shadow-md hover:border-indigo-200 transition-all group">
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: isRead ? '#5f6280' : '#0f1020', lineHeight: 1.35, margin: 0 }} className="group-hover:text-indigo-700 transition-colors">{fiche.title}</h3>
+                {isRead && <span title="Lue" style={{ flexShrink: 0, width: 18, height: 18, borderRadius: '50%', background: '#e0f3eb', color: '#1d7a4f', display: 'grid', placeItems: 'center' }}><svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg></span>}
+              </div>
+              <p style={{ fontSize: 12.5, color: '#5f6280', lineHeight: 1.5, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{fiche.summary}</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2, fontSize: 11.5 }}>
+                <span className={cols.icon} style={{ fontWeight: 700 }}>{currentSubject === 'all' ? '' : ''}{isRead ? 'Relire' : 'Lire'} →</span>
+                <span style={{ color: '#9ca3af' }}>{mins} min</span>
               </div>
             </div>
           );
@@ -3152,7 +3067,7 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
                       <h3 style={{ fontSize: 14, fontWeight: 800, color: '#0f1020', margin: 0 }}>{sub.name}</h3>
                       <span style={{ fontSize: 11.5, color: '#8a8ea8' }}>{items.length} fiche{items.length > 1 ? 's' : ''}</span>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 10 }}>
                       {items.map(renderCard)}
                     </div>
                   </div>
@@ -3163,7 +3078,7 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
         }
 
         return (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 10 }}>
             {filteredFiches.map(renderCard)}
           </div>
         );
@@ -3182,37 +3097,6 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
           onLaunchQCM={onLaunchQCM}
           onOpenCours={(fiche) => { setActiveCours(fiche); setSelectedFiche(null); }}
         />
-      )}
-
-      {/* Incitation Premium : téléchargement PDF */}
-      {pdfGate && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,16,32,0.45)', backdropFilter: 'blur(4px)' }} onClick={() => setPdfGate(false)} />
-          <div style={{ position: 'relative', width: '100%', maxWidth: 400, background: '#fff', borderRadius: 20, padding: '28px 26px', boxShadow: '0 32px 80px rgba(15,16,32,0.22)', textAlign: 'center' }}>
-            <div style={{ width: 52, height: 52, borderRadius: 16, background: '#ece9ff', display: 'grid', placeItems: 'center', margin: '0 auto 14px' }}>
-              <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#4f46e5" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-            </div>
-            <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0f1020', margin: '0 0 8px' }}>Emporte tes fiches partout</h3>
-            <p style={{ fontSize: 13.5, color: '#5f6280', lineHeight: 1.55, margin: '0 0 18px' }}>
-              Le téléchargement des fiches en PDF fait partie du Premium :{' '}
-              <strong style={{ color: '#2a2c44' }}>révise hors ligne, imprime, annote</strong>{' '}
-              — avec en plus les cours complets et les QCM illimités.
-            </p>
-            <Link
-              href="/tarifs"
-              style={{ display: 'block', padding: '12px 18px', borderRadius: 12, background: '#4f46e5', color: '#fff', fontSize: 13.5, fontWeight: 700, textDecoration: 'none', marginBottom: 10 }}
-              className="hover:bg-indigo-700 transition-colors"
-            >
-              Voir les offres — dès 6,25 €/mois
-            </Link>
-            <button
-              onClick={() => setPdfGate(false)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#8a8ea8', fontWeight: 600 }}
-            >
-              Plus tard
-            </button>
-          </div>
-        </div>
       )}
 
       {/* Cours full-screen overlay */}
