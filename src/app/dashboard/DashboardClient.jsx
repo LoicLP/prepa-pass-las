@@ -519,14 +519,7 @@ export default function DashboardPage() {
     { label: 'QCM', count: data.qcmCount, color: '#6366f1' },
     { label: 'Examens', count: data.examCount, color: '#8b5cf6' },
   ];
-  let cumulative = 0;
   const totalTypeCount = data.qcmCount + data.examCount;
-  const conicStops = segments.map(seg => {
-    const start = cumulative;
-    const end = cumulative + (seg.count / Math.max(totalTypeCount, 1)) * 100;
-    cumulative = end;
-    return `${seg.color} ${start}% ${end}%`;
-  }).join(', ');
 
 
   // ---- Étapes de l'onboarding (présentent chacune une fonction du dashboard) ----
@@ -1203,8 +1196,9 @@ export default function DashboardPage() {
                   ];
                   return (
                   <div>
+                    <PencilDefs />
                     <SectionHeader
-                      lead="Tes" word="objectifs"
+                      lead="Ton" word="carnet de la semaine"
                       chips={[
                         { label: `${data.thisWeekSessions} session${data.thisWeekSessions > 1 ? 's' : ''} cette semaine` },
                         streak > 0 && { label: `🔥 ${streak} jour${streak > 1 ? 's' : ''} d'affilée`, tone: 'amber' },
@@ -1214,10 +1208,21 @@ export default function DashboardPage() {
                       <EmptyState title="Aucune donn&eacute;e" description="Effectue des sessions pour voir tes objectifs." onCta={() => openQCM({ initialView: 'modeChoice', subjectName: 'QCM', title: 'QCM' })} ctaLabel="Commencer un QCM" />
                     ) : (
                     <div className="space-y-5">
-                      {/* Objectifs de la semaine */}
-                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" style={{ borderTopWidth: 3, borderTopColor: '#4f46e5' }}>
-                        <div className="flex items-center justify-between mb-5">
-                          <h3 className="font-jakarta text-base font-bold text-gray-900">Objectifs de la semaine</h3>
+                      {/* Objectifs de la semaine : fiche de suivi tamponnée */}
+                      {(() => { const pcts = goals.map(g => Math.min(100, Math.round((g.value / g.target) * 100))); const weekPct = Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length); const allDone = pcts.every(x => x >= 100); return (
+                      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7f0', boxShadow: '0 2px 6px rgba(15,16,32,0.04)' }}>
+                       <div style={{ margin: 10, border: '1px solid #c7c9dc', outline: '1px solid #e9eaf3', outlineOffset: 3, borderRadius: 10, padding: '20px 24px 18px' }}>
+                        <div className="flex items-start justify-between gap-4 mb-4">
+                          <div>
+                            <p style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#8a8ea8', margin: 0 }}>Fiche de suivi · semaine en cours</p>
+                            <h3 className="font-jakarta text-base font-bold text-gray-900" style={{ marginTop: 4 }}>Objectifs de la semaine</h3>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Stamp top={allDone ? 'Semaine' : 'Avancement'} big={allDone ? '✓' : `${weekPct} %`} sub={allDone ? 'validée' : 'des objectifs'} color={allDone ? '#15803d' : '#4f46e5'} size={92} />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                          <span style={{ fontSize: 11, color: '#8a8ea8' }}>Coche-les au fil de la semaine : chaque session compte.</span>
                           {!editGoals && (
                             <button onClick={openEditGoals} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-gray-200 text-gray-600 hover:border-indigo-200 hover:text-indigo-600 transition-colors">
                               <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" /></svg>
@@ -1255,39 +1260,41 @@ export default function DashboardPage() {
                                 <div key={goal.label}>
                                   <div className="flex items-center justify-between mb-1.5">
                                     <div className="flex items-center gap-2.5">
-                                      <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: goal.bg, color: goal.color }}>
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">{goal.icon}</svg>
-                                      </span>
-                                      <span className="text-sm font-medium text-gray-700">{goal.label}</span>
+                                      <PencilCheck done={done} />
+                                      <span className={`text-sm font-semibold ${done ? 'text-gray-500 line-through decoration-gray-400' : 'text-gray-800'}`}>{goal.label}</span>
                                     </div>
                                     <span className={`inline-flex items-center gap-1 text-sm font-bold ${done ? 'text-emerald-600' : 'text-gray-900'}`}>
                                       {goal.display}
                                       {done && <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                                     </span>
                                   </div>
-                                  <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: done ? '#10b981' : `linear-gradient(90deg, ${goal.color}, ${goal.color}cc)` }} />
-                                  </div>
+                                  <PencilBar pct={pct} done={done} />
                                 </div>
                               );
                             })}
                           </div>
                         )}
+                       </div>
                       </div>
+                      ); })()}
 
                       {/* Régularité */}
                       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                         <h3 className="font-jakarta text-base font-bold text-gray-900 mb-4">R&eacute;gularit&eacute;</h3>
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="rounded-xl p-5 text-center" style={{ background: 'linear-gradient(150deg, #eef2ff, #e0e7ff)' }}>
-                            <p className="font-jakarta text-3xl font-black text-indigo-700">🔥 {streak}</p>
-                            <p className="text-xs font-semibold text-indigo-700 mt-1">Jour{streak > 1 ? 's' : ''} cons&eacute;cutif{streak > 1 ? 's' : ''}</p>
-                            <p className="text-xs text-indigo-400 mt-1">Record : {record} jour{record > 1 ? 's' : ''}</p>
+                          <div className="rounded-xl p-4 flex items-center gap-4" style={{ background: '#fbfbff', border: '1px solid #e5e7f0' }}>
+                            <Stamp top="Série" big={String(streak)} sub={`jour${streak > 1 ? 's' : ''} d'affilée`} color="#b45309" size={92} rotate={-6} />
+                            <div>
+                              <p className="text-sm font-bold text-gray-900">Assiduit&eacute;</p>
+                              <p className="text-xs text-gray-500 mt-0.5">Record : {record} jour{record > 1 ? 's' : ''}</p>
+                              <p className="text-xs text-gray-400 mt-0.5">Une session par jour suffit &agrave; garder la s&eacute;rie.</p>
+                            </div>
                           </div>
-                          <div className="rounded-xl p-5 text-center bg-amber-50/60 border border-amber-100/60">
-                            <p className="font-jakarta text-3xl font-black text-amber-600">{fmtMin(weekMins)}</p>
-                            <p className="text-xs font-semibold text-amber-700 mt-1">Cette semaine</p>
-                            <p className="text-xs text-amber-500/80 mt-1">
+                          <div className="rounded-xl p-4" style={{ background: '#fbfbff', border: '1px solid #e5e7f0' }}>
+                            <p className="text-[10.5px] font-bold uppercase tracking-widest text-gray-400">Temps de travail</p>
+                            <p className="font-jakarta text-3xl font-black text-gray-900 mt-1">{fmtMin(weekMins)}</p>
+                            <p className="text-xs font-semibold text-gray-600 mt-1">Cette semaine</p>
+                            <p className="text-xs text-gray-400 mt-1">
                               {lastWeekMins > 0 ? (weekMins >= lastWeekMins ? `+${fmtMin(weekMins - lastWeekMins)} vs semaine dernière` : `${fmtMin(weekMins)} sur ${fmtMin(lastWeekMins)} la semaine dernière`) : 'Première semaine mesurée'}
                             </p>
                           </div>
@@ -1299,10 +1306,10 @@ export default function DashboardPage() {
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                           <h3 className="font-jakarta text-base font-bold text-gray-900 mb-4">Objectif score</h3>
                           <div className="flex items-center gap-6">
-                            <MiniProgressRing value={data.overallAvg} max={data.targetScore} color="#4f46e5" />
+                            <PencilRing segments={[{ pct: Math.min(100, Math.round((data.overallAvg / Math.max(1, data.targetScore)) * 100)), color: data.overallAvg >= data.targetScore ? '#15803d' : '#4f46e5' }]} center={`${Math.round((data.overallAvg / 100) * 20 * 10) / 10}`.replace('.', ',')} sub="/ 20" />
                             <div className="flex-1">
-                              <p className="text-sm font-bold text-gray-900">Score moyen : {data.overallAvg}%</p>
-                              <p className="text-sm text-gray-500">Prochain palier : {data.targetScore}%</p>
+                              <p className="text-sm font-bold text-gray-900">Moyenne : {data.overallAvg} %</p>
+                              <p className="text-sm text-gray-500">Palier vis&eacute; : <span className="font-semibold" style={{ color: '#dc2626' }}>{data.targetScore} %</span> <span className="text-gray-400">({(Math.round((data.targetScore / 100) * 20 * 10) / 10).toString().replace('.', ',')}/20)</span></p>
                               <p className="text-xs text-gray-400 mt-1.5">Le palier progresse avec toi : atteins-le pour en d&eacute;bloquer un nouveau.</p>
                             </div>
                           </div>
@@ -1310,14 +1317,11 @@ export default function DashboardPage() {
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                           <h3 className="font-jakarta text-base font-bold text-gray-900 mb-4">R&eacute;partition des sessions</h3>
                           <div className="flex items-center gap-6">
-                            <div className="relative w-24 h-24 shrink-0">
-                              <div className="w-full h-full rounded-full" style={{ background: totalTypeCount > 0 ? `conic-gradient(${conicStops})` : '#e5e7eb' }} />
-                              <div className="absolute inset-3 bg-white rounded-full flex items-center justify-center"><span className="font-jakarta text-lg font-black text-gray-900">{totalTypeCount}</span></div>
-                            </div>
+                            <PencilRing segments={segments.map(seg => ({ pct: totalTypeCount > 0 ? (seg.count / totalTypeCount) * 100 : 0, color: seg.color }))} center={totalTypeCount} sub="sessions" />
                             <div className="space-y-2">
                               {segments.map(seg => (
                                 <div key={seg.label} className="flex items-center gap-2">
-                                  <div className="w-3 h-3 rounded-full shrink-0" style={{ background: seg.color }} />
+                                  <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" className="shrink-0"><rect x="1.5" y="1.5" width="11" height="11" rx="2" fill={seg.color} opacity="0.85" filter="url(#pencilG)" /></svg>
                                   <span className="text-sm text-gray-700">{seg.label}</span>
                                   <span className="text-sm font-bold text-gray-900 tabular-nums">{seg.count}</span>
                                   <span className="text-xs text-gray-400 tabular-nums">({totalTypeCount > 0 ? Math.round((seg.count / totalTypeCount) * 100) : 0}%)</span>
@@ -1333,17 +1337,13 @@ export default function DashboardPage() {
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="font-jakarta text-base font-bold text-gray-900">Ma&icirc;trise par mati&egrave;re</h3>
-                            <span className="text-[11px] text-gray-400 flex items-center gap-1.5"><span className="w-3 h-0.5 bg-gray-300 inline-block"></span> seuil vis&eacute; 70%</span>
+                            <span className="text-[11px] text-gray-400 flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block" style={{ borderTop: '2px dashed #dc2626' }}></span> seuil vis&eacute; 70 %</span>
                           </div>
                           <div className="space-y-3.5">
                             {subjects.map(s => (
                               <div key={s.id} className="flex items-center gap-3">
-                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} />
                                 <span className="w-28 sm:w-36 shrink-0 text-[13px] font-semibold text-gray-800 truncate">{s.name}</span>
-                                <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden relative">
-                                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${s.avg}%`, background: s.color }} />
-                                  <div className="absolute top-0 h-full w-0.5 bg-gray-300" style={{ left: '70%' }} />
-                                </div>
+                                <div className="flex-1"><PencilBar pct={s.avg} done={s.avg >= 70} seuil={70} height={12} /></div>
                                 <span className={`w-11 text-right text-sm font-bold tabular-nums ${scoreClass(s.avg)}`}>{s.avg}%</span>
                                 <span className="w-20 text-right text-[11px] text-gray-400 tabular-nums hidden sm:block">record {s.bestScore}%</span>
                               </div>
@@ -1715,6 +1715,85 @@ function ConcoursPath({ examDate, facId = null }) {
             📅 Ajoute ta date de concours →
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* Éléments « au crayon » partagés par Objectifs : filtres et hachures définis une fois par section. */
+function PencilDefs() {
+  return (
+    <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+      <defs>
+        <filter id="pencilG" x="-5%" y="-20%" width="110%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" seed="11" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <pattern id="hatchG" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="#3b3a4f" strokeWidth="1" opacity="0.45" />
+        </pattern>
+        <pattern id="hatchRed" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="#dc2626" strokeWidth="1" opacity="0.5" />
+        </pattern>
+        <pattern id="hatchGreen" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="#15803d" strokeWidth="1" opacity="0.55" />
+        </pattern>
+      </defs>
+    </svg>
+  );
+}
+/* Barre de progression hachurée au crayon, sur une règle millimétrée ; `seuil` trace un repère rouge. */
+function PencilBar({ pct, done = false, seuil = null, height = 14 }) {
+  const w = 300; const p = Math.max(0, Math.min(100, pct));
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" style={{ width: '100%', height, display: 'block' }} aria-hidden="true">
+      <rect x="0.5" y="0.5" width={w - 1} height={height - 1} rx="2" fill="#fbfbff" stroke="#c7cbe8" strokeWidth="1" />
+      {[10, 20, 30, 40, 50, 60, 70, 80, 90].map(t => <line key={t} x1={(w * t) / 100} y1="1" x2={(w * t) / 100} y2={height - 1} stroke="#c7cbe8" strokeWidth={t % 50 === 0 ? 1 : 0.5} opacity="0.7" />)}
+      {p > 0 && <rect x="1" y="1" width={(w * p) / 100 - 1} height={height - 2} fill={done ? 'url(#hatchGreen)' : 'url(#hatchG)'} filter="url(#pencilG)" />}
+      {p > 0 && <line x1={(w * p) / 100} y1="0" x2={(w * p) / 100} y2={height} stroke={done ? '#15803d' : '#3b3a4f'} strokeWidth="1.6" filter="url(#pencilG)" />}
+      {seuil != null && <line x1={(w * seuil) / 100} y1="-1" x2={(w * seuil) / 100} y2={height + 1} stroke="#dc2626" strokeWidth="1.4" strokeDasharray="3 2" opacity="0.8" filter="url(#pencilG)" />}
+    </svg>
+  );
+}
+/* Anneau tracé au crayon : `segments` = [{pct, color}] (cumul ≤ 100). Le centre affiche `center`. */
+function PencilRing({ segments, center, sub, size = 96 }) {
+  const r = 38; const c = 2 * Math.PI * r; let acc = 0;
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true">
+        <circle cx="50" cy="50" r={r} fill="none" stroke="#c7cbe8" strokeWidth="9" strokeDasharray="1.5 2.5" opacity="0.8" />
+        {segments.filter(sg => sg.pct > 0).map((sg, i) => {
+          const len = (Math.min(100, sg.pct) / 100) * c; const off = -(acc / 100) * c; acc += sg.pct;
+          return <circle key={i} cx="50" cy="50" r={r} fill="none" stroke={sg.color} strokeWidth="8" strokeLinecap={segments.length > 1 ? 'butt' : 'round'} strokeDasharray={`${len} ${c - len}`} strokeDashoffset={off} transform="rotate(-90 50 50)" filter="url(#pencilG)" opacity="0.9" />;
+        })}
+        <circle cx="50" cy="50" r={r - 7} fill="none" stroke="#3b3a4f" strokeWidth="0.8" opacity="0.35" filter="url(#pencilG)" />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <span className="font-jakarta" style={{ fontSize: size * 0.2, fontWeight: 900, color: '#0f1020', lineHeight: 1 }}>{center}</span>
+        {sub && <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#8a8ea8', marginTop: 3 }}>{sub}</span>}
+      </div>
+    </div>
+  );
+}
+/* Case à cocher tracée à la main. */
+function PencilCheck({ done }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <rect x="2.5" y="2.5" width="15" height="15" rx="2" fill={done ? '#f0fdf4' : '#fff'} stroke="#3b3a4f" strokeWidth="1.4" filter="url(#pencilG)" />
+      {done && <path d="M5 10.5 8.5 14 15.5 6" fill="none" stroke="#15803d" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" filter="url(#pencilG)" />}
+    </svg>
+  );
+}
+/* Tampon rond incliné (moyenne, série…). */
+function Stamp({ top, big, sub, color = '#4f46e5', size = 104, rotate = -8 }) {
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0, transform: `rotate(${rotate}deg)` }}>
+      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `3px double ${color}`, opacity: 0.85 }} />
+      <div style={{ position: 'absolute', inset: 7, borderRadius: '50%', border: `1px dashed ${color}`, opacity: 0.7 }} />
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color, textAlign: 'center', padding: 10 }}>
+        {top && <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' }}>{top}</span>}
+        <span className="font-jakarta" style={{ fontSize: size * 0.24, fontWeight: 900, lineHeight: 1.05, letterSpacing: -0.5 }}>{big}</span>
+        {sub && <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', marginTop: 2 }}>{sub}</span>}
       </div>
     </div>
   );
@@ -4639,25 +4718,6 @@ function PremiumLock({ title, description }) {
           <Link href="/tarifs" className="inline-flex px-6 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25">Passer au Premium+</Link>
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   MINI PROGRESS RING
-   ============================================================ */
-function MiniProgressRing({ value, max, color }) {
-  const pct = Math.min(100, Math.round((value / Math.max(max, 1)) * 100));
-  const radius = 36;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (pct / 100) * circumference;
-  return (
-    <div className="relative w-20 h-20 mx-auto">
-      <svg className="w-full h-full" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="6" />
-        <circle cx="40" cy="40" r={radius} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 0.6s ease' }} />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-sm font-black text-gray-900">{pct}%</span>
     </div>
   );
 }
