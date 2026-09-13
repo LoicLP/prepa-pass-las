@@ -21,7 +21,7 @@ const FAQ_ITEMS = [
   {
     question: 'La plateforme est-elle adaptée à toutes les universités ?',
     answer:
-      'Oui, notre contenu couvre le tronc commun national du programme PASS/LAS. Les matières fondamentales sont communes à toutes les universités.',
+      'Oui, et plus que ça : renseigne ta faculté et la plateforme applique le barème de ses MCC à tes examens blancs (points négatifs, dégressif par discordance, tout ou rien…), pré-remplit la durée et le nombre de QCM de chaque UE, tient compte des coefficients et de la note-seuil, et te propose les dates de partiels. Nous avons lu les MCC de 33 facultés : le détail, avec les sources, est sur la page Facultés.',
   },
   {
     question: 'Puis-je utiliser la plateforme dès la terminale ?',

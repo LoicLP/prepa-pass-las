@@ -15,7 +15,7 @@ export const metadata = {
     absolute: 'Prépa PASS/LAS - Réussissez votre première année de médecine',
   },
   description:
-    'La plateforme de révision pour réussir le concours PASS/LAS : QCM illimités corrigés, révisions espacées, examens blancs, 150 fiches et un coach de progression.',
+    'La plateforme de révision qui s’adapte à ta faculté : examens blancs au barème et au format de tes MCC, QCM illimités corrigés, révisions espacées, 150 fiches et un coach de progression.',
   alternates: { canonical: '/' },
 };
 
@@ -102,8 +102,8 @@ export default function Home() {
           </h1>
 
           <p className="hero-seq-3 text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed mb-10">
-            Le QG de révision qui te fait tenir jusqu&apos;au concours : QCM illimités corrigés, révisions espacées de tes erreurs,
-            examens blancs en conditions réelles — et un coach qui récompense ta régularité, jour après jour.
+            Le QG de révision qui s&apos;adapte à ta fac : examens blancs au barème et au format de tes MCC, QCM illimités corrigés,
+            révisions espacées de tes erreurs — et un coach qui récompense ta régularité, jour après jour.
           </p>
 
           <div className="hero-seq-4 flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
@@ -124,6 +124,7 @@ export default function Home() {
             <div className="inline-flex items-center gap-1.5"><CheckIcon /> 7 jours de Premium offerts</div>
             <div className="inline-flex items-center gap-1.5"><CheckIcon /> Sans carte bancaire</div>
             <div className="inline-flex items-center gap-1.5"><CheckIcon /> 150 fiches en accès libre</div>
+            <div className="inline-flex items-center gap-1.5"><CheckIcon /> Adapté à 33 facultés</div>
           </div>
 
           <div className="mt-16 flex justify-center">
@@ -197,6 +198,59 @@ export default function Home() {
       {/* ================================================================
           QUESTION DU JOUR — outil gratuit, sans inscription
       ================================================================ */}
+      {/* ============================================================
+          TA FAC — la plateforme s'adapte à chaque université
+          ============================================================ */}
+      <section id="facs" className="py-20 md:py-28 bg-white border-t border-slate-100 relative overflow-hidden">
+        <GridBackground opacity={0.035} />
+        <div className="absolute top-[10%] right-[-6%] w-[420px] h-[420px] bg-indigo-200/[0.25] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
+          <div data-reveal className="max-w-2xl mx-auto text-center mb-14">
+            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 border border-indigo-100 px-3.5 py-1.5 text-xs font-bold text-indigo-700 uppercase tracking-wider mb-5">Nouveau · 33 facultés</span>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-5">
+              Une prépa qui s&apos;adapte<br />à <span className="text-indigo-600">ta fac</span>, pas l&apos;inverse
+            </h2>
+            <p className="text-slate-500 text-lg leading-relaxed">
+              Le programme est national, le concours ne l&apos;est pas. Chaque faculté a son barème, ses durées d&apos;épreuve, ses coefficients, ses dates. Nous avons lu les MCC de chaque université pour que tu révises dans les conditions de la tienne.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center mb-14">
+            <div data-reveal className="grid sm:grid-cols-2 gap-4">
+              {[
+                { t: 'Le barème de tes MCC', d: 'Points négatifs, dégressif par discordance, tout ou rien… ta note sur 20 est calculée comme chez toi, pas avec un barème générique.', i: '⚖️' },
+                { t: 'Le format exact des épreuves', d: '40 QCM en 1 h 30 à Lille, 30 minutes à Bordeaux, réponse unique en biophysique : durée et nombre de questions pré-remplis par UE.', i: '⏱️' },
+                { t: 'Coefficients et note-seuil', d: 'Tes priorités sont pondérées par le poids de chaque UE dans ta fac, et tu sais tout de suite si tu passes la note éliminatoire.', i: '🎯' },
+                { t: 'Stratégie de réponse', d: 'Cocher ou s’abstenir ? La bonne réponse dépend du barème. Après chaque épreuve : ce que les cases en trop t’ont coûté.', i: '🧠' },
+              ].map((c) => (
+                <div key={c.t} className="bg-white rounded-2xl border border-slate-200/70 p-5 shadow-sm shadow-slate-900/[0.03]">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-lg mb-3">{c.i}</div>
+                  <h3 className="font-bold text-slate-900 mb-1.5">{c.t}</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed">{c.d}</p>
+                </div>
+              ))}
+            </div>
+            <div data-reveal className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-br from-indigo-100/60 to-violet-100/60 rounded-3xl blur-2xl pointer-events-none" aria-hidden="true" />
+              <div className="relative"><MockFac /></div>
+            </div>
+          </div>
+
+          <div data-reveal className="text-center">
+            <p className="text-sm font-semibold text-slate-500 mb-4">Paris Cité, Sorbonne, Lyon, Marseille, Lille, Toulouse, Montpellier, Bordeaux, Nantes, Strasbourg… et 23 autres, avec les sources.</p>
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              {[['paris-cite', 'Paris Cité'], ['sorbonne', 'Sorbonne'], ['lyon-est', 'Lyon Est'], ['marseille', 'Marseille'], ['lille', 'Lille'], ['toulouse', 'Toulouse'], ['montpellier', 'Montpellier'], ['bordeaux', 'Bordeaux'], ['nantes', 'Nantes'], ['strasbourg', 'Strasbourg'], ['nice', 'Nice'], ['rennes', 'Rennes']].map(([id, n]) => (
+                <Link key={id} href={`/facs/${id}`} className="rounded-full bg-white border border-slate-200 px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700 transition-colors">{n}</Link>
+              ))}
+            </div>
+            <Link href="/facs" className="group inline-flex items-center justify-center gap-2 px-7 py-4 bg-slate-900 text-white font-semibold rounded-full hover:bg-slate-800 transition-colors">
+              Voir le barème de ma fac
+              <ArrowIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section id="question-du-jour" className="py-16 md:py-20 bg-[#f8f9fc] relative overflow-hidden">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
           <div data-reveal className="relative overflow-hidden rounded-3xl border border-indigo-200/80 bg-gradient-to-br from-white via-[#eef2ff]/60 to-white shadow-xl shadow-indigo-200/20">
@@ -249,14 +303,14 @@ export default function Home() {
             <FeatureRow num="2" flip label="Consolider · révisions espacées" title="La pile « À consolider »" subtitle="Chaque erreur rejoint ta pile. Tu la rejoues jusqu'à la maîtriser, puis elle disparaît : c'est la répétition espacée, sans y penser."
               bullets={['Rien ne se perd : une question ratée revient au bon moment', 'Une question réussie deux fois sort de la pile', 'Session de 5 minutes possible entre deux cours']}
               href="/qcm" cta="Voir comment ça marche" mockup={<MockConsolider />} />
-            <FeatureRow num="3" label="Valider · conditions concours" title="Examens blancs chronométrés" subtitle="40 questions mélangées, 60 minutes, grille de réponses. Le stress du jour J, avant le jour J."
-              bullets={['Toutes les UE mélangées, comme au concours', 'Grille de réponses et chrono qui tourne', 'Correction complète et score par matière à la fin']}
+            <FeatureRow num="3" label="Valider · au format de ta fac" title="Examens blancs comme chez toi" subtitle="Par UE, avec la durée et le nombre de QCM de ta faculté, notés sur 20 au barème de tes MCC. Le stress du jour J, avant le jour J."
+              bullets={['Format pré-rempli : 40 QCM en 1 h 30 à Lille, 25 en 30 min à Bordeaux…', 'Note sur 20 au barème de ta fac, comparée à sa note-seuil', 'Après l’épreuve : ce que les cases cochées en trop t’ont coûté']}
               href="/examen" cta="Passer un examen blanc" mockup={<MockExamen />} />
             <FeatureRow num="4" flip label="Réviser · 150 fiches et cours" title="Fiches suivies, cours complets" subtitle="Chaque fiche a son temps de lecture, son sommaire et son QCM ciblé. Tu sais toujours ce qui est lu, et ce qui reste."
               bullets={['150 fiches synthétiques, 25 par UE, en accès libre', 'Cours détaillés avec schémas pour aller plus loin', 'Téléchargement PDF pour réviser hors ligne']}
               href="/fiches" cta="Parcourir les fiches" mockup={<MockFiches />} />
             <FeatureRow num="5" label="Progresser · coach de révision" title="Un coach qui te dit quoi faire" subtitle="Courbe par matière, objectifs de la semaine et une recommandation claire à chaque connexion."
-              bullets={['« L’Anatomie te freine : 3 QCM ciblés et tu passes la barre »', 'Objectifs hebdo modifiables : sessions, temps, jours actifs', 'Parcours vers ta date de concours, jour par jour']}
+              bullets={['« L’Anatomie te freine : 3 QCM ciblés et tu passes la barre »', 'Priorités pondérées par les coefficients de ta fac', 'Parcours vers tes partiels, dates de ta fac proposées']}
               href="/inscription" cta="Créer mon compte" mockup={<MockProgression />} />
           </div>
         </div>
@@ -393,7 +447,7 @@ export default function Home() {
                   <span key={l} className={`w-6 h-6 rounded-full border-2 border-white text-[10px] font-bold text-white flex items-center justify-center ${['bg-indigo-500', 'bg-violet-500', 'bg-cyan-500', 'bg-emerald-500'][i]}`}>{l}</span>
                 ))}
               </div>
-              150 fiches · 6 UE · QCM illimités
+              33 facultés · 150 fiches · QCM illimités
             </div>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-4">Ils révisent avec nous</h2>
             <p className="text-slate-500 text-lg">Ce que disent les étudiants qui préparent le concours sur la plateforme.</p>
@@ -560,6 +614,26 @@ function MockConsolider() {
         ))}
       </div>
       <button className="mt-3 w-full bg-indigo-600 text-white text-[11px] font-semibold py-2.5 rounded-lg inline-flex items-center justify-center gap-1.5">Rejouer mes 12 questions <ArrowIcon className="w-3 h-3" /></button>
+    </MockFrame>
+  );
+}
+
+function MockFac() {
+  return (
+    <MockFrame label="Épreuve par UE · Chimie / Biochimie" badge="Université de Lille">
+      <div className="rounded-xl border-2 border-indigo-200 bg-white px-4 py-3 text-center mb-3">
+        <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Note au barème « dégressif 1 · 0,5 · 0,2 · 0 »</p>
+        <p className="text-3xl font-black text-slate-900">11,4<span className="text-sm text-slate-400 font-bold"> / 20</span></p>
+        <span className="mt-1.5 inline-flex rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5">Au-dessus de la note-seuil (8/20)</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="rounded-lg bg-rose-50 border border-rose-100 px-3 py-2"><p className="text-[11px] font-bold text-rose-800">4 cases en trop</p><p className="text-[10px] text-rose-700">−1,6 pt au barème</p></div>
+        <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2"><p className="text-[11px] font-bold text-amber-800">2 oublis</p><p className="text-[10px] text-amber-700">−1 pt</p></div>
+      </div>
+      <div className="flex items-center justify-between text-[10.5px] text-slate-500 border-t border-slate-100 pt-2.5">
+        <span><strong className="text-slate-700">Format Lille</strong> · UE1.1 · 40 QCM en 1 h 30</span>
+        <span className="font-mono text-indigo-600">MCC 2025-2026</span>
+      </div>
     </MockFrame>
   );
 }
