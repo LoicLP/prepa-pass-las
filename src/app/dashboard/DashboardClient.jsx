@@ -2943,7 +2943,7 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
 
   return (
     <div style={{ minHeight: 0 }}>
-      <style>{`.fiche-bristol-mini:hover { transform: translateY(-3px) rotate(-0.6deg); box-shadow: 0 1px 0 #fff inset, 0 14px 28px -14px rgba(66,50,10,0.35); }`}</style>
+      <style>{`.fiche-bristol-mini:hover { transform: translateY(-3px) rotate(-0.6deg); box-shadow: 0 14px 28px -14px rgba(15,16,32,0.25); }`}</style>
       {selectedFiche ? (
         <FicheBristolPage
           fiche={selectedFiche}
@@ -3021,13 +3021,11 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
           return (
             <div key={fiche.id} role="button" tabIndex={0} onClick={open} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }}
               className="fiche-bristol-mini group"
-              style={{ position: 'relative', background: '#fffdf6', borderRadius: 14, border: '1px solid #ece6d3', cursor: 'pointer', padding: '18px 16px 12px 22px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'transform .18s, box-shadow .18s', boxShadow: '0 1px 0 #fff inset, 0 2px 6px rgba(66,50,10,0.06)', backgroundImage: 'repeating-linear-gradient(transparent 0, transparent 21px, #ece8da 21px, #ece8da 22px)', backgroundPosition: '0 14px', overflow: 'visible' }}>
+              style={{ position: 'relative', background: '#fff', borderRadius: 14, border: '1px solid #e5e7f0', cursor: 'pointer', padding: '14px 16px 12px 22px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'transform .18s, box-shadow .18s', boxShadow: '0 2px 6px rgba(15,16,32,0.04)', backgroundImage: 'repeating-linear-gradient(transparent 0, transparent 21px, #eef0f4 21px, #eef0f4 22px)', backgroundPosition: '0 10px', overflow: 'visible' }}>
               {/* marge rouge */}
-              <span aria-hidden="true" style={{ position: 'absolute', left: 12, top: 0, bottom: 0, width: 1.5, background: '#f4c2c2', borderRadius: 1 }} />
+              <span aria-hidden="true" style={{ position: 'absolute', left: 12, top: 0, bottom: 0, width: 1.5, background: '#f6cfcf', borderRadius: 1 }} />
               {/* onglet de couleur (index) */}
               <span aria-hidden="true" style={{ position: 'absolute', left: -1, top: 14, width: 5, height: 34, borderRadius: '0 4px 4px 0', background: accent }} />
-              {/* ruban adhésif */}
-              <span aria-hidden="true" style={{ position: 'absolute', top: -7, left: '50%', width: 62, height: 14, transform: 'translateX(-50%) rotate(-2deg)', background: 'rgba(232,226,208,0.75)', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }} />
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f1020', lineHeight: '22px', margin: 0 }} className="group-hover:text-indigo-800 transition-colors">
                   <span style={{ background: `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}a6 2.4%, ${fluo}73 5.8%, ${fluo}26 93%, ${fluo}8c 96%, ${fluo}00 98%)`, backgroundSize: '100% 66%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{fiche.title}</span>
@@ -3038,10 +3036,10 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: 12.5, color: '#4b4a40', lineHeight: '22px', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{fiche.summary}</p>
+              <p style={{ fontSize: 12.5, color: '#5f6280', lineHeight: '22px', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{fiche.summary}</p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2, fontSize: 11.5, lineHeight: '22px' }}>
                 <span style={{ fontWeight: 700, color: '#4f46e5' }}>{isRead ? 'Relire' : 'Lire'} →</span>
-                <span style={{ color: '#9a978a' }}>{mins} min</span>
+                <span style={{ color: '#9ca3af' }}>{mins} min</span>
               </div>
             </div>
           );
@@ -3065,7 +3063,7 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
                       <h3 style={{ fontSize: 14, fontWeight: 800, color: '#0f1020', margin: 0 }}>{sub.name}</h3>
                       <span style={{ fontSize: 11.5, color: '#8a8ea8' }}>{items.length} fiche{items.length > 1 ? 's' : ''}</span>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 14, paddingTop: 6 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }}>
                       {items.map(renderCard)}
                     </div>
                   </div>
