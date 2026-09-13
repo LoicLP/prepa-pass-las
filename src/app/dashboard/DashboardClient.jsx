@@ -4272,10 +4272,10 @@ function EmptyState({ title, description, ctaHref, ctaLabel, onCta, userName }) 
 function ProfileCard({ user }) {
   const initial = getProfile(user);
   const explicitBareme = user?.user_metadata?.profile?.bareme || null; // choisi par l'étudiant (ou pré-rempli) ?
-  const [form, setForm] = useState({ fac: initial.fac || '', voie: initial.voie || '', mineure: initial.mineure || '', bareme: explicitBareme || mccFor(initial.fac)?.bareme || 'partiel' });
+  const [form, setForm] = useState({ fac: initial.fac || '', voie: initial.voie || '', bareme: explicitBareme || mccFor(initial.fac)?.bareme || 'partiel' });
   const mcc = mccFor(form.fac);
   const onFacChange = (fac) => setForm(f => ({ ...f, fac, bareme: mccFor(fac)?.bareme || f.bareme }));
-  // Confirmation par les étudiants de la fac (agrégée côté serveur, mise en cache une heure)
+  // Confirmations des étudiants de la fac (agrégées côté serveur, cache une heure)
   const [stats, setStats] = useState(null);
   useEffect(() => {
     if (!form.fac) { setStats(null); return; }
@@ -4283,74 +4283,54 @@ function ProfileCard({ user }) {
     fetch(`/api/fac-stats?fac=${encodeURIComponent(form.fac)}`).then(r => r.ok ? r.json() : null).then(d => { if (on) setStats(d); }).catch(() => {});
     return () => { on = false; };
   }, [form.fac]);
-  const [confirming, setConfirming] = useState(false);
-  const confirmBareme = async (ok) => {
-    if (!supabase) return;
-    setConfirming(true);
-    try {
-      const vote = { fac: form.fac, bareme: form.bareme, ok, at: new Date().toISOString() };
-      const profile = { ...initial, fac: form.fac || null, voie: form.voie || null, mineure: form.mineure, bareme: form.bareme, baremeVote: vote };
-      const { error } = await supabase.auth.updateUser({ data: { profile } });
-      if (error) throw error;
-      setMsg({ ok: true, t: ok ? 'Merci ! Ta confirmation aide les étudiants de ta fac.' : 'Merci, ton barème est enregistré — il compte pour les autres étudiants de ta fac.' });
-      setStats(st => st ? { ...st, votes: { ...st.votes, [form.bareme]: (st.votes?.[form.bareme] || 0) + 1 } } : st);
-    } catch (e) { setMsg({ ok: false, t: e.message || 'Erreur' }); } finally { setConfirming(false); }
-  };
-  const myVote = initial.baremeVote && initial.baremeVote.fac === form.fac ? initial.baremeVote : null;
   const [saving, setSaving] = useState(false); const [msg, setMsg] = useState(null);
-  const save = async () => {
+  const persist = async (extra = {}) => {
     setSaving(true); setMsg(null);
     try {
-      const profile = { ...initial, fac: form.fac || null, voie: form.voie || null, mineure: form.mineure, bareme: form.bareme };
+      const profile = { ...initial, fac: form.fac || null, voie: form.voie || null, bareme: form.bareme, ...extra };
       const { error } = await supabase.auth.updateUser({ data: { profile } });
-      if (error) throw error; setMsg({ ok: true, t: 'Profil enregistré.' });
-    } catch (e) { setMsg({ ok: false, t: e.message || 'Erreur' }); } finally { setSaving(false); }
+      if (error) throw error;
+      return true;
+    } catch (e) { setMsg({ ok: false, t: e.message || 'Erreur' }); return false; } finally { setSaving(false); }
   };
+  const save = async () => { if (await persist()) setMsg({ ok: true, t: 'Profil enregistré.' }); };
+  const confirm = async () => {
+    const vote = { fac: form.fac, bareme: form.bareme, ok: true, at: new Date().toISOString() };
+    if (await persist({ baremeVote: vote })) {
+      setMsg({ ok: true, t: 'Merci ! Ta confirmation aide les étudiants de ta fac.' });
+      setStats(st => st ? { ...st, votes: { ...st.votes, [form.bareme]: (st.votes?.[form.bareme] || 0) + 1 } } : st);
+    }
+  };
+  const myVote = initial.baremeVote && initial.baremeVote.fac === form.fac && initial.baremeVote.bareme === form.bareme;
+  const votes = stats?.votes?.[form.bareme] || 0;
   const inputCls = 'w-full px-3.5 py-2.5 bg-[#fafafe] border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-indigo-300 focus:ring-[3px] focus:ring-indigo-100';
   const labelCls = 'block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5';
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-      <h3 className="font-jakarta text-base font-bold text-gray-900 mb-1">Mon profil de révision</h3>
-      <p className="text-sm text-gray-500 mb-5">C&apos;est avec &ccedil;a que le site s&apos;adapte : style des questions et note au bar&egrave;me de ta fac.</p>
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div><label className={labelCls}>Facult&eacute;</label><select value={form.fac} onChange={e => onFacChange(e.target.value)} className={inputCls}><option value="">Choisir…</option>{FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}</select></div>
-        <div><label className={labelCls}>Voie</label><select value={form.voie} onChange={e => setForm(f => ({ ...f, voie: e.target.value }))} className={inputCls}><option value="">Choisir…</option>{VOIES.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}</select></div>
-        <div><label className={labelCls}>Mineure (PASS) ou licence (LAS)</label><input value={form.mineure} onChange={e => setForm(f => ({ ...f, mineure: e.target.value }))} className={inputCls} placeholder="Droit, Biologie, Psychologie…" /></div>
-        <div className="sm:col-span-2"><label className={labelCls}>Bar&egrave;me de ta facult&eacute;</label>
-          <div className="grid sm:grid-cols-2 gap-2">
-            {BAREMES.map(b => (
-              <button key={b.id} type="button" onClick={() => setForm(f => ({ ...f, bareme: b.id }))} className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${form.bareme === b.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
-                <span className="block text-sm font-bold text-gray-900">{b.label}{mcc && mcc.bareme === b.id && <span className="ml-2 inline-block align-middle rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5">Ta fac</span>}{stats?.votes?.[b.id] > 0 && <span className="ml-2 inline-block align-middle rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5">✓ {stats.votes[b.id]} étudiant{stats.votes[b.id] > 1 ? 's' : ''}</span>}</span><span className="block text-[11px] text-gray-500 leading-snug">{b.desc}</span>
-              </button>
-            ))}
-          </div>
-          {mcc ? (
-            <p className="mt-2 text-[11.5px] text-gray-500 leading-snug">
-              {mcc.confidence === 'officiel' ? 'D’après les ' : mcc.confidence === 'temoignage' ? 'D’après des témoignages d’étudiants (' : 'D’après une source non officielle ('}<a href={mcc.source} target="_blank" rel="noreferrer" className="text-indigo-600 font-semibold hover:underline">{mcc.sourceLabel}</a>{mcc.confidence === 'officiel' ? '' : ')'}{' '}: {mcc.note}{' '}Les MCC changent chaque ann&eacute;e&nbsp;: v&eacute;rifie sur ton intranet, tu peux modifier ce choix.
-            </p>
-          ) : form.fac ? (
-            <p className="mt-2 text-[11.5px] text-gray-500 leading-snug">Nous n&apos;avons pas encore les MCC de cette facult&eacute;&nbsp;: choisis le bar&egrave;me indiqu&eacute; sur ton intranet.</p>
-          ) : null}
-          {(() => { const p = programFor({ fac: form.fac }); return form.fac && p.known ? (
-            <p className="mt-2 text-[11.5px] text-gray-500 leading-snug"><strong className="text-gray-700">Programme de cette fac :</strong> {p.subjects.map(s => s.facLabel || s.name).join(' · ')}.{p.others.length ? ` Hors programme : ${p.others.map(s => s.name).join(', ')}.` : ''}</p>
-          ) : null; })()}
-          {form.fac && form.fac !== 'autre' && (
-            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-[#fafafe] border border-gray-100 px-3.5 py-2.5">
-              <span className="text-[12px] text-gray-700">
-                {myVote && myVote.bareme === form.bareme ? <>Tu as confirm&eacute; ce bar&egrave;me pour ta fac. Merci&nbsp;!</> : <>C&apos;est bien le bar&egrave;me appliqu&eacute; dans ta fac&nbsp;? Ta r&eacute;ponse aide les autres &eacute;tudiants{stats?.students > 0 ? <> ({stats.students} inscrit{stats.students > 1 ? 's' : ''} de ta fac ici)</> : null}.</>}
-              </span>
-              {!(myVote && myVote.bareme === form.bareme) && (
-                <span className="flex gap-2 ml-auto">
-                  <button type="button" disabled={confirming} onClick={() => confirmBareme(true)} className="rounded-full bg-emerald-600 text-white text-[12px] font-bold px-3 py-1 hover:bg-emerald-700 disabled:opacity-50">Oui, c&apos;est &ccedil;a</button>
-                  <button type="button" disabled={confirming} onClick={() => confirmBareme(false)} className="rounded-full border border-gray-200 bg-white text-gray-700 text-[12px] font-bold px-3 py-1 hover:border-indigo-300 disabled:opacity-50" title="Sélectionne d’abord le bon barème ci-dessus, puis clique">Non, c&apos;est celui que j&apos;ai s&eacute;lectionn&eacute;</button>
-                </span>
-              )}
-            </div>
-          )}
+      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-5">
+        <div>
+          <h3 className="font-jakarta text-base font-bold text-gray-900">Ma facult&eacute;</h3>
+          <p className="text-sm text-gray-500">Le site applique le bar&egrave;me, le format des &eacute;preuves et le programme de ta fac.</p>
         </div>
+        {form.fac && form.fac !== 'autre' && <Link href={`/facs/${form.fac}`} className="text-xs font-bold text-indigo-600 hover:underline">Fiche de la fac →</Link>}
       </div>
+      <div className="grid sm:grid-cols-3 gap-4">
+        <div><label className={labelCls}>Facult&eacute;</label><select value={form.fac} onChange={e => onFacChange(e.target.value)} className={inputCls}><option value="">Choisir…</option>{FACS.map(f => <option key={f.id} value={f.id}>{f.name}{f.city ? ` — ${f.city}` : ''}</option>)}</select></div>
+        <div><label className={labelCls}>Voie</label><select value={form.voie} onChange={e => setForm(f => ({ ...f, voie: e.target.value }))} className={inputCls}><option value="">Choisir…</option>{VOIES.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}</select></div>
+        <div><label className={labelCls}>Bar&egrave;me des QCM</label><select value={form.bareme} onChange={e => setForm(f => ({ ...f, bareme: e.target.value }))} className={inputCls}>{BAREMES.map(b => <option key={b.id} value={b.id}>{b.label}{mcc?.bareme === b.id ? ' — ta fac' : ''}</option>)}</select></div>
+      </div>
+      <p className="mt-2 text-[11.5px] text-gray-500 leading-snug">
+        {mcc?.bareme
+          ? <>Pr&eacute;-rempli d&apos;apr&egrave;s {mcc.confidence === 'officiel' ? 'les MCC officielles' : 'une source étudiante'} {mcc.year} (<a href={mcc.source} target="_blank" rel="noreferrer" className="text-indigo-600 font-semibold hover:underline">source</a>){votes > 0 ? <>, confirm&eacute; par {votes} &eacute;tudiant{votes > 1 ? 's' : ''}</> : null}. V&eacute;rifie sur ton intranet, tu peux le changer.</>
+          : form.fac
+            ? <>Bar&egrave;me non publi&eacute; par cette facult&eacute; : choisis celui de ton intranet.{votes > 0 ? <> {votes} &eacute;tudiant{votes > 1 ? 's' : ''} de ta fac ont indiqu&eacute; celui-ci.</> : null}</>
+            : <>Choisis ta facult&eacute; pour pr&eacute;-remplir le bar&egrave;me.</>}
+      </p>
       <div className="flex items-center gap-3 mt-5 flex-wrap">
-        <button onClick={save} disabled={saving} className="inline-flex items-center px-5 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-full hover:bg-indigo-700 transition-colors disabled:opacity-50">{saving ? 'Enregistrement…' : 'Enregistrer mon profil'}</button>
+        <button onClick={save} disabled={saving} className="inline-flex items-center px-5 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-full hover:bg-indigo-700 transition-colors disabled:opacity-50">{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
+        {form.fac && form.fac !== 'autre' && (myVote
+          ? <span className="text-xs font-semibold text-emerald-700">✓ Bar&egrave;me confirm&eacute; pour ta fac</span>
+          : <button onClick={confirm} disabled={saving} className="text-xs font-bold text-gray-600 hover:text-indigo-700 disabled:opacity-50">Confirmer ce bar&egrave;me pour ma fac</button>)}
         {msg && <span className={`text-xs font-semibold ${msg.ok ? 'text-emerald-700' : 'text-red-600'}`}>{msg.t}</span>}
       </div>
     </div>
