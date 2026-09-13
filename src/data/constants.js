@@ -80,6 +80,42 @@ export const SUBJECT_COLORS = {
     barHex: '#f43f5e',
     gradient: 'from-rose-500 to-rose-600',
   },
+  sky: {
+    bg: 'bg-sky-50',
+    border: 'border-sky-200',
+    text: 'text-sky-700',
+    badge: 'bg-sky-100 text-sky-700',
+    bar: 'bg-sky-500',
+    icon: 'text-sky-500',
+    ring: 'ring-sky-200',
+    accent: '#0284c7',
+    barHex: '#0ea5e9',
+    gradient: 'from-sky-500 to-sky-600',
+  },
+  teal: {
+    bg: 'bg-teal-50',
+    border: 'border-teal-200',
+    text: 'text-teal-700',
+    badge: 'bg-teal-100 text-teal-700',
+    bar: 'bg-teal-500',
+    icon: 'text-teal-500',
+    ring: 'ring-teal-200',
+    accent: '#0d9488',
+    barHex: '#14b8a6',
+    gradient: 'from-teal-500 to-teal-600',
+  },
+  fuchsia: {
+    bg: 'bg-fuchsia-50',
+    border: 'border-fuchsia-200',
+    text: 'text-fuchsia-700',
+    badge: 'bg-fuchsia-100 text-fuchsia-700',
+    bar: 'bg-fuchsia-500',
+    icon: 'text-fuchsia-500',
+    ring: 'ring-fuchsia-200',
+    accent: '#c026d3',
+    barHex: '#d946ef',
+    gradient: 'from-fuchsia-500 to-fuchsia-600',
+  },
   primary: {
     bg: 'bg-primary-50',
     border: 'border-primary-200',
@@ -122,6 +158,15 @@ export const SUBJECT_ICONS = {
   },
   ssh: {
     path: 'M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18',
+  },
+  physiologie: {
+    path: 'M3 12h3l2.5-6 3 12 2.5-6h3l1.5 3 1.5-3h2',
+  },
+  medicament: {
+    path: 'm9.75 3.104 5.25 5.25m-9.5 4.5 5.25 5.25M5.5 12.5l7-7a3.5 3.5 0 1 1 4.95 4.95l-7 7a3.5 3.5 0 1 1-4.95-4.95Z',
+  },
+  histo: {
+    path: 'M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Zm0 0v18M3 12h18M6 6.5c2 1.5 4 2.5 6 2.5s4-1 6-2.5M6 17.5c2-1.5 4-2.5 6-2.5s4 1 6 2.5',
   },
 };
 

@@ -12,8 +12,8 @@ const UE_ICON_STYLES = {
 };
 
 export const metadata = {
-  title: 'Programme PASS/LAS - Les 6 UE du Tronc Commun',
-  description: 'D\u00e9couvrez le programme officiel des 6 Unit\u00e9s d\u2019Enseignement du tronc commun PASS/LAS\u00a0: anatomie, chimie & biochimie, biologie cellulaire, biostatistiques, biophysique et SSH. Coefficients et volumes horaires inclus.',
+  title: 'Programme PASS/LAS - Les 9 UE du Tronc Commun',
+  description: 'D\u00e9couvrez le programme des 9 Unit\u00e9s d\u2019Enseignement du tronc commun PASS/LAS\u00a0: anatomie, chimie & biochimie, biologie cellulaire, biostatistiques, biophysique et SSH. Coefficients et volumes horaires inclus.',
   alternates: { canonical: '/programme' },
 };
 
@@ -42,7 +42,7 @@ export default function ProgrammePage() {
                 Le programme <span className="programme-gradient-text">PASS/LAS</span> d&eacute;taill&eacute;
               </h1>
               <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-xl">
-                Retrouvez le d&eacute;tail des <strong className="text-gray-900">6 Unit&eacute;s d&apos;Enseignement</strong> du tronc commun de la premi&egrave;re ann&eacute;e de sant&eacute;. Chaque UE est d&eacute;crypt&eacute;e avec ses <strong className="text-gray-900">th&egrave;mes, coefficients</strong> et volumes horaires.
+                Retrouvez le d&eacute;tail des <strong className="text-gray-900">9 Unit&eacute;s d&apos;Enseignement</strong> du tronc commun de la premi&egrave;re ann&eacute;e de sant&eacute;. Chaque UE est d&eacute;crypt&eacute;e avec ses <strong className="text-gray-900">th&egrave;mes, coefficients</strong> et volumes horaires.
               </p>
               {/* Stats row */}
               <div className="flex flex-wrap items-center gap-5 sm:gap-6">
@@ -51,7 +51,7 @@ export default function ProgrammePage() {
                     <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" /></svg>
                   </div>
                   <div>
-                    <div className="text-xl font-black text-gray-900">6</div>
+                    <div className="text-xl font-black text-gray-900">9</div>
                     <div className="text-xs font-medium text-gray-500">UE au programme</div>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { getProfile, styleFor, BAREMES } from '@/lib/profile';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { getProfile, styleFor, BAREMES, programFor } from '@/lib/profile';
 import { noteSur20, strategyFor, analyzeAnswers } from '@/lib/bareme';
 import { facById } from '@/data/facs';
 import { facExams, examFor, fmtMinutes } from '@/data/facExams';
@@ -111,7 +111,7 @@ function MixedExamModal({ onConfirm, onCancel }) {
         </div>
         <p className="text-sm text-gray-500 mb-4 leading-relaxed">40 questions m&eacute;lang&eacute;es couvrant l&apos;ensemble des mati&egrave;res du tronc commun. Conditions proches du concours.</p>
         <div className="grid grid-cols-2 gap-2 mb-4">
-          {SUBJECTS.map(s => {
+          {prog.subjects.map(s => {
             const colors = getColors(s.color);
             return (
               <div key={s.id} className="flex items-center gap-2">
@@ -279,6 +279,7 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
   // ----- Auth & Premium -----
   const { user } = useAuth();
   const { isEssentiel, isPremiumPlus } = usePremium();
+  const prog = useMemo(() => programFor(getProfile(user)), [user]); // UE de la fac d'abord
 
   // ----- Finish ref for timer callback -----
   const finishRef = useRef(null);
@@ -338,7 +339,7 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
         pool = [...QUESTIONS];
       }
     } else if (source.type === 'mixed') {
-      pool = [...QUESTIONS];
+      pool = QUESTIONS.filter(q => prog.has(q.subject));
     } else if (source.subjectId) {
       pool = QUESTIONS.filter(q => q.subject === source.subjectId);
     } else {
@@ -346,7 +347,7 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
     }
     const shuffled = shuffleArray(pool);
     return shuffled.slice(0, Math.min(count, shuffled.length));
-  }, []);
+  }, [prog]);
 
   // ----- Helper to launch exam with questions -----
   const startWithQuestions = useCallback((qs) => {
@@ -874,13 +875,14 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
           <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">&Eacute;preuve par UE</h2>
           <p className="text-gray-500 mb-6">Choisis la mati&egrave;re et le format de ton concours. Note sur 20 au bar&egrave;me <strong className="text-gray-800">{bar.label.toLowerCase()}</strong> — modifiable dans <span className="whitespace-nowrap">Mon compte</span>.</p>
           <div className="grid sm:grid-cols-2 gap-3 mb-6">
-            {SUBJECTS.map(sub => {
+            {[...prog.subjects, ...prog.others].map(sub => {
               const colors = getColors(sub.color);
               const sel = ueSubject === sub.id;
+              const outside = prog.known && !prog.has(sub.id);
               return (
-                <button key={sub.id} onClick={() => pickSubject(sub.id)} className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all ${sel ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'}`}>
+                <button key={sub.id} onClick={() => pickSubject(sub.id)} className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all ${sel ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'} ${outside ? 'opacity-60' : ''}`}>
                   <div className={`w-9 h-9 rounded-xl ${colors.bg} flex items-center justify-center shrink-0`}><SubjectIcon subjectId={sub.id} className={`w-4 h-4 ${colors.icon}`} /></div>
-                  <span className="text-sm font-bold text-gray-900">{sub.name}</span>
+                  <span className="min-w-0"><span className="block text-sm font-bold text-gray-900">{sub.name}</span>{sub.facLabel ? <span className="block text-[11px] text-indigo-600 truncate">{sub.facLabel}</span> : outside ? <span className="block text-[11px] text-gray-400">hors programme de ta fac</span> : null}</span>
                 </button>
               );
             })}
@@ -945,8 +947,8 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
             </div>
             <div className="flex flex-wrap gap-2 mt-3">
               <button onClick={() => setSubjectFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${subjectFilter === 'all' ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 bg-white text-gray-600'}`}>Toutes</button>
-              {SUBJECTS.map(s => (
-                <button key={s.id} onClick={() => setSubjectFilter(s.id)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${subjectFilter === s.id ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 bg-white text-gray-600'}`}>{s.name}</button>
+              {[...prog.subjects, ...prog.others].map(s => (
+                <button key={s.id} title={prog.known && !prog.has(s.id) ? 'Hors programme de ta fac' : (s.facLabel || undefined)} style={prog.known && !prog.has(s.id) ? { opacity: 0.55 } : undefined} onClick={() => setSubjectFilter(s.id)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${subjectFilter === s.id ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 bg-white text-gray-600'}`}>{s.name}</button>
               ))}
             </div>
             {(searchQuery || subjectFilter !== 'all') && (
@@ -963,10 +965,11 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
             ) : (
               <>
                 {subjectFilter === 'all' && !searchQuery ? (
-                  SUBJECTS.map(s => {
+                  [...prog.subjects, ...prog.others].map(s => {
                     const subjectFiches = filteredFiches.filter(f => f.subject === s.id);
                     if (subjectFiches.length === 0) return null;
                     const colors = getColors(s.color);
+                    const outside = prog.known && !prog.has(s.id);
                     return (
                       <div key={s.id} className="contents">
                         <div className="col-span-full mt-6 first:mt-0">
@@ -975,6 +978,8 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
                               <SubjectIcon subjectId={s.id} className={`w-4 h-4 ${colors.icon}`} />
                             </div>
                             <h3 className="font-bold text-gray-900">{s.name}</h3>
+                            {s.facLabel && <span className="hidden sm:inline text-[11px] font-semibold text-indigo-600 bg-indigo-50 rounded-full px-2 py-0.5">{s.facLabel}</span>}
+                            {outside && <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">hors programme de ta fac</span>}
                             <span className="text-xs text-gray-400 font-medium">{subjectFiches.length} sujets</span>
                           </div>
                         </div>

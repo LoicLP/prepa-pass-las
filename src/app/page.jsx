@@ -62,7 +62,7 @@ const UE_TONES = {
   amber: { bg: 'bg-amber-500', soft: 'bg-amber-50 text-amber-700 border-amber-100', dot: 'bg-amber-500' },
   rose: { bg: 'bg-rose-500', soft: 'bg-rose-50 text-rose-700 border-rose-100', dot: 'bg-rose-500' },
 };
-const UE_CODES = { chimie: 'UE1', biocell: 'UE2', biophysique: 'UE3', biostats: 'UE4', anatomie: 'UE5', ssh: 'UE6' };
+const UE_CODES = { chimie: 'UE1', biocell: 'UE2', biophysique: 'UE3', biostats: 'UE4', anatomie: 'UE5', ssh: 'UE6', physiologie: 'UE7', medicament: 'UE8', histo: 'UE9' };
 
 export default function Home() {
   const totalCoeff = PROGRAMME_DATA.reduce((a, u) => a + (u.coeff || 0), 0);
@@ -124,7 +124,7 @@ export default function Home() {
           <div className="hero-seq-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-slate-500">
             <div className="inline-flex items-center gap-1.5"><CheckIcon /> 7 jours de Premium offerts</div>
             <div className="inline-flex items-center gap-1.5"><CheckIcon /> Sans carte bancaire</div>
-            <div className="inline-flex items-center gap-1.5"><CheckIcon /> 150 fiches en accès libre</div>
+            <div className="inline-flex items-center gap-1.5"><CheckIcon /> 170 fiches en accès libre</div>
             <div className="inline-flex items-center gap-1.5"><CheckIcon /> Adapté à 33 facultés</div>
           </div>
 
@@ -307,8 +307,8 @@ export default function Home() {
             <FeatureRow num="3" label="Valider · au format de ta fac" title="Examens blancs comme chez toi" subtitle="Par UE, avec la durée et le nombre de QCM de ta faculté, notés sur 20 au barème de tes MCC. Le stress du jour J, avant le jour J."
               bullets={['Format pré-rempli : 40 QCM en 1 h 30 à Lille, 25 en 30 min à Bordeaux…', 'Note sur 20 au barème de ta fac, comparée à sa note-seuil', 'Après l’épreuve : ce que les cases cochées en trop t’ont coûté']}
               href="/examen" cta="Passer un examen blanc" mockup={<MockExamen />} />
-            <FeatureRow num="4" flip label="Réviser · 150 fiches et cours" title="Fiches suivies, cours complets" subtitle="Chaque fiche a son temps de lecture, son sommaire et son QCM ciblé. Tu sais toujours ce qui est lu, et ce qui reste."
-              bullets={['150 fiches synthétiques, 25 par UE, en accès libre', 'Cours détaillés avec schémas pour aller plus loin', 'Téléchargement PDF pour réviser hors ligne']}
+            <FeatureRow num="4" flip label="Réviser · 170 fiches et cours" title="Fiches suivies, cours complets" subtitle="Chaque fiche a son temps de lecture, son sommaire et son QCM ciblé. Tu sais toujours ce qui est lu, et ce qui reste."
+              bullets={['170 fiches synthétiques sur 9 UE, en accès libre', 'Cours détaillés avec schémas pour aller plus loin', 'Téléchargement PDF pour réviser hors ligne']}
               href="/fiches" cta="Parcourir les fiches" mockup={<MockFiches />} />
             <FeatureRow num="5" label="Progresser · coach de révision" title="Un coach qui te dit quoi faire" subtitle="Courbe par matière, objectifs de la semaine et une recommandation claire à chaque connexion."
               bullets={['« L’Anatomie te freine : 3 QCM ciblés et tu passes la barre »', 'Priorités pondérées par les coefficients de ta fac', 'Parcours vers tes partiels, dates de ta fac proposées']}
@@ -318,7 +318,7 @@ export default function Home() {
       </section>
 
       {/* ================================================================
-          PROGRAMME — les 6 UE du tronc commun, pondérées par coefficient
+          PROGRAMME — les 9 UE, pondérées par coefficient
       ================================================================ */}
       <section id="programme" className="py-20 md:py-28 bg-gradient-to-b from-white via-[#f8f9fc] to-white border-t border-slate-100 relative overflow-hidden">
         <div className="absolute top-[20%] right-[0%] w-[320px] h-[320px] bg-violet-200/[0.16] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
@@ -448,7 +448,7 @@ export default function Home() {
                   <span key={l} className={`w-6 h-6 rounded-full border-2 border-white text-[10px] font-bold text-white flex items-center justify-center ${['bg-indigo-500', 'bg-violet-500', 'bg-cyan-500', 'bg-emerald-500'][i]}`}>{l}</span>
                 ))}
               </div>
-              33 facultés · 150 fiches · QCM illimités
+              33 facultés · 170 fiches · QCM illimités
             </div>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-4">Ils révisent avec nous</h2>
             <p className="text-slate-500 text-lg">Ce que disent les étudiants qui préparent le concours sur la plateforme.</p>

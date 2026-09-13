@@ -41,4 +41,25 @@ export const PROGRAMME_DATA = [
     description: "Les Sciences Humaines et Sociales en Sant\u00e9 abordent les dimensions \u00e9thiques, juridiques, psychologiques et sociologiques de la m\u00e9decine et du soin.",
     topics: ['\u00c9thique m\u00e9dicale (principes de Beauchamp & Childress)', 'Droit de la sant\u00e9 (loi Kouchner, Leonetti, Claeys-Leonetti)', 'Psychologie m\u00e9dicale', 'Sociologie de la sant\u00e9', 'Histoire de la m\u00e9decine', 'Philosophie du soin et relation m\u00e9decin-patient'],
   },
+  {
+    id: 'physiologie', name: 'Physiologie', coeff: 4, hours: 60,
+    icon: '<svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12h3l2.5-6 3 12 2.5-6h3l1.5 3 1.5-3h2" /></svg>',
+    color: 'sky',
+    description: "La physiologie explique comment fonctionnent les grands syst\u00e8mes de l'organisme et comment ils maintiennent l'hom\u00e9ostasie : du potentiel d'action au cycle cardiaque, de la ventilation \u00e0 la filtration r\u00e9nale.",
+    topics: ['Hom\u00e9ostasie et compartiments liquidiens', 'Potentiels de membrane et potentiel d\u2019action', 'Syst\u00e8me nerveux autonome', 'Physiologie cardiovasculaire (cycle cardiaque, pression art\u00e9rielle)', 'Physiologie respiratoire (ventilation, \u00e9changes gazeux)', 'Physiologie r\u00e9nale (filtration, r\u00e9absorption)', 'Physiologie digestive et endocrinienne'],
+  },
+  {
+    id: 'medicament', name: 'M\u00e9dicament', coeff: 3, hours: 40,
+    icon: '<svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m9.75 3.104 5.25 5.25m-9.5 4.5 5.25 5.25M5.5 12.5l7-7a3.5 3.5 0 1 1 4.95 4.95l-7 7a3.5 3.5 0 1 1-4.95-4.95Z" /></svg>',
+    color: 'teal',
+    description: "L'UE M\u00e9dicament (initiation \u00e0 la connaissance du m\u00e9dicament) couvre le devenir du m\u00e9dicament dans l'organisme, son m\u00e9canisme d'action, son d\u00e9veloppement et les r\u00e8gles de son bon usage.",
+    topics: ['D\u00e9finitions, formes gal\u00e9niques et voies d\u2019administration', 'Pharmacocin\u00e9tique : absorption, distribution, m\u00e9tabolisme, \u00e9limination', 'Pharmacodynamie : r\u00e9cepteurs, agonistes, antagonistes', 'Cycle de vie du m\u00e9dicament et essais cliniques', 'Effets ind\u00e9sirables, interactions, pharmacovigilance', 'Prescription, dispensation et r\u00e9glementation'],
+  },
+  {
+    id: 'histo', name: 'Histologie / Embryologie', coeff: 3, hours: 45,
+    icon: '<svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Zm0 0v18M3 12h18M6 6.5c2 1.5 4 2.5 6 2.5s4-1 6-2.5M6 17.5c2-1.5 4-2.5 6-2.5s4 1 6 2.5" /></svg>',
+    color: 'fuchsia',
+    description: "L'histologie d\u00e9crit les quatre tissus fondamentaux et l'embryologie les premi\u00e8res semaines du d\u00e9veloppement, de la f\u00e9condation \u00e0 la mise en place des feuillets et des annexes.",
+    topics: ['\u00c9pith\u00e9liums de rev\u00eatement et glandulaires', 'Tissus conjonctifs, cartilage et os', 'Tissu musculaire et tissu nerveux', 'F\u00e9condation et premi\u00e8re semaine', 'Gastrulation et troisi\u00e8me semaine', 'Neurulation et d\u00e9riv\u00e9s des feuillets', 'Annexes embryonnaires et placenta'],
+  },
 ];

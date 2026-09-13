@@ -7,6 +7,7 @@ import { FICHES_DATA } from '@/data/fiches';
 import { SUBJECTS } from '@/data/subjects';
 import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { getProfile, programFor } from '@/lib/profile';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { SUBJECT_COLORS } from '@/data/constants';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
@@ -31,6 +32,9 @@ const subjectColorMap = {
   cyan: { badge: 'bg-cyan-100 text-cyan-700', bar: 'bg-cyan-500', ring: 'ring-cyan-500/20', icon: 'text-cyan-500', light: 'bg-cyan-50', border: 'border-cyan-100' },
   amber: { badge: 'bg-amber-100 text-amber-700', bar: 'bg-amber-500', ring: 'ring-amber-500/20', icon: 'text-amber-500', light: 'bg-amber-50', border: 'border-amber-100' },
   rose: { badge: 'bg-rose-100 text-rose-700', bar: 'bg-rose-500', ring: 'ring-rose-500/20', icon: 'text-rose-500', light: 'bg-rose-50', border: 'border-rose-100' },
+  sky: { badge: 'bg-sky-100 text-sky-700', bar: 'bg-sky-500', ring: 'ring-sky-500/20', icon: 'text-sky-500', light: 'bg-sky-50', border: 'border-sky-100' },
+  teal: { badge: 'bg-teal-100 text-teal-700', bar: 'bg-teal-500', ring: 'ring-teal-500/20', icon: 'text-teal-500', light: 'bg-teal-50', border: 'border-teal-100' },
+  fuchsia: { badge: 'bg-fuchsia-100 text-fuchsia-700', bar: 'bg-fuchsia-500', ring: 'ring-fuchsia-500/20', icon: 'text-fuchsia-500', light: 'bg-fuchsia-50', border: 'border-fuchsia-100' },
 };
 
 function getColors(subject) {
@@ -45,6 +49,9 @@ const CARD_STYLES = {
   cyan: { bg: 'bg-cyan-100', icon: 'text-cyan-600', label: 'text-cyan-700', border: 'border-cyan-100/50', shadow: 'shadow-cyan-500/10', barBg: 'bg-cyan-100', barLight: 'bg-cyan-50' },
   amber: { bg: 'bg-amber-100', icon: 'text-amber-600', label: 'text-amber-700', border: 'border-amber-100/50', shadow: 'shadow-amber-500/10', barBg: 'bg-amber-100', barLight: 'bg-amber-50' },
   rose: { bg: 'bg-rose-100', icon: 'text-rose-600', label: 'text-rose-700', border: 'border-rose-100/50', shadow: 'shadow-rose-500/10', barBg: 'bg-rose-100', barLight: 'bg-rose-50' },
+  sky: { bg: 'bg-sky-100', icon: 'text-sky-600', label: 'text-sky-700', border: 'border-sky-100/50', shadow: 'shadow-sky-500/10', barBg: 'bg-sky-100', barLight: 'bg-sky-50' },
+  teal: { bg: 'bg-teal-100', icon: 'text-teal-600', label: 'text-teal-700', border: 'border-teal-100/50', shadow: 'shadow-teal-500/10', barBg: 'bg-teal-100', barLight: 'bg-teal-50' },
+  fuchsia: { bg: 'bg-fuchsia-100', icon: 'text-fuchsia-600', label: 'text-fuchsia-700', border: 'border-fuchsia-100/50', shadow: 'shadow-fuchsia-500/10', barBg: 'bg-fuchsia-100', barLight: 'bg-fuchsia-50' },
 };
 
 /* 4 positions that NEVER overlap — corners of the container */
@@ -350,6 +357,7 @@ export default function FichesPage() {
   const { isEssentiel } = usePremium();
   const { user } = useAuth();
   const router = useRouter();
+  const orderedSubjects = useMemo(() => { const p = programFor(getProfile(user)); return [...p.subjects, ...p.others]; }, [user]); // UE de la fac d'abord
 
   // Page publique /fiches : un utilisateur connecté est redirigé vers son dashboard (section Fiches)
   useEffect(() => {
@@ -505,7 +513,7 @@ export default function FichesPage() {
                   {FICHES_DATA.length}
                 </span>
               </button>
-              {SUBJECTS.map((sub) => {
+              {orderedSubjects.map((sub) => {
                 const count = FICHES_DATA.filter(f => f.subject === sub.id).length;
                 const isActive = currentSubject === sub.id;
                 const iconPath = SUBJECT_ICONS[sub.id] || '';
@@ -616,7 +624,7 @@ export default function FichesPage() {
             </div>
           ) : showGrouped ? (
             /* Grouped by subject */
-            SUBJECTS.map((sub) => {
+            orderedSubjects.map((sub) => {
               const subFiches = filteredFiches.filter(f => f.subject === sub.id);
               if (subFiches.length === 0) return null;
               const colors = getColors(sub);

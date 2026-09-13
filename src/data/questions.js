@@ -158,5 +158,70 @@ export const QUESTIONS = [
     { text: "Aristote", correct: false }, { text: "Kant", correct: true },
     { text: "Bentham", correct: false }, { text: "Hippocrate", correct: false }
   ], explanation: "Kant (déontologisme) : agir selon des principes universalisables. Bentham (utilitarisme) : maximiser le bonheur global. Aristote (éthique des vertus) : développer le caractère vertueux. Hippocrate : serment médical fondateur." },
-];
 
+  // ===== PHYSIOLOGIE =====
+  { id: 31, subject: 'physiologie', question: "Quel ion est principalement responsable de la phase de dépolarisation du potentiel d'action neuronal ?", options: [
+    { text: "K+", correct: false }, { text: "Na+", correct: true },
+    { text: "Cl-", correct: false }, { text: "Ca2+", correct: false }
+  ], explanation: "L'ouverture des canaux sodiques voltage-dépendants provoque une entrée massive de Na+ : c'est la dépolarisation. La repolarisation est assurée par la sortie de K+." },
+  { id: 32, subject: 'physiologie', question: "Le débit cardiaque est égal à :", options: [
+    { text: "Fréquence cardiaque × volume d'éjection systolique", correct: true }, { text: "Pression artérielle × résistances périphériques", correct: false },
+    { text: "Volume télédiastolique − volume télésystolique", correct: false }, { text: "Fréquence cardiaque × pression artérielle moyenne", correct: false }
+  ], explanation: "Qc = FC × VES ≈ 70 × 70 mL ≈ 5 L/min au repos. VTD − VTS est le volume d'éjection systolique, pas le débit." },
+  { id: 33, subject: 'physiologie', question: "Le débit de filtration glomérulaire normal est d'environ :", options: [
+    { text: "12 L/jour", correct: false }, { text: "1,5 L/jour", correct: false },
+    { text: "180 L/jour", correct: true }, { text: "600 L/jour", correct: false }
+  ], explanation: "Le DFG est d'environ 125 mL/min soit 180 L/jour ; 99 % du filtrat est réabsorbé, d'où une diurèse de 1,5 L/jour." },
+  { id: 34, subject: 'physiologie', question: "Quel neurotransmetteur est libéré par les fibres post-ganglionnaires du système sympathique sur la plupart des organes cibles ?", options: [
+    { text: "Acétylcholine", correct: false }, { text: "Noradrénaline", correct: true },
+    { text: "Dopamine", correct: false }, { text: "Sérotonine", correct: false }
+  ], explanation: "Le sympathique post-ganglionnaire est noradrénergique (sauf glandes sudoripares, cholinergiques). Le parasympathique post-ganglionnaire libère de l'acétylcholine." },
+  { id: 35, subject: 'physiologie', question: "Une hypoventilation entraîne :", options: [
+    { text: "Une baisse de la PaCO2 et une alcalose", correct: false }, { text: "Une hausse de la PaCO2 et une acidose respiratoire", correct: true },
+    { text: "Une hausse de la PaO2", correct: false }, { text: "Aucune modification du pH", correct: false }
+  ], explanation: "Moins de CO2 est éliminé : la PaCO2 monte, l'acide carbonique s'accumule et le pH baisse (acidose respiratoire)." },
+
+  // ===== MÉDICAMENT =====
+  { id: 36, subject: 'medicament', question: "La biodisponibilité d'un médicament administré par voie intraveineuse est :", options: [
+    { text: "Toujours inférieure à 50 %", correct: false }, { text: "Égale à 100 % par définition", correct: true },
+    { text: "Dépendante de l'effet de premier passage hépatique", correct: false }, { text: "Nulle", correct: false }
+  ], explanation: "La voie IV est la référence : toute la dose atteint la circulation générale, biodisponibilité F = 1. L'effet de premier passage concerne la voie orale." },
+  { id: 37, subject: 'medicament', question: "Un antagoniste compétitif d'un récepteur :", options: [
+    { text: "Active le récepteur avec une efficacité maximale", correct: false }, { text: "Se fixe sur le site de l'agoniste sans l'activer, et son effet est surmontable par une hausse de concentration d'agoniste", correct: true },
+    { text: "Diminue l'effet maximal de l'agoniste", correct: false }, { text: "Se fixe de façon irréversible", correct: false }
+  ], explanation: "L'antagoniste compétitif déplace la courbe dose-réponse de l'agoniste vers la droite sans changer l'effet maximal ; l'antagoniste non compétitif, lui, abaisse l'Emax." },
+  { id: 38, subject: 'medicament', question: "La demi-vie d'élimination d'un médicament est le temps nécessaire pour que :", options: [
+    { text: "La concentration plasmatique diminue de moitié", correct: true }, { text: "La totalité du médicament soit éliminée", correct: false },
+    { text: "L'effet thérapeutique apparaisse", correct: false }, { text: "La concentration atteigne le plateau", correct: false }
+  ], explanation: "t½ = 0,693 × Vd / Cl. Il faut environ 5 demi-vies pour éliminer 97 % du médicament ou pour atteindre l'état d'équilibre en administration répétée." },
+  { id: 39, subject: 'medicament', question: "Les essais cliniques de phase III ont pour objectif principal :", options: [
+    { text: "D'évaluer la tolérance chez le volontaire sain", correct: false }, { text: "De démontrer l'efficacité contre un comparateur sur un grand nombre de patients", correct: true },
+    { text: "De surveiller les effets indésirables rares après commercialisation", correct: false }, { text: "De déterminer la dose chez quelques dizaines de patients", correct: false }
+  ], explanation: "Phase I : tolérance chez le volontaire sain ; phase II : dose et efficacité préliminaire ; phase III : efficacité comparative à grande échelle ; phase IV : après AMM (pharmacovigilance)." },
+  { id: 40, subject: 'medicament', question: "Le cytochrome P450 intervient principalement dans :", options: [
+    { text: "L'absorption intestinale", correct: false }, { text: "Le métabolisme hépatique de phase I", correct: true },
+    { text: "La filtration glomérulaire", correct: false }, { text: "La fixation aux protéines plasmatiques", correct: false }
+  ], explanation: "Les CYP450 (CYP3A4, 2D6…) catalysent les réactions d'oxydation de phase I ; ils sont le siège de nombreuses interactions par induction ou inhibition enzymatique." },
+
+  // ===== HISTOLOGIE / EMBRYOLOGIE =====
+  { id: 41, subject: 'histo', question: "Un épithélium pseudostratifié cilié tapisse :", options: [
+    { text: "L'œsophage", correct: false }, { text: "La trachée", correct: true },
+    { text: "La vessie", correct: false }, { text: "L'intestin grêle", correct: false }
+  ], explanation: "L'épithélium respiratoire (trachée, bronches) est pseudostratifié cilié à cellules caliciformes. L'œsophage est pavimenteux stratifié, la vessie urothélial, l'intestin prismatique simple." },
+  { id: 42, subject: 'histo', question: "La nidation du blastocyste dans l'endomètre débute vers :", options: [
+    { text: "Le 1er jour après la fécondation", correct: false }, { text: "Le 6e-7e jour", correct: true },
+    { text: "Le 14e jour", correct: false }, { text: "Le 21e jour", correct: false }
+  ], explanation: "Fécondation (J0) → morula (J3-4) → blastocyste (J5) → début de nidation vers J6-J7, achevée vers J12." },
+  { id: 43, subject: 'histo', question: "Quel feuillet embryonnaire donne naissance au système nerveux ?", options: [
+    { text: "L'endoderme", correct: false }, { text: "Le mésoderme", correct: false },
+    { text: "L'ectoderme", correct: true }, { text: "Le trophoblaste", correct: false }
+  ], explanation: "L'ectoderme donne le neuroectoderme (tube neural, crêtes neurales) et l'épiderme ; le mésoderme donne muscles, squelette, cœur, reins ; l'endoderme les épithéliums digestif et respiratoire." },
+  { id: 44, subject: 'histo', question: "Le tissu conjonctif se caractérise par :", options: [
+    { text: "Des cellules jointives reposant sur une lame basale", correct: false }, { text: "Une matrice extracellulaire abondante avec des cellules dispersées", correct: true },
+    { text: "L'absence totale de vascularisation", correct: false }, { text: "Des cellules contractiles striées", correct: false }
+  ], explanation: "Le tissu conjonctif associe cellules (fibroblastes, macrophages…), fibres (collagène, élastine) et substance fondamentale ; il est vascularisé, contrairement aux épithéliums." },
+  { id: 45, subject: 'histo', question: "La gastrulation, qui met en place les trois feuillets, a lieu au cours de :", options: [
+    { text: "La 1re semaine", correct: false }, { text: "La 3e semaine", correct: true },
+    { text: "La 8e semaine", correct: false }, { text: "Du 2e trimestre", correct: false }
+  ], explanation: "3e semaine : la ligne primitive apparaît, les cellules épiblastiques migrent et forment endoderme, mésoderme et ectoderme. La 2e semaine est celle du disque didermique." },
+];

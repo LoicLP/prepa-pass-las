@@ -17,7 +17,7 @@ import { sanitizeHtml } from '@/utils/sanitize';
 import { loadCoursForFiche } from '@/data/cours';
 import { supabase } from '@/lib/supabase';
 import { track } from '@/lib/track';
-import { getProfile, momentFor, BAREMES, VOIES, facName } from '@/lib/profile';
+import { getProfile, momentFor, BAREMES, VOIES, facName, programFor, baremeById } from '@/lib/profile';
 import { FACS, mccFor, facById } from '@/data/facs';
 import { facExams, facCoeffs, fmtMinutes } from '@/data/facExams';
 import { computeMastery } from '@/lib/mastery';
@@ -266,6 +266,7 @@ export default function DashboardPage() {
   // ---- Centralized data computation ----
   const profile = useMemo(() => getProfile(user), [user]);
   const coeffs = useMemo(() => facCoeffs(profile.fac), [profile.fac]);
+  const prog = useMemo(() => programFor(profile), [profile]); // UE de la fac d'abord
   const data = useMemo(() => {
     const today = new Date();
     const sorted = [...allSessions].filter(s => s.date).sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -339,7 +340,7 @@ export default function DashboardPage() {
     // Recommendations (weakest subjects with sessions, up to 4)
     // Priorité : l'écart à 100 pondéré par le coefficient de la fac quand on le connaît
     const weightOf = (id) => (coeffs && coeffs[id]) || 1;
-    const recommendations = [...withSessions]
+    const recommendations = [...withSessions].filter(s => prog.has(s.id))
       .sort((a, b) => (100 - b.avg) * weightOf(b.id) - (100 - a.avg) * weightOf(a.id))
       .slice(0, 4)
       .map(s => ({
@@ -391,7 +392,7 @@ export default function DashboardPage() {
       hasMultipleSubjects: withSessions.length >= 2,
       recommendations,
     };
-  }, [allSessions, qcmStats.sessions, examStats.sessions, coeffs]);
+  }, [allSessions, qcmStats.sessions, examStats.sessions, coeffs, prog]);
 
   // ---- Adaptation à l'étudiant : carte de maîtrise, moment du parcours ----
   const mastery = useMemo(() => computeMastery(qcmStats.sessions || [], profile.placement), [qcmStats.sessions, profile.placement]);
@@ -978,6 +979,8 @@ export default function DashboardPage() {
                   </button>
                 </div>
               )}
+              {/* Ta fac : ce que le site applique */}
+              {profile.fac && profile.fac !== 'autre' && <FacCard profile={profile} prog={prog} onEdit={() => setActiveSection('account')} onExam={() => openExamen()} />}
               {/* Parcours vers le concours */}
               <ConcoursPath examDate={user.user_metadata?.exam_date || null} facId={profile.fac} />
               <ActionHub
@@ -988,7 +991,7 @@ export default function DashboardPage() {
                 }}
                 todaySubject={todaySubject}
                 reviewDue={reviewDue}
-                subjects={SUBJECTS}
+                subjects={prog.subjects}
                 onLaunchQCM={setActiveQCM}
                 onLaunchExamen={() => openExamen()}
                 onOpenFiches={() => { setActiveFicheSubject(null); setActiveSection('fiches'); }}
@@ -1011,7 +1014,7 @@ export default function DashboardPage() {
 
             {/* ===== FICHES & COURS ===== */}
             {activeSection === 'fiches' && (
-              <FichesSection initialSubject={activeFicheSubject} onLaunchQCM={setActiveQCM} />
+              <FichesSection initialSubject={activeFicheSubject} onLaunchQCM={setActiveQCM} subjectOrder={[...prog.subjects, ...prog.others].map(s => s.id)} />
             )}
 
             {/* ===== HISTORIQUE ===== */}
@@ -1778,6 +1781,50 @@ function ConcoursPath({ examDate, facId = null }) {
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+/* Carte « Ta fac » de l'accueil : barème, format des épreuves, programme, dates. */
+function FacCard({ profile, prog, onEdit, onExam }) {
+  const fac = facById(profile.fac); const mcc = mccFor(profile.fac); const ex = facExams(profile.fac);
+  if (!fac) return null;
+  const bar = baremeById(profile.bareme || 'partiel');
+  const nExams = (ex?.exams || []).filter(e => e.minutes).length;
+  const dates = ex?.dates; const fmtD = (d) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const voie = VOIES.find(v => v.id === profile.voie)?.label;
+  const tiles = [
+    { k: 'Barème', v: bar.label, s: mcc?.confidence === 'officiel' ? 'MCC officielles' : mcc?.confidence ? 'source étudiante, à confirmer' : 'choisi par toi' },
+    { k: 'Épreuves', v: nExams ? `${nExams} UE au format de ta fac` : 'format à renseigner', s: nExams ? 'durée et nombre de QCM pré-remplis' : 'depuis ton intranet' },
+    { k: 'Programme', v: prog.known ? `${prog.subjects.length} UE` : '9 UE', s: prog.known ? (prog.others.length ? `${prog.others.length} hors programme` : 'toutes nos UE') : 'programme complet' },
+    { k: 'Partiels', v: dates?.s1 ? `S1 ${fmtD(dates.s1)}${dates.s2 ? ` · S2 ${fmtD(dates.s2)}` : ''}` : ex?.threshold ? `note-seuil ${ex.threshold}/20` : 'dates à renseigner', s: dates?.approx ? 'd’après 2025-2026' : ex?.threshold ? 'éliminatoire' : 'sur ton intranet' },
+  ];
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 14, border: '1px solid #ddd9fb', background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4338ca 100%)', padding: '14px 16px', color: '#fff' }}>
+      <div style={{ position: 'absolute', right: -40, top: -50, width: 180, height: 180, borderRadius: '50%', background: 'rgba(129,140,248,0.25)', filter: 'blur(30px)', pointerEvents: 'none' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.12)', display: 'grid', placeItems: 'center', fontSize: 17, flexShrink: 0 }}>🎓</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: 'rgba(199,210,254,0.9)' }}>Ta fac</div>
+            <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fac.name}{voie ? <span style={{ fontWeight: 600, color: 'rgba(224,231,255,0.8)' }}> · {voie}</span> : null}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          <Link href={`/facs/${fac.id}`} style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 11px', borderRadius: 9, background: 'rgba(255,255,255,0.12)', color: '#fff', textDecoration: 'none' }} className="hover:bg-white/20 transition-colors">Fiche de la fac</Link>
+          <button onClick={onExam} style={{ fontSize: 11.5, fontWeight: 700, padding: '6px 11px', borderRadius: 9, background: '#fff', color: '#312e81', border: 'none', cursor: 'pointer' }} className="hover:bg-indigo-50 transition-colors">Épreuve au format →</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4" style={{ gap: 8, marginTop: 12, position: 'relative' }}>
+        {tiles.map(t => (
+          <div key={t.k} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, textTransform: 'uppercase', color: 'rgba(199,210,254,0.85)' }}>{t.k}</div>
+            <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.v}</div>
+            <div style={{ fontSize: 10.5, color: 'rgba(224,231,255,0.7)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.s}</div>
+          </div>
+        ))}
+      </div>
+      <button onClick={onEdit} style={{ position: 'absolute', right: 10, bottom: 8, background: 'none', border: 'none', color: 'rgba(199,210,254,0.7)', fontSize: 10.5, fontWeight: 600, cursor: 'pointer' }} className="hover:text-white">modifier ✎</button>
     </div>
   );
 }
@@ -2626,6 +2673,9 @@ const FICHES_SUBJECT_COLORS = {
   cyan:    { badge: 'bg-cyan-100 text-cyan-700', bar: 'bg-cyan-500', icon: 'text-cyan-500', light: 'bg-cyan-50', border: 'border-cyan-100', pill: 'bg-cyan-600 text-white', pillIdle: 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100' },
   amber:   { badge: 'bg-amber-100 text-amber-700', bar: 'bg-amber-500', icon: 'text-amber-500', light: 'bg-amber-50', border: 'border-amber-100', pill: 'bg-amber-600 text-white', pillIdle: 'bg-amber-50 text-amber-700 hover:bg-amber-100' },
   rose:    { badge: 'bg-rose-100 text-rose-700', bar: 'bg-rose-500', icon: 'text-rose-500', light: 'bg-rose-50', border: 'border-rose-100', pill: 'bg-rose-600 text-white', pillIdle: 'bg-rose-50 text-rose-700 hover:bg-rose-100' },
+  sky:     { badge: 'bg-sky-100 text-sky-700', bar: 'bg-sky-500', icon: 'text-sky-500', light: 'bg-sky-50', border: 'border-sky-100', pill: 'bg-sky-600 text-white', pillIdle: 'bg-sky-50 text-sky-700 hover:bg-sky-100' },
+  teal:    { badge: 'bg-teal-100 text-teal-700', bar: 'bg-teal-500', icon: 'text-teal-500', light: 'bg-teal-50', border: 'border-teal-100', pill: 'bg-teal-600 text-white', pillIdle: 'bg-teal-50 text-teal-700 hover:bg-teal-100' },
+  fuchsia: { badge: 'bg-fuchsia-100 text-fuchsia-700', bar: 'bg-fuchsia-500', icon: 'text-fuchsia-500', light: 'bg-fuchsia-50', border: 'border-fuchsia-100', pill: 'bg-fuchsia-600 text-white', pillIdle: 'bg-fuchsia-50 text-fuchsia-700 hover:bg-fuchsia-100' },
 };
 
 // Temps de lecture estimé d'une fiche (≈200 mots/min)
@@ -2639,6 +2689,7 @@ function ficheReadingTime(html) {
 const FICHES_ACCENT_HEX = {
   indigo: '#4f46e5', primary: '#4f46e5', emerald: '#059669',
   violet: '#7c3aed', cyan: '#0891b2', amber: '#d97706', rose: '#e11d48',
+  sky: '#0284c7', teal: '#0d9488', fuchsia: '#c026d3',
 };
 
 const FICHES_SUBJECT_ICONS = {
@@ -2648,6 +2699,9 @@ const FICHES_SUBJECT_ICONS = {
   biostats:    'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z',
   biophysique: 'm3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z',
   ssh:         'M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18',
+  physiologie: 'M3 12h3l2.5-6 3 12 2.5-6h3l1.5 3 1.5-3h2',
+  medicament:  'm9.75 3.104 5.25 5.25m-9.5 4.5 5.25 5.25M5.5 12.5l7-7a3.5 3.5 0 1 1 4.95 4.95l-7 7a3.5 3.5 0 1 1-4.95-4.95Z',
+  histo:       'M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Zm0 0v18M3 12h18M6 6.5c2 1.5 4 2.5 6 2.5s4-1 6-2.5M6 17.5c2-1.5 4-2.5 6-2.5s4 1 6 2.5',
 };
 
 /* ===== COURS MODAL (full-screen, reste dans le dashboard) ===== */
@@ -2821,7 +2875,7 @@ function CoursModal({ fiche, onClose }) {
   );
 }
 
-function FichesSection({ initialSubject, onLaunchQCM }) {
+function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
   const [currentSubject, setCurrentSubject] = useState(initialSubject || 'all');
   const [search, setSearch] = useState('');
   const [selectedFiche, setSelectedFiche] = useState(null);
@@ -2880,7 +2934,7 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
     return m;
   }, [readIds]);
 
-  const SUBJECT_ORDER = ['chimie', 'biocell', 'biophysique', 'biostats', 'anatomie', 'ssh'];
+  const SUBJECT_ORDER = subjectOrder || ['chimie', 'biocell', 'biophysique', 'biostats', 'anatomie', 'ssh', 'physiologie', 'medicament', 'histo'];
 
   const filteredFiches = useMemo(() => {
     let fiches = currentSubject === 'all' ? FICHES_DATA : FICHES_DATA.filter(f => f.subject === currentSubject);
@@ -2949,7 +3003,7 @@ function FichesSection({ initialSubject, onLaunchQCM }) {
             </button>
           );
         })()}
-        {SUBJECTS.map(sub => {
+        {SUBJECT_ORDER.map(id => SUBJECTS.find(s => s.id === id)).filter(Boolean).map(sub => {
           const accent = FICHES_ACCENT_HEX[sub.color] || FICHES_ACCENT_HEX.primary;
           const cols = FICHES_SUBJECT_COLORS[sub.color] || FICHES_SUBJECT_COLORS.primary;
           const iconPath = FICHES_SUBJECT_ICONS[sub.id] || '';
@@ -4243,6 +4297,9 @@ function ProfileCard({ user }) {
           ) : form.fac ? (
             <p className="mt-2 text-[11.5px] text-gray-500 leading-snug">Nous n&apos;avons pas encore les MCC de cette facult&eacute;&nbsp;: choisis le bar&egrave;me indiqu&eacute; sur ton intranet.</p>
           ) : null}
+          {(() => { const p = programFor({ fac: form.fac }); return form.fac && p.known ? (
+            <p className="mt-2 text-[11.5px] text-gray-500 leading-snug"><strong className="text-gray-700">Programme de cette fac :</strong> {p.subjects.map(s => s.facLabel || s.name).join(' · ')}.{p.others.length ? ` Hors programme : ${p.others.map(s => s.name).join(', ')}.` : ''}</p>
+          ) : null; })()}
           {form.fac && form.fac !== 'autre' && (
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-[#fafafe] border border-gray-100 px-3.5 py-2.5">
               <span className="text-[12px] text-gray-700">

@@ -2,7 +2,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 import { buildQCMPrompt, buildExamenPrompt } from '@/utils/prompts';
 
-const VALID_SUBJECTS = ['anatomie', 'chimie', 'biocell', 'biostats', 'biophysique', 'ssh'];
+import { SUBJECTS } from '@/data/subjects';
+const VALID_SUBJECTS = SUBJECTS.map((s) => s.id);
 const VALID_MODES = ['qcm', 'examen'];
 
 // Rate limiting par IP (100 requêtes par 15 min)

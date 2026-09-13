@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePremium } from '@/contexts/PremiumContext';
 import { supabase } from '@/lib/supabase';
 import { track } from '@/lib/track';
-import { getProfile, styleFor, VOIES, CONCOURS_DATES } from '@/lib/profile';
+import { getProfile, styleFor, VOIES, CONCOURS_DATES, programFor } from '@/lib/profile';
 import { FACS, mccFor, facById } from '@/data/facs';
 import { facExams } from '@/data/facExams';
 import { strategyFor } from '@/lib/bareme';
@@ -224,6 +224,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
   // ----- Hooks -----
   const { user } = useAuth();
   const { isEssentiel } = usePremium();
+  const prog = useMemo(() => programFor(getProfile(user)), [user]); // UE de la fac d'abord
   const timer = useTimer({ mode: 'up' });
   const [stats, setStats] = useSupabaseStats(user?.id, 'qcm_stats');
   const { generateQuestions: generateAIQuestions, isGenerating } = useGeminiQuestions();
@@ -519,9 +520,9 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     setSelectedTopic({ type: 'custom', subject: null, subjectName: 'Bienvenue', title: 'Faisons connaissance', placement: true });
     setAiGenerated(false);
     const bySub = {};
-    shuffleArray([...QUESTIONS]).forEach(q => { (bySub[q.subject] ||= []); if (bySub[q.subject].length < 2) bySub[q.subject].push(q); });
+    shuffleArray(QUESTIONS.filter(q => prog.has(q.subject))).forEach(q => { (bySub[q.subject] ||= []); if (bySub[q.subject].length < 2) bySub[q.subject].push(q); });
     launchWithQuestions(shuffleArray(Object.values(bySub).flat()));
-  }, [launchWithQuestions]);
+  }, [launchWithQuestions, prog]);
 
   // ----- Démo découverte (page publique, sans compte) -----
   // 5 questions de la banque statique, aucune sauvegarde ni limite : un avant-goût avant inscription.
@@ -1403,8 +1404,8 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
             </div>
             <div className="flex flex-wrap gap-2 mt-3">
               <button onClick={() => setSubjectFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${subjectFilter === 'all' ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 bg-white text-gray-600'}`}>Toutes</button>
-              {SUBJECTS.map(s => (
-                <button key={s.id} onClick={() => setSubjectFilter(s.id)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${subjectFilter === s.id ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 bg-white text-gray-600'}`}>{s.name}</button>
+              {[...prog.subjects, ...prog.others].map(s => (
+                <button key={s.id} title={prog.known && !prog.has(s.id) ? 'Hors programme de ta fac' : (s.facLabel || undefined)} style={prog.known && !prog.has(s.id) ? { opacity: 0.55 } : undefined} onClick={() => setSubjectFilter(s.id)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${subjectFilter === s.id ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 bg-white text-gray-600'}`}>{s.name}</button>
               ))}
             </div>
             {(searchQuery || subjectFilter !== 'all') && (
@@ -1421,10 +1422,11 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
             ) : (
               <>
                 {subjectFilter === 'all' && !searchQuery ? (
-                  SUBJECTS.map(s => {
+                  [...prog.subjects, ...prog.others].map(s => {
                     const subjectFiches = filteredFiches.filter(f => f.subject === s.id);
                     if (subjectFiches.length === 0) return null;
                     const colors = getColors(s.color);
+                    const outside = prog.known && !prog.has(s.id);
                     return (
                       <div key={s.id} className="contents">
                         <div className="col-span-full mt-6 first:mt-0">
@@ -1433,6 +1435,8 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
                               <SubjectIcon subjectId={s.id} className={`w-4 h-4 ${colors.icon}`} />
                             </div>
                             <h3 className="font-bold text-gray-900">{s.name}</h3>
+                            {s.facLabel && <span className="hidden sm:inline text-[11px] font-semibold text-indigo-600 bg-indigo-50 rounded-full px-2 py-0.5">{s.facLabel}</span>}
+                            {outside && <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">hors programme de ta fac</span>}
                             <span className="text-xs text-gray-400 font-medium">{subjectFiches.length} sujets</span>
                           </div>
                         </div>
@@ -1849,7 +1853,7 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     const isPlacement = !!selectedTopic?.placement;
     const scoreMessage = isPlacement ? 'Ton point de départ' : pct >= 90 ? 'Excellent !' : pct >= 70 ? 'Très bien !' : pct >= 50 ? 'Pas mal !' : 'Courage !';
     const showConfetti = !isPlacement && pct >= 70;
-    const placementMap = isPlacement ? SUBJECTS.map(sub => {
+    const placementMap = isPlacement ? prog.subjects.map(sub => {
       const qs = validAnswers.filter(a => a.question?.subject === sub.id);
       const score = qs.length ? Math.round(qs.filter(a => a.correct).length / qs.length * 100) : null;
       return { sub, score, level: levelOf(score) };

@@ -1,5 +1,6 @@
 import { facById, mccFor } from '@/data/facs';
-import { facExams } from '@/data/facExams';
+import { facExams, facProgram } from '@/data/facExams';
+import { SUBJECTS } from '@/data/subjects';
 
 /* Profil de révision, stocké dans user.user_metadata.profile.
    Tout est optionnel : le site fonctionne sans, il s'adapte avec. */
@@ -60,4 +61,15 @@ export function styleFor(profile) {
   if (!fac && !profile.bareme) return null;
   const formats = facExams(profile.fac)?.formats || null;
   return { fac, bareme: profile.bareme || 'partiel', voie: profile.voie || null, formats };
+}
+
+/** Programme vu par l'étudiant : UE de sa fac d'abord (avec leur libellé local), les autres à part.
+    Sans fac connue, toutes les UE sont « au programme ». */
+export function programFor(profile) {
+  const prog = facProgram(profile?.fac);
+  if (!prog) return { fac: profile?.fac || null, known: false, subjects: SUBJECTS, others: [], labelOf: () => null, has: () => true };
+  const inProg = prog.order.map((id) => SUBJECTS.find((s) => s.id === id)).filter(Boolean).map((s) => ({ ...s, facLabel: prog.labels[s.id] }));
+  const ids = new Set(prog.order);
+  const others = SUBJECTS.filter((s) => !ids.has(s.id));
+  return { fac: profile.fac, known: true, subjects: inProg, others, labelOf: (id) => prog.labels[id] || null, has: (id) => ids.has(id) };
 }

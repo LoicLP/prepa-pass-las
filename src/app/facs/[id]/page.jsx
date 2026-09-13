@@ -128,7 +128,7 @@ export default async function FacPage({ params }) {
               <li>Examens blancs par UE avec {exams.some((e) => e.minutes) ? 'la durée et le nombre de QCM de ta fac' : 'la durée de ton choix'}, not&eacute;s sur 20 {b ? `au barème « ${b.label.toLowerCase()} »` : 'au barème que tu choisis'}.</li>
               <li>Conseils de strat&eacute;gie et analyse des cases coch&eacute;es en trop apr&egrave;s chaque &eacute;preuve.</li>
               <li>Questions g&eacute;n&eacute;r&eacute;es dans le style de ta fac{particularites.length ? ` (${particularites[0]})` : ''}.</li>
-              <li>150 fiches, QCM illimit&eacute;s, r&eacute;visions espac&eacute;es.</li>
+              <li>170 fiches sur 9 UE, QCM illimit&eacute;s, r&eacute;visions espac&eacute;es.</li>
             </ul>
             <Link href="/inscription" className="inline-flex items-center px-6 py-3 rounded-full bg-white text-slate-900 font-bold hover:bg-indigo-50 transition-colors">Cr&eacute;er mon compte — 7 jours Premium offerts</Link>
           </div>

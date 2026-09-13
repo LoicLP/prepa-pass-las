@@ -20,7 +20,7 @@ const FEATURES = [
     icon: '🧬',
     bg: 'bg-indigo-50',
     title: '40 questions, toutes les UE',
-    desc: 'Épreuve mélangée sur les 6 UE du tronc commun, comme le jour J.',
+    desc: 'Épreuve mélangée sur les UE de ta fac, comme le jour J.',
   },
   {
     icon: '☑️',
