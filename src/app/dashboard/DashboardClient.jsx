@@ -1114,7 +1114,7 @@ export default function DashboardPage() {
               <PremiumBlurGate locked={!isPremiumPlus} title="Progression détaillée" description="Visualise ta courbe de progression, tes points forts et tes axes d'amélioration.">
                 <div>
                   <SectionHeader
-                    lead="Ta" word="progression"
+                    lead="Ton" word="relevé de notes"
                     chips={[
                       { label: `${data.totalSessions} session${data.totalSessions > 1 ? 's' : ''}` },
                       data.hasAnySessions && { label: `${data.avgScore}% de moyenne` },
@@ -1137,7 +1137,7 @@ export default function DashboardPage() {
                     <div className="space-y-5">
                       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" style={{ borderTopWidth: 3, borderTopColor: '#4f46e5' }}>
                         <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-                          <h3 className="font-jakarta text-base font-bold text-gray-900">&Eacute;volution des scores</h3>
+                          <h3 className="font-jakarta text-base font-bold text-gray-900 flex items-center gap-2"><svg width="26" height="14" viewBox="0 0 52 20" fill="none" stroke="#4f46e5" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"><path d="M0 12h9l3-7 5 14 5-16 4 9h9l2-3 3 3h12" /></svg>&Eacute;volution des scores</h3>
                           {filterSubjects.length > 1 && (
                             <SegmentedPills value={progSubject} onChange={setProgSubject} options={[{ key: 'all', label: 'Toutes' }, ...filterSubjects.map(s => ({ key: s.id, label: s.name }))]} />
                           )}
@@ -1155,36 +1155,7 @@ export default function DashboardPage() {
                         )}
                       </div>
 
-                      {coeffs && (() => {
-                        const rows = SUBJECTS.map(sub => ({ ...sub, coeff: coeffs[sub.id] || null, st: data.subjectStats[sub.id] })).filter(r => r.coeff);
-                        const tot = rows.reduce((a, r) => a + r.coeff, 0);
-                        const withSess = rows.filter(r => r.st?.count > 0);
-                        const weighted = withSess.length ? Math.round(withSess.reduce((a, r) => a + r.st.avg * r.coeff, 0) / withSess.reduce((a, r) => a + r.coeff, 0)) : null;
-                        const fac = facById(profile.fac);
-                        return (
-                          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" style={{ borderTopWidth: 3, borderTopColor: '#7c3aed' }}>
-                            <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
-                              <h3 className="font-jakarta text-base font-bold text-gray-900">Pond&eacute;ration de ta fac</h3>
-                              {weighted != null && <span className="inline-flex items-center rounded-full bg-violet-50 text-violet-700 text-xs font-bold px-2.5 py-1">{weighted}% pond&eacute;r&eacute;</span>}
-                            </div>
-                            <p className="text-xs text-gray-400 mb-4">Coefficients des UE &agrave; {fac?.name} d&apos;apr&egrave;s ses MCC : une matière qui p&egrave;se lourd compte davantage dans ta moyenne et dans tes priorit&eacute;s.</p>
-                            <div className="space-y-2.5">
-                              {rows.sort((a, b) => b.coeff - a.coeff).map(r => {
-                                const share = Math.round((r.coeff / tot) * 100);
-                                const bar = { indigo: '#4f46e5', emerald: '#10b981', violet: '#7c3aed', cyan: '#06b6d4', amber: '#f59e0b', rose: '#f43f5e' }[r.color] || '#4f46e5';
-                                return (
-                                  <div key={r.id} className="flex items-center gap-3">
-                                    <span className="w-40 shrink-0 text-sm font-semibold text-gray-800 truncate">{r.name}</span>
-                                    <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${share}%`, background: bar }} /></div>
-                                    <span className="w-16 text-right text-xs font-bold text-gray-500">coef {r.coeff}</span>
-                                    <span className={`w-14 text-right text-xs font-bold ${r.st?.count > 0 ? 'text-gray-900' : 'text-gray-300'}`}>{r.st?.count > 0 ? `${r.st.avg}%` : '—'}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })()}
+                      <Bulletin data={data} coeffs={coeffs} prog={prog} profile={profile} user={user} onWork={(sub) => openQCM({ type: 'custom', subject: sub.id, subjectName: sub.name, title: sub.name, count: 10 })} />
 
                       {(() => {
                         const agg = (qcmStats.sessions || []).reduce((a, s) => { if (s.errNature) { a.lecture += s.errNature.lecture || 0; a.connaissance += s.errNature.connaissance || 0; a.idk += s.errNature.idk || 0; a.n += 1; } return a; }, { lecture: 0, connaissance: 0, idk: 0, n: 0 });
@@ -1205,42 +1176,6 @@ export default function DashboardPage() {
                           </div>
                         );
                       })()}
-                      {data.hasMultipleSubjects && (
-                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                          <h3 className="font-jakarta text-base font-bold text-gray-900 mb-4">Points forts &amp; axes d&rsquo;am&eacute;lioration</h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            {[
-                              { title: '↑ Points forts', cls: 'text-emerald-600', items: strengths },
-                              { title: 'À améliorer', cls: 'text-amber-600', items: toImprove },
-                            ].map(col => (
-                              <div key={col.title}>
-                                <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${col.cls}`}>{col.title}</h4>
-                                <div className="space-y-3">
-                                  {col.items.map(s => (
-                                    <div key={s.id} className="p-3 rounded-xl border border-gray-100 bg-gray-50/60">
-                                      <div className="flex items-center justify-between mb-1.5">
-                                        <span className="text-[13px] font-semibold text-gray-800 truncate">{s.name}</span>
-                                        <span className={`text-sm font-bold tabular-nums ${scoreClass(s.avg)}`}>{s.avg}%</span>
-                                      </div>
-                                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${scoreBarClass(s.avg)}`} style={{ width: `${s.avg}%` }} /></div>
-                                      <div className="text-[11px] text-gray-400 mt-1 tabular-nums">{s.count} session{s.count > 1 ? 's' : ''}</div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          {w && (
-                            <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
-                              <span className="text-[13px] text-gray-500">&Agrave; renforcer en priorit&eacute; : <strong className="text-gray-800">{w.name}</strong> <span className="tabular-nums">({w.avg}%)</span></span>
-                              <button onClick={() => openQCM({ type: 'custom', subject: w.id, subjectName: w.name, title: w.name, count: 10 })} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20">
-                                Travailler {w.name}
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                     );
                   })()}
@@ -1780,6 +1715,99 @@ function ConcoursPath({ examDate, facId = null }) {
             📅 Ajoute ta date de concours →
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* Bulletin de notes façon relevé universitaire : en-tête tamponné, table des UE avec note /20,
+   coefficient (de la fac quand on le connaît), appréciation et moyenne pondérée. */
+const NOTE20 = (pct) => Math.round(pct * 2) / 10;
+const APPRECIATION = (n) => (n >= 16 ? ['Très bien', '#065f46', '#d1fae5'] : n >= 14 ? ['Bien', '#047857', '#ecfdf5'] : n >= 12 ? ['Assez bien', '#1d4ed8', '#eff6ff'] : n >= 10 ? ['Passable', '#b45309', '#fffbeb'] : ['À renforcer', '#b91c1c', '#fef2f2']);
+function Bulletin({ data, coeffs, prog, profile, user, onWork }) {
+  const fac = facById(profile?.fac);
+  const subjects = prog?.known ? prog.subjects : SUBJECTS;
+  const rows = subjects.map(sub => {
+    const st = data.subjectStats[sub.id];
+    const coeff = (coeffs && coeffs[sub.id]) || PROGRAMME_DATA.find(u => u.id === sub.id)?.coeff || 3;
+    return { ...sub, coeff, st, note: st?.count > 0 ? NOTE20(st.avg) : null };
+  });
+  const graded = rows.filter(r => r.note != null);
+  const weighted = graded.length ? Math.round((graded.reduce((a, r) => a + r.note * r.coeff, 0) / graded.reduce((a, r) => a + r.coeff, 0)) * 10) / 10 : null;
+  const best = graded.length ? [...graded].sort((a, b) => b.note - a.note)[0] : null;
+  const weak = graded.length > 1 ? [...graded].sort((a, b) => a.note - b.note)[0] : null;
+  const mention = weighted != null ? APPRECIATION(weighted) : null;
+  const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const name = user?.displayName || user?.email?.split('@')[0] || 'Étudiant';
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7f0', boxShadow: '0 2px 6px rgba(15,16,32,0.04)', overflow: 'hidden' }}>
+      {/* cadre « document officiel » */}
+      <div style={{ margin: 10, border: '1px solid #c7c9dc', outline: '1px solid #e9eaf3', outlineOffset: 3, borderRadius: 10, padding: '22px 26px 20px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 18 }}>
+          <div>
+            <p style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#8a8ea8', margin: 0 }}>Prépa PASS/LAS · Relevé de notes</p>
+            <h3 className="font-jakarta" style={{ fontSize: 20, fontWeight: 800, color: '#0f1020', margin: '4px 0 2px', letterSpacing: -0.4 }}>{name}</h3>
+            <p style={{ fontSize: 12.5, color: '#5f6280', margin: 0 }}>{fac ? fac.name : 'Faculté non renseignée'}{profile?.voie ? ` · ${profile.voie.toUpperCase()}` : ''} · établi le {today}</p>
+          </div>
+          {/* tampon */}
+          <div style={{ position: 'relative', width: 118, height: 118, flexShrink: 0, transform: 'rotate(-8deg)' }}>
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px double #4f46e5', opacity: 0.85 }} />
+            <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px dashed #4f46e5', opacity: 0.7 }} />
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#4f46e5' }}>
+              <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' }}>Moyenne</span>
+              <span className="font-jakarta" style={{ fontSize: 28, fontWeight: 900, lineHeight: 1, letterSpacing: -1 }}>{weighted != null ? String(weighted).replace('.', ',') : '—'}</span>
+              <span style={{ fontSize: 9, fontWeight: 700 }}>/ 20 pondérée</span>
+              {mention && <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', marginTop: 3 }}>{mention[0]}</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* table des UE */}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#8a8ea8', borderBottom: '2px solid #0f1020' }}>
+                <th style={{ textAlign: 'left', padding: '6px 8px 8px 0' }}>Unité d’enseignement</th>
+                <th style={{ textAlign: 'center', padding: '6px 8px 8px' }}>Coef.</th>
+                <th style={{ textAlign: 'center', padding: '6px 8px 8px' }}>Sessions</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px 8px' }}>Note</th>
+                <th style={{ textAlign: 'left', padding: '6px 0 8px 12px', minWidth: 120 }}>Appréciation</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(r => {
+                const app = r.note != null ? APPRECIATION(r.note) : null;
+                return (
+                  <tr key={r.id} style={{ borderBottom: '1px dashed #e5e7f0' }}>
+                    <td style={{ padding: '9px 8px 9px 0' }}>
+                      <div style={{ fontWeight: 700, color: '#0f1020' }}>{r.name}</div>
+                      {r.facLabel && <div style={{ fontSize: 11, color: '#8a8ea8' }}>{r.facLabel}</div>}
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '9px 8px', color: '#5f6280', fontVariantNumeric: 'tabular-nums' }}>{r.coeff}</td>
+                    <td style={{ textAlign: 'center', padding: '9px 8px', color: '#5f6280', fontVariantNumeric: 'tabular-nums' }}>{r.st?.count || 0}</td>
+                    <td style={{ textAlign: 'right', padding: '9px 8px', fontVariantNumeric: 'tabular-nums' }}>
+                      {r.note != null ? <><span className="font-jakarta" style={{ fontSize: 16, fontWeight: 800, color: '#0f1020' }}>{String(r.note).replace('.', ',')}</span><span style={{ fontSize: 11, color: '#8a8ea8' }}> /20</span></> : <span style={{ color: '#c3c5d5' }}>—</span>}
+                    </td>
+                    <td style={{ padding: '9px 0 9px 12px' }}>
+                      {app ? <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: app[1], background: app[2], borderRadius: 6, padding: '3px 8px' }}>{app[0]}</span> : <button onClick={() => onWork(r)} style={{ fontSize: 11, fontWeight: 700, color: '#4f46e5', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} className="hover:underline">Commencer →</button>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* observations */}
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: '2px solid #0f1020', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <p style={{ fontSize: 12.5, color: '#5f6280', margin: 0 }}>
+            <strong style={{ color: '#0f1020' }}>Observations :</strong>{' '}
+            {graded.length === 0 ? 'aucune note pour l’instant, lance une session pour remplir ton relevé.' : <>{best ? <>point fort en <strong style={{ color: '#0f1020' }}>{best.name}</strong>{' '}({String(best.note).replace('.', ',')}/20)</> : null}{weak ? <>, à renforcer en <strong style={{ color: '#0f1020' }}>{weak.name}</strong> ({String(weak.note).replace('.', ',')}/20)</> : null}. {coeffs ? 'Coefficients de ta fac.' : 'Coefficients indicatifs du tronc commun.'}</>}
+          </p>
+          {weak && (
+            <button onClick={() => onWork(weak)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#0f1020', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }} className="hover:bg-gray-800 transition-colors">Travailler {weak.name} →</button>
+          )}
+        </div>
       </div>
     </div>
   );
