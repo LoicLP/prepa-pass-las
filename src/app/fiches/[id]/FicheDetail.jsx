@@ -27,7 +27,7 @@ const COLOR_MAP = {
   primary:    { badge: 'bg-indigo-100 text-indigo-700', icon: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
 };
 
-export default function FicheDetail({ fiche, subject, related }) {
+export default function FicheDetail({ fiche, subject, related, prev = null, next = null }) {
   const { user } = useAuth();
   const { isPremiumPlus, isEssentiel } = usePremium();
   const colors = COLOR_MAP[subject?.color] || COLOR_MAP.primary;
@@ -92,6 +92,24 @@ export default function FicheDetail({ fiche, subject, related }) {
                   </Link>
                 </div>
               </div>
+            )}
+
+            {/* Fiche précédente / suivante de la même UE */}
+            {(prev || next) && (
+              <nav className="mt-4 grid sm:grid-cols-2 gap-3" aria-label="Fiches voisines">
+                {prev ? (
+                  <Link href={`/fiches/${prev.id}`} className="group bg-white rounded-2xl border border-gray-200 p-4 hover:border-indigo-300 transition-colors">
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-gray-400">← Fiche précédente</span>
+                    <span className="block text-sm font-bold text-gray-900 group-hover:text-indigo-700 mt-1">{prev.title}</span>
+                  </Link>
+                ) : <span />}
+                {next && (
+                  <Link href={`/fiches/${next.id}`} className="group bg-white rounded-2xl border border-gray-200 p-4 text-right hover:border-indigo-300 transition-colors">
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-gray-400">Fiche suivante →</span>
+                    <span className="block text-sm font-bold text-gray-900 group-hover:text-indigo-700 mt-1">{next.title}</span>
+                  </Link>
+                )}
+              </nav>
             )}
 
             {/* Navigation entre fiches */}

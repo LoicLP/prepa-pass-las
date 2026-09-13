@@ -2,21 +2,16 @@ import FichesPage from './FichesClient';
 import { FICHES_DATA } from '@/data/fiches';
 
 export const metadata = {
-  title: 'Fiches de révision PASS/LAS - Toutes les matières',
-  description: 'Fiches synthétiques par matière pour réviser le programme PASS et LAS : anatomie, chimie, biologie cellulaire, biostatistiques, biophysique et SSH. Téléchargeables en PDF.',
+  title: `${FICHES_DATA.length} fiches de révision PASS/LAS gratuites, 9 UE`,
+  description: `${FICHES_DATA.length} fiches de révision gratuites pour le concours PASS/LAS : anatomie, chimie-biochimie, biologie cellulaire, biostatistiques, biophysique, SSH, physiologie, médicament, histologie-embryologie. Points clés, QCM et PDF.`,
   alternates: { canonical: '/fiches' },
+  openGraph: { type: 'website', locale: 'fr_FR', siteName: 'Prépa PASS/LAS', url: 'https://prepa-pass-las.fr/fiches', title: `${FICHES_DATA.length} fiches de révision PASS/LAS gratuites`, description: 'Toutes les fiches du tronc commun PASS/LAS, par UE, avec leurs points clés du concours.' },
 };
 
 const siteUrl = 'https://prepa-pass-las.fr';
 
-const subjectLabels = {
-  anatomie: 'Anatomie',
-  chimie: 'Chimie & Biochimie',
-  biocell: 'Biologie cellulaire',
-  biostats: 'Biostatistiques',
-  biophysique: 'Biophysique',
-  ssh: 'Sciences Humaines et Sociales',
-};
+import { SUBJECTS } from '@/data/subjects';
+const subjectLabels = Object.fromEntries(SUBJECTS.map((s) => [s.id, s.name]));
 
 const jsonLd = {
   '@context': 'https://schema.org',
