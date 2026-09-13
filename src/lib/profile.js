@@ -14,6 +14,7 @@ export const BAREMES = [
   { id: 'degressif', label: 'Dégressif 1 · 0,5 · 0,2 · 0', desc: '1 pt sans erreur, 0,5 avec une, 0,2 avec deux, 0 au-delà. Jamais négatif.' },
   { id: 'degressif75', label: 'Dégressif 1 · 0,75 · 0,5 · 0', desc: '1 pt sans erreur, 0,75 avec une, 0,5 avec deux, 0 au-delà. Jamais négatif.' },
   { id: 'degressif50', label: 'Dégressif 1 · 0,5 · 0', desc: '1 pt sans erreur, 0,5 avec une, 0 dès deux erreurs. Jamais négatif.' },
+  { id: 'degressif80', label: 'Dégressif 1 · 0,8 · 0,25 · 0', desc: '1 pt sans erreur, 0,8 avec une, 0,25 avec deux, 0 au-delà. Jamais négatif.' },
   { id: 'item_02_01', label: '+0,2 / −0,1 par item', desc: 'Chaque proposition juste rapporte 0,2, chaque fausse retire 0,1 ; la question ne descend pas sous zéro.' },
   { id: 'negatif', label: 'Points négatifs', desc: 'Une proposition fausse retire des points ; la question ne descend pas sous zéro.' },
   { id: 'tout_ou_rien', label: 'Tout ou rien', desc: 'Le point n’est acquis que si toutes les propositions sont justes.' },
