@@ -3024,8 +3024,6 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
               style={{ position: 'relative', background: '#fff', borderRadius: 14, border: '1px solid #e5e7f0', cursor: 'pointer', padding: '14px 16px 12px 22px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'transform .18s, box-shadow .18s', boxShadow: '0 2px 6px rgba(15,16,32,0.04)', backgroundImage: 'repeating-linear-gradient(transparent 0, transparent 21px, #eef0f4 21px, #eef0f4 22px)', backgroundPosition: '0 10px', overflow: 'visible' }}>
               {/* marge rouge */}
               <span aria-hidden="true" style={{ position: 'absolute', left: 12, top: 0, bottom: 0, width: 1.5, background: '#f6cfcf', borderRadius: 1 }} />
-              {/* onglet de couleur (index) */}
-              <span aria-hidden="true" style={{ position: 'absolute', left: -1, top: 14, width: 5, height: 34, borderRadius: '0 4px 4px 0', background: accent }} />
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f1020', lineHeight: '22px', margin: 0 }} className="group-hover:text-indigo-800 transition-colors">
                   <span style={{ background: `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}a6 2.4%, ${fluo}73 5.8%, ${fluo}26 93%, ${fluo}8c 96%, ${fluo}00 98%)`, backgroundSize: '100% 66%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{fiche.title}</span>
