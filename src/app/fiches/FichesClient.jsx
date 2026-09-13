@@ -9,6 +9,7 @@ import { usePremium } from '@/contexts/PremiumContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfile, programFor } from '@/lib/profile';
 import BristolHero from '@/components/fiches/BristolHero';
+import { FLUO_HEX, fluoStroke } from '@/components/fiches/BristolCard';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { SUBJECT_COLORS } from '@/data/constants';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
@@ -170,55 +171,36 @@ function FloatingSubjectCards() {
    ================================================================ */
 function FicheCard({ fiche, index, premiumUser, user, onLoginRequired, onUpgradeRequired }) {
   const subject = SUBJECTS.find(s => s.id === fiche.subject);
-  const colors = getColors(subject);
-  const iconPath = SUBJECT_ICONS[fiche.subject] || '';
+  const fluo = FLUO_HEX[subject?.color] || FLUO_HEX.primary;
 
   return (
     <article
-      className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg hover:shadow-gray-200/60 hover:border-gray-300 transition-all duration-300"
-      style={{ animationDelay: `${Math.min(index * 0.04, 0.4)}s` }}
+      className="group relative bg-white rounded-2xl border border-gray-200 hover:shadow-lg hover:shadow-gray-200/60 hover:border-gray-300 hover:-translate-y-0.5 transition-all duration-200"
+      style={{ animationDelay: `${Math.min(index * 0.04, 0.4)}s`, backgroundImage: 'repeating-linear-gradient(transparent 0, transparent 23px, #eef0f4 23px, #eef0f4 24px)', backgroundPosition: '0 8px' }}
     >
-      <div className={`h-1 ${colors.bar}`} />
-      <div className="p-5">
+      <span aria-hidden="true" className="absolute left-3 top-0 bottom-0 w-px rounded" style={{ background: '#f6cfcf' }} />
+      <div className="pl-6 pr-5 pt-4 pb-4">
         <Link href={`/fiches/${fiche.id}`} className="block">
-        <div className="flex items-start gap-3 mb-3">
-          <div className={`w-9 h-9 rounded-xl ${colors.light} ${colors.border} border flex items-center justify-center shrink-0`}>
-            <svg className={`w-[18px] h-[18px] ${colors.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
+          <h3 className="text-[15px] font-bold text-gray-900 group-hover:text-indigo-800 transition-colors" style={{ lineHeight: '24px' }}>
+            <span style={{ background: fluoStroke(fluo), backgroundSize: '100% 66%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{fiche.title}</span>
+          </h3>
+          <p className="text-[13px] text-gray-500 line-clamp-2 mt-1" style={{ lineHeight: '24px' }}>{fiche.summary}</p>
+          <div className="flex items-center gap-1.5 text-indigo-600 text-xs font-bold group-hover:gap-2.5 transition-all mt-1" style={{ lineHeight: '24px' }}>
+            Lire la fiche
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
             </svg>
           </div>
-          <div className="flex-1 min-w-0">
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${colors.icon}`}>{subject?.name || ''}</span>
-            <h3 className="text-[15px] font-bold text-gray-900 leading-snug mt-0.5 group-hover:text-indigo-700 transition-colors">{fiche.title}</h3>
-          </div>
-        </div>
-        <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-3">{fiche.summary}</p>
-        <div className="flex items-center gap-1.5 text-indigo-600 text-xs font-bold group-hover:gap-2.5 transition-all mb-4">
-          Lire la fiche
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-          </svg>
-        </div>
         </Link>
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end mt-2">
           {premiumUser ? (
-            <Link
-              href={`/cours?id=${fiche.id}`}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
-              </svg>
+            <Link href={`/cours?id=${fiche.id}`} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>
               Cours
             </Link>
           ) : (
-            <button
-              onClick={() => { !user ? onLoginRequired() : onUpgradeRequired(); }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all bg-gray-50 text-gray-400 border border-gray-200 hover:bg-gray-100"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-              </svg>
+            <button onClick={() => { !user ? onLoginRequired() : onUpgradeRequired(); }} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all bg-gray-50 text-gray-400 border border-gray-200 hover:bg-gray-100">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
               Cours
             </button>
           )}
@@ -496,43 +478,27 @@ export default function FichesPage() {
               />
             </div>
 
-            {/* Filter pills */}
+            {/* Filtres : petits rectangles, nom surligné au fluo de l'UE */}
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setCurrentSubject('all')}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                  currentSubject === 'all'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'
-                }`}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition-colors border ${currentSubject === 'all' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-800 border-gray-200 hover:border-gray-400'}`}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" />
-                </svg>
                 Toutes
-                <span className={`text-xs px-2 py-0.5 rounded-full ${currentSubject === 'all' ? 'bg-white/20' : 'text-gray-400'}`}>
-                  {FICHES_DATA.length}
-                </span>
+                <span className={`text-xs font-semibold ${currentSubject === 'all' ? 'text-white/70' : 'text-gray-400'}`}>{FICHES_DATA.length}</span>
               </button>
               {orderedSubjects.map((sub) => {
                 const count = FICHES_DATA.filter(f => f.subject === sub.id).length;
                 const isActive = currentSubject === sub.id;
-                const iconPath = SUBJECT_ICONS[sub.id] || '';
+                const fluo = FLUO_HEX[sub.color] || FLUO_HEX.primary;
                 return (
                   <button
                     key={sub.id}
                     onClick={() => setCurrentSubject(sub.id)}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                      isActive
-                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25'
-                        : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'
-                    }`}
+                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold bg-white text-gray-900 border transition-colors hover:border-gray-400 ${isActive ? 'border-gray-300 ring-2 ring-gray-100' : 'border-gray-200'}`}
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
-                    </svg>
-                    {sub.name}
-                    <span className={`text-xs font-normal ${isActive ? 'text-white/70' : 'text-gray-400'}`}>{count}</span>
+                    <span style={{ background: fluoStroke(fluo, isActive), backgroundSize: '100% 62%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 70%', padding: '0 4px', margin: '0 -4px', borderRadius: 2 }}>{sub.name}</span>
+                    <span className="text-xs font-semibold text-gray-400">{count}</span>
                   </button>
                 );
               })}

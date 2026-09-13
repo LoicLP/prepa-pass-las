@@ -12,6 +12,14 @@ export const ACCENT_HEX = {
   amber: '#d97706', rose: '#e11d48', sky: '#0284c7', teal: '#0d9488', fuchsia: '#c026d3',
 };
 
+/* Couleurs « surligneur » par UE. */
+export const FLUO_HEX = {
+  indigo: '#a5b4ff', primary: '#a5b4ff', emerald: '#7dffa0', violet: '#d69bff', cyan: '#6ff2ff',
+  amber: '#ffd84a', rose: '#ff7ac3', sky: '#7cd4ff', teal: '#6ff5d8', fuchsia: '#ff8ae8',
+};
+/* Trait de surligneur (dégradé plus dense aux extrémités). `strong` pour l'état sélectionné. */
+export const fluoStroke = (hex, strong = false) => `linear-gradient(104deg, ${hex}00 0.9%, ${hex}${strong ? 'e6' : '99'} 2.4%, ${hex}${strong ? 'bf' : '73'} 5.8%, ${hex}${strong ? '66' : '26'} 93%, ${hex}${strong ? 'cc' : '8c'} 96%, ${hex}00 98%)`;
+
 export function readingMinutes(html) {
   const words = (html || '').replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.round(words / 200));
