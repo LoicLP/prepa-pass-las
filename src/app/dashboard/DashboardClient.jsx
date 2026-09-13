@@ -1785,13 +1785,16 @@ function ConcoursPath({ examDate, facId = null }) {
 
 /* Pastille « Ta fac » dans l'en-tête : nom court, détails au clic ou au survol. */
 function FacPill({ profile, prog, onEdit }) {
-  const [open, setOpen] = useState(false);
+  // Survol : ouverture temporaire. Clic : épinglé jusqu'à un clic ailleurs ou un nouveau clic.
+  const [pinned, setPinned] = useState(false);
+  const [hover, setHover] = useState(false);
+  const open = pinned || hover;
   const ref = useRef(null);
   useEffect(() => {
-    if (!open) return;
-    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    if (!pinned) return;
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setPinned(false); };
     document.addEventListener('mousedown', close); return () => document.removeEventListener('mousedown', close);
-  }, [open]);
+  }, [pinned]);
   const fac = facById(profile?.fac);
   const ICON = <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>;
   const pillBase = { display: 'inline-flex', alignItems: 'center', gap: 7, background: '#fff', border: '1px solid #ddd9fb', borderRadius: 999, padding: '8px 13px', fontSize: 13, fontWeight: 800, color: '#0f1020', cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 1px 2px rgba(15,16,32,0.04)' };
@@ -1816,8 +1819,8 @@ function FacPill({ profile, prog, onEdit }) {
     d?.s1 ? ['Partiels', `S1 ${fmtD(d.s1)}${d.s2 ? ` · S2 ${fmtD(d.s2)}` : ''}${d.approx ? ' (à confirmer)' : ''}`] : ex?.threshold ? ['Note-seuil', `${ex.threshold}/20`] : null,
   ].filter(Boolean);
   return (
-    <div ref={ref} style={{ position: 'relative' }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
-      <button onClick={() => setOpen(o => !o)} aria-expanded={open} style={pillBase} className="hover:border-indigo-300 transition-colors">
+    <div ref={ref} style={{ position: 'relative' }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      <button onClick={() => setPinned(p => !p)} aria-expanded={open} style={{ ...pillBase, ...(pinned ? { borderColor: '#4f46e5' } : {}) }} className="hover:border-indigo-300 transition-colors">
         <span style={{ color: '#4f46e5', display: 'flex' }}>{ICON}</span>
         {short}{voie ? <span style={{ color: '#8a8ea8', fontWeight: 600 }}>· {voie}</span> : null}
         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#8a8ea8" strokeWidth="2.5" style={{ transition: 'transform .15s', transform: open ? 'rotate(180deg)' : 'none' }}><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
@@ -1832,7 +1835,7 @@ function FacPill({ profile, prog, onEdit }) {
           ))}
           <div style={{ marginTop: 9, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Link href={`/facs/${fac.id}`} style={{ color: '#4f46e5', fontWeight: 700, textDecoration: 'none' }} className="hover:underline">Fiche de la fac →</Link>
-            <button onClick={() => { setOpen(false); onEdit(); }} style={{ background: 'none', border: 'none', color: '#8a8ea8', cursor: 'pointer', fontSize: 12, padding: 0 }} className="hover:text-indigo-600">modifier ✎</button>
+            <button onClick={() => { setPinned(false); setHover(false); onEdit(); }} style={{ background: 'none', border: 'none', color: '#8a8ea8', cursor: 'pointer', fontSize: 12, padding: 0 }} className="hover:text-indigo-600">modifier ✎</button>
           </div>
         </div>
       )}
