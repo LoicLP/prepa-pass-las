@@ -80,7 +80,7 @@ export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState('overview');
   useEffect(() => {
     const s = new URLSearchParams(window.location.search).get('section');
-    if (s && ['overview', 'progression', 'objectifs', 'historique', 'account'].includes(s)) setActiveSection(s);
+    if (s && ['overview', 'fiches', 'progression', 'objectifs', 'historique', 'account'].includes(s)) setActiveSection(s);
   }, []);
   const [historyFilter, setHistoryFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(10);
@@ -2938,6 +2938,16 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
       return next;
     });
   };
+  // Une fiche ouverte est une page à part entière : URL ?fiche=…, bouton retour du navigateur, pas de fenêtre.
+  const scrollTop = () => { const m = [...document.querySelectorAll('main')].find(x => x.style.overflowY === 'auto'); (m || window).scrollTo({ top: 0, behavior: 'instant' }); };
+  const openFiche = (f, push = true) => { markRead(f.id); setSelectedFiche(f); if (push) window.history.pushState({ fiche: f.id }, '', `?section=fiches&fiche=${f.id}`); scrollTop(); };
+  const closeFiche = () => { setSelectedFiche(null); window.history.pushState({}, '', '?section=fiches'); scrollTop(); };
+  useEffect(() => {
+    const fromUrl = () => { const id = new URLSearchParams(window.location.search).get('fiche'); return id ? FICHES_DATA.find(x => x.id === id) || null : null; };
+    const first = fromUrl(); if (first) openFiche(first, false);
+    const onPop = () => { const f = fromUrl(); setSelectedFiche(f); if (f) markRead(f.id); scrollTop(); };
+    window.addEventListener('popstate', onPop); return () => window.removeEventListener('popstate', onPop);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Comptes par matière (total + lues) pour les cartes de matières
   const subjectStats = useMemo(() => {
@@ -2972,6 +2982,18 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
 
   return (
     <div style={{ minHeight: 0 }}>
+      {selectedFiche ? (
+        <FicheBristolPage
+          fiche={selectedFiche}
+          fiches={filteredFiches}
+          isRead={readIds.has(selectedFiche.id)}
+          onNavigate={(f) => openFiche(f)}
+          onClose={closeFiche}
+          isEssentiel={isEssentiel}
+          onLaunchQCM={onLaunchQCM}
+          onOpenCours={(fiche) => setActiveCours(fiche)}
+        />
+      ) : (<>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ marginBottom: 16 }}>
         <div>
@@ -3031,7 +3053,7 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
           const cols = FICHES_SUBJECT_COLORS[sub?.color] || FICHES_SUBJECT_COLORS.primary;
           const isRead = readIds.has(fiche.id);
           const mins = ficheReadingTime(fiche.content);
-          const open = () => { markRead(fiche.id); setSelectedFiche(fiche); };
+          const open = () => openFiche(fiche);
           return (
             <div key={fiche.id} role="button" tabIndex={0} onClick={open} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }}
               style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7f0', cursor: 'pointer', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'all .2s' }}
@@ -3084,20 +3106,7 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
         );
       })()}
 
-      {/* Fiche detail modal */}
-      {selectedFiche && (
-        <FicheDetailModal
-          fiche={selectedFiche}
-          fiches={filteredFiches}
-          isRead={readIds.has(selectedFiche.id)}
-          onNavigate={(f) => { markRead(f.id); setSelectedFiche(f); }}
-          onClose={() => setSelectedFiche(null)}
-          isEssentiel={isEssentiel}
-          user={user}
-          onLaunchQCM={onLaunchQCM}
-          onOpenCours={(fiche) => { setActiveCours(fiche); setSelectedFiche(null); }}
-        />
-      )}
+      </>)}
 
       {/* Cours full-screen overlay */}
       {activeCours && (
@@ -3106,6 +3115,92 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
           onClose={() => setActiveCours(null)}
         />
       )}
+    </div>
+  );
+}
+
+/* Page « fiche bristol » : la fiche ouverte occupe la section, sur une carte crème lignée
+   avec sa marge rouge et un bandeau à la couleur de l'UE. */
+function FicheBristolPage({ fiche, fiches = [], isRead = false, onNavigate, onClose, isEssentiel, onLaunchQCM, onOpenCours }) {
+  const sub = SUBJECTS.find(s => s.id === fiche.subject);
+  const accent = FICHES_ACCENT_HEX[sub?.color] || FICHES_ACCENT_HEX.primary;
+  const cols = FICHES_SUBJECT_COLORS[sub?.color] || FICHES_SUBJECT_COLORS.primary;
+  const mins = ficheReadingTime(fiche.content);
+  const idx = fiches.findIndex(f => f.id === fiche.id);
+  const prevFiche = idx > 0 ? fiches[idx - 1] : null;
+  const nextFiche = idx >= 0 && idx < fiches.length - 1 ? fiches[idx + 1] : null;
+  const [downloading, setDownloading] = useState(false);
+  const download = async () => { if (downloading) return; setDownloading(true); try { await downloadFichePdf(fiche, sub); } catch (e) { console.error(e); } finally { setDownloading(false); } };
+  const NavBtn = ({ f, dir }) => f ? (
+    <button onClick={() => onNavigate(f)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: 260, background: '#fff', border: '1px solid #e5e7f0', borderRadius: 10, padding: '8px 12px', fontSize: 12.5, fontWeight: 600, color: '#2a2c44', cursor: 'pointer', textAlign: dir === 'next' ? 'right' : 'left' }} className="hover:border-indigo-300 hover:text-indigo-700 transition-colors">
+      {dir === 'prev' && <span>←</span>}<span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.title}</span>{dir === 'next' && <span>→</span>}
+    </button>
+  ) : <span />;
+  return (
+    <div className="max-w-4xl mx-auto">
+      {/* Barre de navigation */}
+      <div className="flex flex-wrap items-center justify-between gap-2" style={{ marginBottom: 16 }}>
+        <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: 0, fontSize: 13, fontWeight: 700, color: '#5f6280', cursor: 'pointer' }} className="hover:text-indigo-700 transition-colors">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+          Retour aux fiches
+        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {isEssentiel && (
+            <button onClick={download} disabled={downloading} title="Télécharger en PDF" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e5e7f0', borderRadius: 10, padding: '8px 12px', fontSize: 12.5, fontWeight: 700, color: '#2a2c44', cursor: 'pointer' }} className="hover:border-indigo-300 transition-colors">
+              {downloading ? <span style={{ width: 13, height: 13, border: '2px solid #d7d9e6', borderTopColor: '#4f46e5', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> : <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>}
+              PDF
+            </button>
+          )}
+          <button onClick={() => onLaunchQCM({ type: 'custom', subject: fiche.subject, subjectName: sub?.name || '', title: fiche.title, content: fiche.content, count: 5 })} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#4f46e5', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#fff', cursor: 'pointer' }} className="hover:bg-indigo-700 transition-colors">
+            Me tester sur cette fiche
+          </button>
+        </div>
+      </div>
+
+      {/* La fiche bristol */}
+      <article style={{ position: 'relative', background: '#fffdf6', borderRadius: 18, border: '1px solid #ece6d3', boxShadow: '0 1px 0 #fff inset, 0 18px 40px -20px rgba(66,50,10,0.25), 0 2px 6px rgba(66,50,10,0.06)', overflow: 'hidden' }}>
+        {/* bandeau de l'UE */}
+        <div style={{ background: accent, color: '#fff', padding: '12px 28px 12px 64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d={FICHES_SUBJECT_ICONS[fiche.subject] || ''} /></svg>
+            <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' }}>{sub?.name}</span>
+          </div>
+          <span style={{ fontSize: 11.5, fontWeight: 700, opacity: 0.9 }}>{mins} min de lecture{isRead ? ' · lue' : ''}</span>
+        </div>
+        {/* perforations */}
+        <div aria-hidden="true" style={{ position: 'absolute', left: 22, top: 70, bottom: 26, width: 12, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
+          {[0, 1, 2, 3, 4, 5].map(i => <span key={i} style={{ width: 12, height: 12, borderRadius: '50%', background: '#f3f4f8', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.18)' }} />)}
+        </div>
+        {/* marge rouge */}
+        <div aria-hidden="true" style={{ position: 'absolute', left: 52, top: 46, bottom: 0, width: 2, background: '#f2b8b8', pointerEvents: 'none' }} />
+        {/* lignes */}
+        <div style={{ position: 'relative', padding: '26px 36px 30px 74px', backgroundImage: 'repeating-linear-gradient(transparent 0, transparent 31px, #e6e2d3 31px, #e6e2d3 32px)', backgroundPosition: '0 12px' }}>
+          <h1 className="font-jakarta" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.15, color: '#0f1020', margin: '0 0 8px' }}>{fiche.title}</h1>
+          {fiche.summary && <p style={{ fontSize: 14.5, fontStyle: 'italic', color: '#6b6a5e', margin: '0 0 20px', lineHeight: 1.6 }}>{fiche.summary}</p>}
+          <div className="fiche-bristol-content" style={{ fontSize: 15, lineHeight: '32px', color: '#1f2030' }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(fiche.content) }} />
+          <style>{`
+            .fiche-bristol-content h3 { font-size: 20px; font-weight: 800; color: #0f1020; margin: 24px 0 8px; line-height: 32px; }
+            .fiche-bristol-content h4 { font-size: 16px; font-weight: 700; color: ${accent}; margin: 16px 0 0; line-height: 32px; text-transform: none; }
+            .fiche-bristol-content p { margin: 0 0 8px; line-height: 32px; }
+            .fiche-bristol-content ul { margin: 0 0 8px; padding-left: 20px; }
+            .fiche-bristol-content li { line-height: 32px; margin: 0; }
+            .fiche-bristol-content strong { color: #0f1020; }
+            .fiche-bristol-content div[class*="rounded-xl"] { background: #fff; border: 1px dashed ${accent}; border-radius: 12px; padding: 12px 16px; margin: 16px 0 8px; line-height: 24px; }
+            .fiche-bristol-content div[class*="rounded-xl"] p { line-height: 24px; margin: 0; font-size: 14px; }
+          `}</style>
+        </div>
+      </article>
+
+      {/* Suite */}
+      <div style={{ marginTop: 18, display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 10 }}>
+        <div><NavBtn f={prevFiche} dir="prev" /></div>
+        <div>
+          {isEssentiel
+            ? <button onClick={() => onOpenCours(fiche)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#0f1020', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }} className="hover:opacity-90 transition-opacity">Cours complet →</button>
+            : <Link href="/tarifs" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fdf4e2', color: '#78350f', border: '1px solid #f4dcb0', borderRadius: 10, padding: '9px 16px', fontSize: 12.5, fontWeight: 700, textDecoration: 'none' }}>Cours complet · Premium</Link>}
+        </div>
+        <div style={{ textAlign: 'right' }}><NavBtn f={nextFiche} dir="next" /></div>
+      </div>
     </div>
   );
 }
