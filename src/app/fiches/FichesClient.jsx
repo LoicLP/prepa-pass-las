@@ -182,7 +182,7 @@ function FicheCard({ fiche, index, premiumUser, user, onLoginRequired, onUpgrade
       <div className="pl-6 pr-5 pt-4 pb-4">
         <Link href={`/fiches/${fiche.id}`} className="block">
           <h3 className="text-[15px] font-bold text-gray-900 group-hover:text-indigo-800 transition-colors" style={{ lineHeight: '24px' }}>
-            <span style={{ background: fluoStroke(fluo), backgroundSize: '100% 66%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{fiche.title}</span>
+            <span style={{ backgroundImage: fluoStroke(fluo), backgroundSize: '100% 66%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{fiche.title}</span>
           </h3>
           <p className="text-[13px] text-gray-500 line-clamp-2 mt-1" style={{ lineHeight: '24px' }}>{fiche.summary}</p>
           <div className="flex items-center gap-1.5 text-indigo-600 text-xs font-bold group-hover:gap-2.5 transition-all mt-1" style={{ lineHeight: '24px' }}>
@@ -497,7 +497,7 @@ export default function FichesPage() {
                     onClick={() => setCurrentSubject(sub.id)}
                     className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold bg-white text-gray-900 border transition-colors hover:border-gray-400 ${isActive ? 'border-gray-300 ring-2 ring-gray-100' : 'border-gray-200'}`}
                   >
-                    <span style={{ background: fluoStroke(fluo, isActive), backgroundSize: '100% 62%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 70%', padding: '0 4px', margin: '0 -4px', borderRadius: 2 }}>{sub.name}</span>
+                    <span style={{ backgroundImage: fluoStroke(fluo, isActive), backgroundSize: '100% 62%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 70%', padding: '0 4px', margin: '0 -4px', borderRadius: 2 }}>{sub.name}</span>
                     <span className="text-xs font-semibold text-gray-400">{count}</span>
                   </button>
                 );

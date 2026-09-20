@@ -130,7 +130,7 @@ export default function DashboardPage() {
   const qcmImmersive = !QCM_SELECTION_VIEWS.includes(effectiveQcmView);
   const closeExamen = () => { setActiveExamen(false); setExamenView(null); setStatsRefresh(k => k + 1); };
   // Vues de « sélection » de l'examen où l'on garde la sidebar visible ; l'épreuve elle-même passe en immersion
-  const EXAMEN_SELECTION_VIEWS = ['hero', 'modeChoice', 'fichesSelection', 'customSelection'];
+  const EXAMEN_SELECTION_VIEWS = ['hero', 'modeChoice', 'mixedConfirm', 'ueSelection', 'fichesSelection', 'ficheConfirm', 'customSelection'];
   const examImmersive = !EXAMEN_SELECTION_VIEWS.includes(examenView || 'modeChoice');
 
   // Ouverture directe d'un module via /dashboard?open=qcm|examen (redirections des pages publiques)
@@ -545,14 +545,6 @@ export default function DashboardPage() {
           className={examImmersive ? 'left-0' : 'left-0 md:left-[120px]'}
           style={{ position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 200, background: '#f8fafc', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
         >
-          <div style={{ flexShrink: 0, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #eef0f7', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <button onClick={closeExamen} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, color: '#5f6280', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, transition: 'all .15s' }} className="hover:bg-gray-100 hover:text-gray-900">
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-              Retour au tableau de bord
-            </button>
-            <div style={{ width: 1, height: 20, background: '#e2e4f0' }} />
-            <span style={{ fontSize: 13, color: '#9ca3af' }}>Mode Examen</span>
-          </div>
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
             <Suspense fallback={null}>
               <ExamenPage onBack={closeExamen} onViewChange={setExamenView} />
@@ -569,15 +561,6 @@ export default function DashboardPage() {
           className={qcmImmersive ? 'left-0' : 'left-0 md:left-[120px]'}
           style={{ position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 200, background: '#f8fafc', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
         >
-          {/* Barre de navigation overlay */}
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #eef0f7', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
-            <button onClick={closeQCM} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, color: '#5f6280', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, transition: 'all .15s' }} className="hover:bg-gray-100 hover:text-gray-900">
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-              Retour au tableau de bord
-            </button>
-            <div style={{ width: 1, height: 20, background: '#e2e4f0' }} />
-            <span style={{ fontSize: 13, color: '#9ca3af' }}>QCM · {activeQCM.subjectName || activeQCM.title}</span>
-          </div>
           {/* QCM embarqué */}
           <div style={{ flex: 1 }}>
             <Suspense fallback={null}>
@@ -3111,7 +3094,7 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
           const stroke = `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}${isSel ? 'e6' : '99'} 2.4%, ${fluo}${isSel ? 'bf' : '73'} 5.8%, ${fluo}${isSel ? '66' : '26'} 93%, ${fluo}${isSel ? 'cc' : '8c'} 96%, ${fluo}00 98%)`;
           return (
             <button key={sub.id} onClick={() => setCurrentSubject(sub.id)} title={`${st.read}/${st.total} lues`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${isSel ? '#c9cbe0' : '#e5e7f0'}`, background: '#fff', color: '#0f1020', boxShadow: isSel ? '0 0 0 2px #eef0f7' : 'none' }} className="transition-colors hover:border-gray-400">
-              <span style={{ background: stroke, backgroundSize: '100% 62%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 70%', padding: '0 4px', margin: '0 -4px', borderRadius: 2 }}>{sub.name}</span>
+              <span style={{ backgroundImage: stroke, backgroundSize: '100% 62%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 70%', padding: '0 4px', margin: '0 -4px', borderRadius: 2 }}>{sub.name}</span>
               <span style={{ fontSize: 11, fontWeight: 600, color: '#8a8ea8' }}>{done ? '✓' : st.read > 0 ? `${st.read}/${st.total}` : st.total}</span>
             </button>
           );
@@ -3136,12 +3119,12 @@ function FichesSection({ initialSubject, onLaunchQCM, subjectOrder = null }) {
           return (
             <div key={fiche.id} role="button" tabIndex={0} onClick={open} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }}
               className="fiche-bristol-mini group"
-              style={{ position: 'relative', background: '#fff', borderRadius: 14, border: '1px solid #e5e7f0', cursor: 'pointer', padding: '14px 16px 12px 22px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'transform .18s, box-shadow .18s', boxShadow: '0 2px 6px rgba(15,16,32,0.04)', backgroundImage: 'repeating-linear-gradient(transparent 0, transparent 21px, #eef0f4 21px, #eef0f4 22px)', backgroundPosition: '0 10px', overflow: 'visible' }}>
+              style={{ position: 'relative', backgroundColor: '#fff', borderRadius: 14, border: '1px solid #e5e7f0', cursor: 'pointer', padding: '14px 16px 12px 22px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'transform .18s, box-shadow .18s', boxShadow: '0 2px 6px rgba(15,16,32,0.04)', backgroundImage: 'repeating-linear-gradient(transparent 0, transparent 21px, #eef0f4 21px, #eef0f4 22px)', backgroundPosition: '0 10px', overflow: 'visible' }}>
               {/* marge rouge */}
               <span aria-hidden="true" style={{ position: 'absolute', left: 12, top: 0, bottom: 0, width: 1.5, background: '#f6cfcf', borderRadius: 1 }} />
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f1020', lineHeight: '22px', margin: 0 }} className="group-hover:text-indigo-800 transition-colors">
-                  <span style={{ background: `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}a6 2.4%, ${fluo}73 5.8%, ${fluo}26 93%, ${fluo}8c 96%, ${fluo}00 98%)`, backgroundSize: '100% 66%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{fiche.title}</span>
+                  <span style={{ backgroundImage: `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}a6 2.4%, ${fluo}73 5.8%, ${fluo}26 93%, ${fluo}8c 96%, ${fluo}00 98%)`, backgroundSize: '100% 66%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{fiche.title}</span>
                 </h3>
                 {isRead && (
                   <span title="Lue" style={{ flexShrink: 0, width: 22, height: 22, borderRadius: '50%', background: '#dcfce7', border: '1px solid #bbf7d0', color: '#166534', display: 'grid', placeItems: 'center' }}>

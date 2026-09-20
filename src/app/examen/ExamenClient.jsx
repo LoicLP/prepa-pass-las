@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePremium } from '@/contexts/PremiumContext';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
 import UpgradeModal from '@/components/ui/UpgradeModal';
+import { FLUO_HEX } from '@/components/fiches/BristolCard';
 
 const LOADING_TIPS = [
   { icon: '💡', text: 'Relisez vos erreurs après chaque épreuve pour progresser plus vite.' },
@@ -48,6 +49,18 @@ function getIconPath(subjectId) {
 
 /* ========== SUB-COMPONENTS ========== */
 
+/* Bouton retour commun aux écrans de préparation (même dessin que le QCM). */
+function BackButton({ onClick, children = 'Retour', className = '' }) {
+  return (
+    <button onClick={onClick} className={`group inline-flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full bg-white border border-gray-200 text-[13px] font-semibold text-gray-600 shadow-[0_1px_2px_rgba(15,16,32,0.04)] hover:border-indigo-300 hover:text-indigo-700 hover:shadow-[0_4px_12px_-4px_rgba(79,70,229,0.25)] transition-all ${className}`}>
+      <span className="w-7 h-7 rounded-full bg-slate-100 group-hover:bg-indigo-50 flex items-center justify-center transition-colors">
+        <svg className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+      </span>
+      {children}
+    </button>
+  );
+}
+
 function SubjectIcon({ subjectId, className = 'w-5 h-5' }) {
   const path = getIconPath(subjectId);
   return (
@@ -58,89 +71,6 @@ function SubjectIcon({ subjectId, className = 'w-5 h-5' }) {
 }
 
 /* Confirmation modal before starting a fiche-based exam */
-function StartConfirmModal({ fiche, subject, questionCount, duration, onConfirm, onCancel }) {
-  const colors = getColors(subject?.color);
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-white rounded-2xl border border-gray-200 p-6 max-w-sm w-full shadow-xl animate-[modalEnter_0.25s_ease-out]">
-        <div className="flex items-center gap-3 mb-4">
-          <div className={`w-10 h-10 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center`}>
-            <SubjectIcon subjectId={subject?.id} className={`w-5 h-5 ${colors.icon}`} />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-500">{subject?.name || 'Sujet libre'}</p>
-            <h3 className="font-bold text-gray-900 text-sm">{fiche.title}</h3>
-          </div>
-        </div>
-        <p className="text-sm text-gray-500 mb-5 leading-relaxed">{fiche.summary}</p>
-        <div className="flex items-center justify-between mb-5 px-1">
-          <span className="text-sm text-gray-500">Format :</span>
-          <span className="font-bold text-gray-900">{questionCount} questions &middot; {duration} min</span>
-        </div>
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-600 text-sm hover:border-gray-300 transition-colors">
-            Annuler
-          </button>
-          <button onClick={onConfirm} className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-            Commencer
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* Mixed exam confirmation modal */
-function MixedExamModal({ onConfirm, onCancel }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-white rounded-2xl border border-gray-200 p-6 max-w-sm w-full shadow-xl animate-[modalEnter_0.25s_ease-out]">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center">
-            <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-emerald-600">&Eacute;preuve compl&egrave;te</p>
-            <h3 className="font-bold text-gray-900 text-sm">Examen complet</h3>
-          </div>
-        </div>
-        <p className="text-sm text-gray-500 mb-4 leading-relaxed">40 questions m&eacute;lang&eacute;es couvrant l&apos;ensemble des mati&egrave;res du tronc commun. Conditions proches du concours.</p>
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          {prog.subjects.map(s => {
-            const colors = getColors(s.color);
-            return (
-              <div key={s.id} className="flex items-center gap-2">
-                <div className={`w-7 h-7 rounded-lg ${colors.bg} flex items-center justify-center`}>
-                  <SubjectIcon subjectId={s.id} className={`w-3.5 h-3.5 ${colors.icon}`} />
-                </div>
-                <span className="text-xs font-medium text-gray-700">{s.name}</span>
-              </div>
-            );
-          })}
-        </div>
-        <div className="flex items-center justify-between mb-5 px-1 py-2 bg-emerald-50 rounded-lg">
-          <span className="text-sm text-gray-600 ml-2">Format :</span>
-          <span className="font-bold text-emerald-700 mr-2">40 questions &middot; 60 min</span>
-        </div>
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-600 text-sm hover:border-gray-300 transition-colors">
-            Annuler
-          </button>
-          <button onClick={onConfirm} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2">
-            Commencer
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* Quit confirmation modal */
 function QuitModal({ answered, total, timerFormatted, onContinue, onQuit }) {
   return (
@@ -256,7 +186,6 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
   const [currentQ, setCurrentQ] = useState(0);
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
-  const [showMixedModal, setShowMixedModal] = useState(false);
   const [pendingFiche, setPendingFiche] = useState(null);
   const [customText, setCustomText] = useState('');
   const [customTopic, setCustomTopic] = useState('');
@@ -438,6 +367,7 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
     if (!fiche) return;
     const subject = SUBJECTS.find(s => s.id === fiche.subject);
     setPendingFiche({ fiche, subject });
+    setView('ficheConfirm');
   }, []);
 
   const confirmFicheStart = useCallback(() => {
@@ -759,97 +689,111 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
 
   // ===== MODE CHOICE VIEW =====
   if (view === 'modeChoice') {
+    const bar = (BAREMES.find(b => b.id === (getProfile(user).bareme || 'partiel')) || BAREMES[0]).label;
+    const Row = ({ onClick, color, icon, title, desc, meta, badge, big = false }) => (
+      <button onClick={onClick} className={`group w-full flex items-center gap-4 text-left rounded-2xl border transition-all ${big ? 'p-5 bg-emerald-50/60 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300' : 'p-4 bg-slate-50 border-gray-200 hover:bg-white hover:border-indigo-300 hover:shadow-[0_8px_20px_-12px_rgba(79,70,229,0.35)]'}`}>
+        <span className={`${big ? 'w-12 h-12' : 'w-10 h-10'} rounded-xl flex items-center justify-center shrink-0 text-white`} style={{ background: color, boxShadow: `0 4px 12px ${color}55` }}>
+          <svg className={big ? 'w-6 h-6' : 'w-[18px] h-[18px]'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">{icon}</svg>
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="flex items-center gap-2 flex-wrap">
+            <span className={`${big ? 'text-[17px]' : 'text-[15px]'} font-bold text-gray-900 leading-tight`}>{title}</span>
+            {badge}
+          </span>
+          <span className="block text-[13px] text-gray-500 mt-0.5 leading-snug">{desc}</span>
+          {meta && <span className="block text-[11.5px] font-semibold mt-1.5" style={{ color }}>{meta}</span>}
+        </span>
+        <svg className="w-4 h-4 text-gray-300 group-hover:text-indigo-500 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+      </button>
+    );
     return (
-      <section className={`bg-slate-50 ${onBack ? 'h-full flex flex-col' : 'pt-24 pb-16 md:pt-28 md:pb-20 min-h-screen'}`}>
-        {!onBack && (
-          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-            <button onClick={() => setView('hero')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-              Retour
-            </button>
-          </div>
-        )}
-        <div className={`max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 ${onBack ? 'flex-1 flex flex-col justify-center pb-6' : 'mt-6'}`}>
-          <div className={`text-center ${onBack ? 'mb-6' : 'mb-8'}`}>
-            <div className="inline-flex items-center gap-1.5 text-primary-600 mb-2">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
-              <span className="text-xs font-bold uppercase tracking-wider">Nouvelle &eacute;preuve</span>
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          {onBack ? <BackButton onClick={onBack} className="md:hidden mb-5">Tableau de bord</BackButton> : <BackButton onClick={() => setView('hero')} className="mb-5" />}
+          <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-8" style={{ boxShadow: '0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px rgba(5,150,105,0.22)' }}>
+            <div className="mb-6">
+              <h2 className="font-jakarta text-[28px] md:text-[34px] font-black text-gray-900 tracking-tight leading-tight">Quelle &eacute;preuve veux-tu passer&nbsp;?</h2>
+              <p className="text-[15px] text-gray-500 mt-1.5">Chrono, sans correction pendant l&rsquo;&eacute;preuve, note &agrave; la fin.</p>
             </div>
-            <h2 className="text-2xl md:text-[28px] font-black text-gray-900 tracking-tight">Quelle &eacute;preuve veux-tu passer&nbsp;?</h2>
-          </div>
 
-          {/* HERO : Examen complet (le mode phare) */}
-          <button onClick={() => setShowMixedModal(true)} className="group w-full text-left rounded-2xl border border-emerald-200 p-5 mb-4 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/10 hover:border-emerald-400" style={{ background: 'linear-gradient(135deg, #ecfdf5 0%, #ffffff 58%)' }}>
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-emerald-600/30 group-hover:scale-105 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" /></svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <h3 className="text-lg font-black text-gray-900 tracking-tight">Examen complet</h3>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white uppercase tracking-wide">Concours</span>
-                  {!isPremiumPlus && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wide">Premium+</span>}
-                </div>
-                <p className="text-[13px] text-gray-600 leading-relaxed mb-3">40 questions m&eacute;lang&eacute;es sur tout le tronc commun, en conditions proches du concours.</p>
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-white/70 border border-emerald-100 px-2.5 py-1 rounded-lg">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                    40 questions &middot; 60 min
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-700 group-hover:gap-2.5 transition-all">
-                    Commencer
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </button>
+            <Row big onClick={() => setView('mixedConfirm')} color="#059669"
+              icon={<path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />}
+              title="Examen complet"
+              badge={<>{' '}<span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white uppercase tracking-wide">Concours</span>{!isPremiumPlus && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wide">Premium+</span>}</>}
+              desc="40 questions mélangées sur tout le tronc commun, en conditions proches du concours."
+              meta="40 questions · 60 min" />
 
-          {/* Épreuve par UE, au barème de la faculté */}
-          <button onClick={() => setView('ueSelection')} className="group w-full bg-white rounded-2xl border-2 border-indigo-200 p-5 text-left hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/10 transition-all hover:-translate-y-0.5 mb-4 flex items-start gap-4">
-            <div className="w-11 h-11 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <svg className="w-5.5 h-5.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mt-6 mb-3">Ou une &eacute;preuve cibl&eacute;e</p>
+            <div className="flex flex-col gap-3">
+              <Row onClick={() => { setUeSubject(null); setView('ueSelection'); }} color="#4f46e5"
+                icon={<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />}
+                title="Une UE, au format de ta fac"
+                desc={`Durée et nombre de questions de ton concours, note sur 20 au barème ${bar.toLowerCase()}.`} />
+              <Row onClick={() => setView('fichesSelection')} color="#d97706"
+                icon={<path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />}
+                title="Une fiche"
+                desc={`Une épreuve générée depuis l’une des ${fichesCount} fiches.`}
+                meta="20 questions · 30 min" />
+              <Row onClick={() => setView('customSelection')} color="#7c3aed"
+                icon={<path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />}
+                title="Un thème libre"
+                desc="Une matière ou un point précis, questions générées par l’IA."
+                meta="20 questions · 30 min" />
             </div>
-            <div className="flex-1">
-              <h3 className="text-base font-bold text-gray-900 mb-1">&Eacute;preuve par UE, au bar&egrave;me de ta fac</h3>
-              <p className="text-[13px] text-gray-500 leading-relaxed">Une seule mati&egrave;re, la dur&eacute;e et le nombre de questions de ton concours, et une <strong className="text-gray-700">note sur 20</strong> calcul&eacute;e avec ton bar&egrave;me ({(BAREMES.find(b => b.id === (getProfile(user).bareme || 'partiel')) || BAREMES[0]).label.toLowerCase()}).</p>
-            </div>
-          </button>
-
-          {/* Modes ciblés (secondaires) */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            {/* Fiches-based */}
-            <button onClick={() => setView('fichesSelection')} className="group bg-white rounded-2xl border border-gray-200 p-5 text-left hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10 transition-all hover:-translate-y-0.5 flex flex-col">
-              <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform">
-                <svg className="w-5.5 h-5.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
-              </div>
-              <h3 className="text-base font-bold text-gray-900 mb-1.5">&Agrave; partir des fiches</h3>
-              <p className="text-[13px] text-gray-500 leading-relaxed mb-4 flex-1">Une &eacute;preuve cibl&eacute;e g&eacute;n&eacute;r&eacute;e depuis une fiche de r&eacute;vision.</p>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg">{fichesCount} fiches</span>
-                <span className="text-[11px] text-gray-400 font-medium">20 q &middot; 30 min</span>
-              </div>
-            </button>
-            {/* Custom */}
-            <button onClick={() => setView('customSelection')} className="group bg-white rounded-2xl border border-gray-200 p-5 text-left hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 transition-all hover:-translate-y-0.5 flex flex-col">
-              <div className="w-11 h-11 bg-violet-100 rounded-xl flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform">
-                <svg className="w-5.5 h-5.5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
-              </div>
-              <h3 className="text-base font-bold text-gray-900 mb-1.5">Sujet personnalis&eacute;</h3>
-              <p className="text-[13px] text-gray-500 leading-relaxed mb-4 flex-1">Choisis une mati&egrave;re ou un th&egrave;me pr&eacute;cis pour ton &eacute;preuve.</p>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-700 bg-violet-50 px-2.5 py-1 rounded-lg">Th&egrave;me libre</span>
-                <span className="text-[11px] text-gray-400 font-medium">20 q &middot; 30 min</span>
-              </div>
-            </button>
           </div>
         </div>
-        {showMixedModal && (
-          <MixedExamModal
-            onConfirm={() => { setShowMixedModal(false); launchExam({ type: 'mixed' }); }}
-            onCancel={() => setShowMixedModal(false)}
-          />
-        )}
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier={upgradeTier} onClose={() => setShowUpgradeModal(false)} />}
+      </section>
+    );
+  }
+
+  // ===== CONFIRMATION DE L'EXAMEN COMPLET (page) =====
+  if (view === 'mixedConfirm') {
+    const accent = '#059669';
+    const ACCENT = { indigo: '#4f46e5', primary: '#4f46e5', emerald: '#059669', violet: '#7c3aed', cyan: '#0891b2', amber: '#d97706', rose: '#e11d48', sky: '#0284c7', teal: '#0d9488', fuchsia: '#c026d3' };
+    const facName = facById(getProfile(user).fac)?.name?.replace(/^Université (de |d’|d')?/i, '');
+    return (
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <BackButton onClick={() => setView('modeChoice')} className="mb-5" />
+          <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-8" style={{ boxShadow: `0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px ${accent}55` }}>
+            <div className="flex items-center gap-3.5 mb-6">
+              <span className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white" style={{ background: accent, boxShadow: `0 4px 12px ${accent}55` }}>
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" /></svg>
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Conditions concours{!isPremiumPlus ? ' · Premium+' : ''}</p>
+                <p className="font-jakarta text-[24px] md:text-[28px] font-black text-gray-900 tracking-tight leading-tight">Examen complet</p>
+              </div>
+            </div>
+
+            <p className="text-[14px] text-gray-600 leading-relaxed mb-5">40 questions m&eacute;lang&eacute;es sur {prog.known && facName ? `le programme de ${facName}` : 'tout le tronc commun'}, sans correction pendant l&rsquo;&eacute;preuve. Note &agrave; la fin, comme le jour J.</p>
+
+            <div className="grid grid-cols-3 gap-2.5 mb-6">
+              {[['40', 'questions'], ['60 min', 'chrono'], ['Fin', 'correction']].map(([big, small]) => (
+                <div key={small} className="rounded-2xl border border-gray-200 bg-slate-50 py-3.5 text-center">
+                  <span className="font-jakarta block text-xl font-black leading-none text-gray-900">{big}</span>
+                  <span className="block text-[11px] text-gray-400 mt-1.5">{small}</span>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2.5">Mati&egrave;res tir&eacute;es</p>
+            <div className="flex flex-wrap gap-2 mb-6">
+              {prog.subjects.map(su => {
+                const col = ACCENT[su.color] || ACCENT.primary;
+                return <span key={su.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-semibold text-gray-700 bg-white border border-gray-200"><span className="w-2 h-2 rounded-full" style={{ background: col }} />{su.name}</span>;
+              })}
+            </div>
+
+            <button onClick={() => launchExam({ type: 'mixed' })} className="w-full py-4 rounded-2xl font-bold text-white text-[15px] flex items-center justify-center gap-2 transition-all hover:opacity-90 hover:-translate-y-px" style={{ background: accent, boxShadow: `0 8px 20px -8px ${accent}99` }}>
+              Lancer l&rsquo;examen complet
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+            </button>
+            <p className="text-xs text-gray-400 text-center mt-3">Pr&eacute;vois une heure au calme. Tu pourras quitter, mais l&rsquo;&eacute;preuve ne sera pas compt&eacute;e.</p>
+          </div>
+        </div>
         {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
         {showUpgradeModal && <UpgradeModal requiredTier={upgradeTier} onClose={() => setShowUpgradeModal(false)} />}
       </section>
@@ -861,50 +805,86 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
     const prof = getProfile(user);
     const bar = BAREMES.find(b => b.id === (prof.bareme || 'partiel')) || BAREMES[0];
     const fac = facById(prof.fac);
+    const facName = fac?.name?.replace(/^Université (de |d’|d')?/i, '');
+    const ACCENT = { indigo: '#4f46e5', primary: '#4f46e5', emerald: '#059669', violet: '#7c3aed', cyan: '#0891b2', amber: '#d97706', rose: '#e11d48', sky: '#0284c7', teal: '#0d9488', fuchsia: '#c026d3' };
+    const chosen = ueSubject ? SUBJECTS.find(x => x.id === ueSubject) : null;
     const facEx = ueSubject ? examFor(prof.fac, ueSubject) : null;
+    const pickSubject = (id) => { setUeSubject(id); const ex = examFor(prof.fac, id); setUeCount(ex?.questions || 30); setUeDuration(ex?.minutes || 45); };
     const countOptions = [...new Set([20, 30, 40, 50, facEx?.questions].filter(Boolean))].sort((a, b) => a - b);
     const durationOptions = [...new Set([30, 45, 60, 90, facEx?.minutes].filter(Boolean))].sort((a, b) => a - b);
-    const pickSubject = (id) => { setUeSubject(id); const ex = examFor(prof.fac, id); if (ex?.questions) setUeCount(ex.questions); if (ex?.minutes) setUeDuration(ex.minutes); };
+    const accent = chosen ? (ACCENT[chosen.color] || ACCENT.primary) : '#4f46e5';
+    const Tile = ({ active, onClick, big, small }) => (
+      <button onClick={onClick} className="rounded-2xl border py-3.5 text-center transition-all" style={{ borderColor: active ? accent : '#e5e7eb', background: active ? `${accent}14` : '#f8fafc', boxShadow: active ? `0 0 0 3px ${accent}26` : undefined }}>
+        <span className="font-jakarta block text-xl font-black leading-none" style={{ color: active ? accent : '#0f1020' }}>{big}</span>
+        <span className="block text-[11px] mt-1.5" style={{ color: active ? accent : '#9ca3af' }}>{small}</span>
+      </button>
+    );
+
     return (
-      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-            Retour
-          </button>
-          <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">&Eacute;preuve par UE</h2>
-          <p className="text-gray-500 mb-6">Choisis la mati&egrave;re et le format de ton concours. Note sur 20 au bar&egrave;me <strong className="text-gray-800">{bar.label.toLowerCase()}</strong> — modifiable dans <span className="whitespace-nowrap">Mon compte</span>.</p>
-          <div className="grid sm:grid-cols-2 gap-3 mb-6">
-            {[...prog.subjects, ...prog.others].map(sub => {
-              const colors = getColors(sub.color);
-              const sel = ueSubject === sub.id;
-              const outside = prog.known && !prog.has(sub.id);
-              return (
-                <button key={sub.id} onClick={() => pickSubject(sub.id)} className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all ${sel ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'} ${outside ? 'opacity-60' : ''}`}>
-                  <div className={`w-9 h-9 rounded-xl ${colors.bg} flex items-center justify-center shrink-0`}><SubjectIcon subjectId={sub.id} className={`w-4 h-4 ${colors.icon}`} /></div>
-                  <span className="min-w-0"><span className="block text-sm font-bold text-gray-900">{sub.name}</span>{sub.facLabel ? <span className="block text-[11px] text-indigo-600 truncate">{sub.facLabel}</span> : outside ? <span className="block text-[11px] text-gray-400">hors programme de ta fac</span> : null}</span>
-                </button>
-              );
-            })}
-          </div>
-          {fac && ueSubject && (
-            <div className={`mb-4 rounded-xl border px-4 py-3 text-[13px] leading-snug ${facEx ? 'border-indigo-200 bg-indigo-50 text-indigo-900' : 'border-gray-200 bg-white text-gray-500'}`}>
-              {facEx ? (
-                <><strong>Format {fac.name}</strong> — {facEx.label}{facEx.questions ? ` : ${facEx.questions} QCM` : ''}{facEx.minutes ? `${facEx.questions ? ' en' : ' :'} ${fmtMinutes(facEx.minutes)}` : ''}{facEx.format === 'qru' ? ' (réponse unique)' : facEx.format?.includes('qr') ? ' (+ partie rédactionnelle, non simulée)' : ''}.{!facEx.questions && ' Nombre de questions non publié : choisis-le.'} D&apos;apr&egrave;s les MCC, &agrave; v&eacute;rifier sur ton intranet.</>
-              ) : (
-                <>Nous n&apos;avons pas le format de cette UE &agrave; {fac.name} : choisis le nombre de questions et la dur&eacute;e de ton intranet.</>
-              )}
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          {chosen
+            ? <BackButton onClick={() => setUeSubject(null)} className="mb-5">Changer d&rsquo;UE</BackButton>
+            : <BackButton onClick={() => setView('modeChoice')} className="mb-5" />}
+
+          {!chosen ? (
+            /* Étape 1 : choisir l'UE, avec le format de la fac en regard */
+            <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-8" style={{ boxShadow: '0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px rgba(79,70,229,0.2)' }}>
+              <div className="mb-5">
+                <h2 className="font-jakarta text-[28px] md:text-[34px] font-black text-gray-900 tracking-tight leading-tight">Quelle UE&nbsp;?</h2>
+                <p className="text-[15px] text-gray-500 mt-1.5">{facName ? `Le format de ${facName} est pré-rempli, tu pourras l’ajuster.` : 'Tu choisiras ensuite le nombre de questions et la durée.'}</p>
+              </div>
+              <div className="rounded-2xl border border-gray-200 overflow-hidden">
+                {[...prog.subjects, ...prog.others].map((sub, i, arr) => {
+                  const ex = examFor(prof.fac, sub.id); const outside = prog.known && !prog.has(sub.id); const col = ACCENT[sub.color] || ACCENT.primary;
+                  const fmt = ex ? [ex.questions ? `${ex.questions} QCM` : null, ex.minutes ? fmtMinutes(ex.minutes) : null].filter(Boolean).join(' · ') : null;
+                  return (
+                    <button key={sub.id} onClick={() => pickSubject(sub.id)} className={`group w-full flex items-center gap-3.5 px-4 sm:px-5 py-3.5 text-left hover:bg-indigo-50/50 transition-colors ${i < arr.length - 1 ? 'border-b border-gray-100' : ''} ${outside ? 'opacity-60' : ''}`}>
+                      <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white" style={{ background: col }}><SubjectIcon subjectId={sub.id} className="w-4 h-4" /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[15px] font-bold text-gray-900 leading-tight">{sub.name}</span>
+                        {sub.facLabel && sub.facLabel !== sub.name ? <span className="block text-xs text-gray-400 truncate mt-0.5">{sub.facLabel}</span> : outside ? <span className="block text-xs text-gray-400 mt-0.5">hors programme de ta fac</span> : null}
+                      </span>
+                      <span className="text-right shrink-0 text-[12px] font-semibold text-gray-500 tabular-nums">{fmt || <span className="text-gray-300 font-medium">format libre</span>}</span>
+                      <svg className="w-4 h-4 text-gray-300 group-hover:text-indigo-500 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* Étape 2 : format pré-rempli, ajustable */
+            <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-8" style={{ boxShadow: `0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px ${accent}44` }}>
+              <div className="flex items-center gap-3.5 mb-7">
+                <span className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white" style={{ background: accent, boxShadow: `0 4px 12px ${accent}55` }}><SubjectIcon subjectId={chosen.id} className="w-5 h-5" /></span>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">&Eacute;preuve par UE</p>
+                  <p className="font-jakarta text-[22px] md:text-[26px] font-black text-gray-900 tracking-tight leading-tight truncate">{chosen.name}</p>
+                </div>
+              </div>
+
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Questions</p>
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5 mb-6">
+                {countOptions.map(n => <Tile key={n} active={ueCount === n} onClick={() => setUeCount(n)} big={n} small={facEx?.questions === n ? 'ta fac' : 'QCM'} />)}
+              </div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Dur&eacute;e</p>
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5 mb-6">
+                {durationOptions.map(n => <Tile key={n} active={ueDuration === n} onClick={() => setUeDuration(n)} big={fmtMinutes(n)} small={facEx?.minutes === n ? 'ta fac' : ' '} />)}
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 border border-gray-200 px-4 py-3 text-[12.5px] text-gray-600 leading-snug mb-5">
+                {facEx
+                  ? <><strong className="text-gray-900">Format {facName}</strong> d&rsquo;apr&egrave;s les MCC{facEx.format === 'qru' ? ', réponse unique' : facEx.format?.includes('qr') ? ', partie rédactionnelle non simulée' : ''}. </>
+                  : fac ? <>Format de cette UE non publi&eacute; &agrave; {facName}, r&egrave;gle-le d&rsquo;apr&egrave;s ton intranet. </> : null}
+                Note sur 20 au bar&egrave;me <strong className="text-gray-900">{bar.label.toLowerCase()}</strong>.
+              </div>
+
+              <button onClick={() => launchExam({ type: 'ue', subject: chosen.id, subjectName: chosen.name, title: chosen.name, count: ueCount, duration: ueDuration })} className="w-full py-4 rounded-2xl font-bold text-white text-[15px] flex items-center justify-center gap-2 transition-all hover:opacity-90 hover:-translate-y-px" style={{ background: accent, boxShadow: `0 8px 20px -8px ${accent}99` }}>
+                Lancer l&rsquo;&eacute;preuve · {ueCount} questions · {fmtMinutes(ueDuration)}
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+              </button>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <label className="block"><span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Questions</span>
-              <select value={ueCount} onChange={e => setUeCount(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">{countOptions.map(n => <option key={n} value={n}>{n} questions{facEx?.questions === n ? ' — ta fac' : ''}</option>)}</select></label>
-            <label className="block"><span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Dur&eacute;e</span>
-              <select value={ueDuration} onChange={e => setUeDuration(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">{durationOptions.map(n => <option key={n} value={n}>{fmtMinutes(n)}{facEx?.minutes === n ? ' — ta fac' : ''}</option>)}</select></label>
-          </div>
-          <button disabled={!ueSubject} onClick={() => { const sub = SUBJECTS.find(x => x.id === ueSubject); launchExam({ type: 'ue', subject: sub.id, subjectName: sub.name, title: sub.name, count: ueCount, duration: ueDuration }); }} className="w-full py-3.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-40">
-            Lancer l&apos;&eacute;preuve
-          </button>
         </div>
         {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
         {showUpgradeModal && <UpgradeModal requiredTier={upgradeTier} onClose={() => setShowUpgradeModal(false)} />}
@@ -915,178 +895,194 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
   // ===== FICHES SELECTION VIEW =====
   if (view === 'fichesSelection') {
     const filteredFiches = getFilteredFiches();
+    const orderedSubjects = [...prog.subjects, ...prog.others];
+    const countOf = (id) => FICHES_DATA.filter(f => f.subject === id).length;
+    const stroke = (fluo, strong) => `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}${strong ? 'e6' : '99'} 2.4%, ${fluo}${strong ? 'bf' : '73'} 5.8%, ${fluo}${strong ? '66' : '26'} 93%, ${fluo}${strong ? 'cc' : '8c'} 96%, ${fluo}00 98%)`;
+    const renderCard = (f) => {
+      const sub = SUBJECTS.find(s => s.id === f.subject);
+      const fluo = FLUO_HEX[sub?.color] || FLUO_HEX.primary;
+      return (
+        <div key={f.id} role="button" tabIndex={0} onClick={() => selectFiche(f.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectFiche(f.id); } }}
+          className="exam-fiche-mini group"
+          style={{ position: 'relative', backgroundColor: '#fff', borderRadius: 14, border: '1px solid #e5e7f0', cursor: 'pointer', padding: '14px 16px 12px 22px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'transform .18s, box-shadow .18s', boxShadow: '0 2px 6px rgba(15,16,32,0.04)', backgroundImage: 'repeating-linear-gradient(transparent 0, transparent 21px, #eef0f4 21px, #eef0f4 22px)', backgroundPosition: '0 10px' }}>
+          <span aria-hidden="true" style={{ position: 'absolute', left: 12, top: 0, bottom: 0, width: 1.5, background: '#f6cfcf', borderRadius: 1 }} />
+          <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0f1020', lineHeight: '22px', margin: 0 }} className="group-hover:text-indigo-800 transition-colors">
+            <span style={{ backgroundImage: stroke(fluo, false), backgroundSize: '100% 66%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{f.title}</span>
+          </h4>
+          <p style={{ fontSize: 12.5, color: '#5f6280', lineHeight: '22px', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{f.summary}</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 2, fontSize: 11.5, lineHeight: '22px' }}>
+            <span style={{ fontWeight: 700, color: '#4f46e5', whiteSpace: 'nowrap' }}>Passer l&rsquo;&eacute;preuve &rarr;</span>
+            <span style={{ color: '#9ca3af', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub?.name}</span>
+          </div>
+        </div>
+      );
+    };
+    const groups = (subjectFilter === 'all' && !searchQuery)
+      ? orderedSubjects.map(s => ({ s, items: filteredFiches.filter(f => f.subject === s.id) })).filter(g => g.items.length > 0)
+      : null;
     return (
-      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-            Retour
-          </button>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Choisissez votre fiche</h2>
-            <p className="text-gray-500 text-base max-w-lg mx-auto">S&eacute;lectionnez un sujet parmi nos fiches de r&eacute;vision pour g&eacute;n&eacute;rer votre &eacute;preuve de 20 questions.</p>
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
+        <style>{`.exam-fiche-mini:hover { transform: translateY(-3px) rotate(-0.6deg); box-shadow: 0 14px 28px -14px rgba(15,16,32,0.25); }`}</style>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <BackButton onClick={() => setView('modeChoice')} className="mb-5" />
+          <div className="mb-6">
+            <h2 className="font-jakarta text-[28px] md:text-[34px] font-black text-gray-900 tracking-tight leading-tight">Choisis une fiche</h2>
+            <p className="text-[15px] text-gray-500 mt-1.5">&Eacute;preuve de <strong className="text-gray-800">20 questions en 30 minutes</strong> sur le contenu de la fiche, correction &agrave; la fin.</p>
           </div>
-          {/* Exam info banner */}
-          <div className="bg-gradient-to-br from-primary-50 to-violet-50 rounded-2xl border-2 border-primary-200 p-5 mb-8 max-w-lg mx-auto relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary-100/50 rounded-full -translate-y-8 translate-x-8 pointer-events-none" />
-            <div className="relative flex items-center gap-4">
-              <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">20 questions &middot; 30 minutes &middot; Correction &agrave; la fin</p>
-                <p className="text-xs text-gray-500 mt-0.5">&Eacute;preuve en conditions r&eacute;elles de concours</p>
+
+          {/* Recherche */}
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white pl-5 pr-4 py-2.5 shadow-[0_1px_2px_rgba(15,16,32,0.04)] focus-within:border-indigo-400 focus-within:shadow-[0_0_0_4px_rgba(79,70,229,0.12)] transition-all mb-4">
+            <svg className="w-5 h-5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+            <input type="text" placeholder="Rechercher une fiche…" className="flex-1 min-w-0 text-[15px] text-gray-800 placeholder-gray-400 outline-none bg-transparent py-1.5" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            {searchQuery && <button onClick={() => setSearchQuery('')} className="text-xs font-semibold text-gray-400 hover:text-gray-700">Effacer</button>}
+          </div>
+
+          {/* Filtres à trait de fluo */}
+          <div className="flex flex-wrap gap-2 mb-7">
+            {(() => { const isSel = subjectFilter === 'all'; return (
+              <button onClick={() => setSubjectFilter('all')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${isSel ? '#0f1020' : '#e5e7f0'}`, background: isSel ? '#0f1020' : '#fff', color: isSel ? '#fff' : '#2a2c44' }} className="transition-colors hover:border-gray-400">
+                Toutes <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.7 }}>{fichesCount}</span>
+              </button>
+            ); })()}
+            {orderedSubjects.map(s => {
+              const fluo = FLUO_HEX[s.color] || FLUO_HEX.primary; const isSel = subjectFilter === s.id; const outside = prog.known && !prog.has(s.id);
+              return (
+                <button key={s.id} onClick={() => setSubjectFilter(s.id)} title={outside ? 'Hors programme de ta fac' : (s.facLabel || undefined)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${isSel ? '#c9cbe0' : '#e5e7f0'}`, background: '#fff', color: '#0f1020', boxShadow: isSel ? '0 0 0 2px #eef0f7' : 'none', opacity: outside ? 0.6 : 1 }} className="transition-colors hover:border-gray-400">
+                  <span style={{ backgroundImage: stroke(fluo, isSel), backgroundSize: '100% 62%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 70%', padding: '0 4px', margin: '0 -4px', borderRadius: 2 }}>{s.name}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#8a8ea8' }}>{countOf(s.id)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Fiches */}
+          {filteredFiches.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 24px', color: '#5f6280' }}>
+              <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Aucune fiche trouv&eacute;e</p>
+              <p style={{ fontSize: 13 }}>Essaie un autre terme ou change de mati&egrave;re.</p>
+            </div>
+          ) : groups ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
+              {groups.map(({ s, items }) => {
+                const colors = getColors(s.color); const outside = prog.known && !prog.has(s.id);
+                return (
+                  <div key={s.id}>
+                    <div className="flex items-center gap-2.5 mb-3 flex-wrap">
+                      <span className={`w-7 h-7 rounded-lg ${colors.bg} ${colors.border} border flex items-center justify-center shrink-0`}>
+                        <SubjectIcon subjectId={s.id} className={`w-4 h-4 ${colors.icon}`} />
+                      </span>
+                      <h3 className="font-jakarta text-[15px] font-extrabold text-gray-900">{s.name}</h3>
+                      {s.facLabel && s.facLabel !== s.name && <span className="hidden sm:inline text-[11px] font-semibold text-indigo-600 bg-indigo-50 rounded-full px-2 py-0.5">{s.facLabel}</span>}
+                      {outside && <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">hors programme de ta fac</span>}
+                      <span className="text-xs text-gray-400">{items.length} fiche{items.length > 1 ? 's' : ''}</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }}>{items.map(renderCard)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-gray-400 font-medium mb-3">{filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''} sur {fichesCount}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }}>{filteredFiches.map(renderCard)}</div>
+            </>
+          )}
+        </div>
+        {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
+        {showUpgradeModal && <UpgradeModal requiredTier={upgradeTier} onClose={() => setShowUpgradeModal(false)} />}
+      </section>
+    );
+  }
+
+  // ===== CONFIRMATION D'UNE FICHE (page, remplace l'ancienne modale) =====
+  if (view === 'ficheConfirm') {
+    if (!pendingFiche) { setView('fichesSelection'); return null; }
+    const { fiche, subject } = pendingFiche;
+    const ACCENT = { indigo: '#4f46e5', primary: '#4f46e5', emerald: '#059669', violet: '#7c3aed', cyan: '#0891b2', amber: '#d97706', rose: '#e11d48', sky: '#0284c7', teal: '#0d9488', fuchsia: '#c026d3' };
+    const accent = ACCENT[subject?.color] || ACCENT.primary;
+    const fluo = FLUO_HEX[subject?.color] || FLUO_HEX.primary;
+    const back = () => { setPendingFiche(null); setView('fichesSelection'); };
+    return (
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <BackButton onClick={back} className="mb-5">Changer de fiche</BackButton>
+          <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-8" style={{ boxShadow: `0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px ${accent}44` }}>
+            <div className="flex items-center gap-3.5 mb-6">
+              <span className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white" style={{ background: accent, boxShadow: `0 4px 12px ${accent}55` }}><SubjectIcon subjectId={subject?.id} className="w-5 h-5" /></span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">&Eacute;preuve sur une fiche · {subject?.name}</p>
+                <p className="font-jakarta text-[22px] md:text-[26px] font-black text-gray-900 tracking-tight leading-tight">
+                  <span style={{ backgroundImage: `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}a6 2.4%, ${fluo}73 5.8%, ${fluo}26 93%, ${fluo}8c 96%, ${fluo}00 98%)`, backgroundSize: '100% 60%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 70%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{fiche.title}</span>
+                </p>
               </div>
             </div>
-          </div>
-          {/* Search + filters */}
-          <div className="max-w-5xl mx-auto mb-6">
-            <div className="relative flex-1 w-full">
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
-              <input type="text" placeholder="Rechercher un sujet..." className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-            </div>
-            <div className="flex flex-wrap gap-2 mt-3">
-              <button onClick={() => setSubjectFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${subjectFilter === 'all' ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 bg-white text-gray-600'}`}>Toutes</button>
-              {[...prog.subjects, ...prog.others].map(s => (
-                <button key={s.id} title={prog.known && !prog.has(s.id) ? 'Hors programme de ta fac' : (s.facLabel || undefined)} style={prog.known && !prog.has(s.id) ? { opacity: 0.55 } : undefined} onClick={() => setSubjectFilter(s.id)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${subjectFilter === s.id ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 bg-white text-gray-600'}`}>{s.name}</button>
+
+            {fiche.summary && <p className="text-[14px] text-gray-600 leading-relaxed mb-6">{fiche.summary}</p>}
+
+            <div className="grid grid-cols-3 gap-2.5 mb-6">
+              {[['20', 'questions'], ['30 min', 'chrono'], ['Fin', 'correction']].map(([big, small]) => (
+                <div key={small} className="rounded-2xl border border-gray-200 bg-slate-50 py-3.5 text-center">
+                  <span className="font-jakarta block text-xl font-black leading-none text-gray-900">{big}</span>
+                  <span className="block text-[11px] text-gray-400 mt-1.5">{small}</span>
+                </div>
               ))}
             </div>
-            {(searchQuery || subjectFilter !== 'all') && (
-              <p className="text-xs text-gray-400 font-medium mt-2 text-center">{filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''} trouv&eacute;e{filteredFiches.length > 1 ? 's' : ''} sur {fichesCount}</p>
-            )}
-          </div>
-          {/* Fiches grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-5xl mx-auto">
-            {filteredFiches.length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
-                <p className="text-sm text-gray-400 font-medium">Aucune fiche ne correspond &agrave; votre recherche.</p>
-              </div>
-            ) : (
-              <>
-                {subjectFilter === 'all' && !searchQuery ? (
-                  [...prog.subjects, ...prog.others].map(s => {
-                    const subjectFiches = filteredFiches.filter(f => f.subject === s.id);
-                    if (subjectFiches.length === 0) return null;
-                    const colors = getColors(s.color);
-                    const outside = prog.known && !prog.has(s.id);
-                    return (
-                      <div key={s.id} className="contents">
-                        <div className="col-span-full mt-6 first:mt-0">
-                          <div className="flex items-center gap-2.5 mb-3">
-                            <div className={`w-8 h-8 rounded-lg ${colors.bg} ${colors.border} border flex items-center justify-center`}>
-                              <SubjectIcon subjectId={s.id} className={`w-4 h-4 ${colors.icon}`} />
-                            </div>
-                            <h3 className="font-bold text-gray-900">{s.name}</h3>
-                            {s.facLabel && <span className="hidden sm:inline text-[11px] font-semibold text-indigo-600 bg-indigo-50 rounded-full px-2 py-0.5">{s.facLabel}</span>}
-                            {outside && <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">hors programme de ta fac</span>}
-                            <span className="text-xs text-gray-400 font-medium">{subjectFiches.length} sujets</span>
-                          </div>
-                        </div>
-                        {subjectFiches.map(f => {
-                          const fColors = getColors(s.color);
-                          return (
-                            <button key={f.id} onClick={() => selectFiche(f.id)} className="bg-white rounded-xl p-4 text-left border border-gray-200 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-500/10 hover:border-primary-300 cursor-pointer">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${fColors.badge}`}>{s.name}</span>
-                                <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-                              </div>
-                              <h4 className="text-sm font-bold text-gray-900 mb-1 leading-snug">{f.title}</h4>
-                              <p className="text-xs text-gray-500 line-clamp-2">{f.summary}</p>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    );
-                  })
-                ) : (
-                  filteredFiches.map(f => {
-                    const subject = SUBJECTS.find(s => s.id === f.subject);
-                    const fColors = getColors(subject?.color);
-                    return (
-                      <button key={f.id} onClick={() => selectFiche(f.id)} className="bg-white rounded-xl p-4 text-left border border-gray-200 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-500/10 hover:border-primary-300 cursor-pointer">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${fColors.badge}`}>{subject?.name || ''}</span>
-                          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-                        </div>
-                        <h4 className="text-sm font-bold text-gray-900 mb-1 leading-snug">{f.title}</h4>
-                        <p className="text-xs text-gray-500 line-clamp-2">{f.summary}</p>
-                      </button>
-                    );
-                  })
-                )}
-              </>
-            )}
+
+            <button onClick={confirmFicheStart} className="w-full py-4 rounded-2xl font-bold text-white text-[15px] flex items-center justify-center gap-2 transition-all hover:opacity-90 hover:-translate-y-px" style={{ background: accent, boxShadow: `0 8px 20px -8px ${accent}99` }}>
+              Lancer l&rsquo;&eacute;preuve
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+            </button>
+            <p className="text-xs text-gray-400 text-center mt-3">Les questions sont g&eacute;n&eacute;r&eacute;es depuis le contenu de la fiche. Pas de correction avant la fin.</p>
           </div>
         </div>
-        {pendingFiche && (
-          <StartConfirmModal
-            fiche={pendingFiche.fiche}
-            subject={pendingFiche.subject}
-            questionCount={20}
-            duration={30}
-            onConfirm={confirmFicheStart}
-            onCancel={() => setPendingFiche(null)}
-          />
-        )}
         {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
         {showUpgradeModal && <UpgradeModal requiredTier={upgradeTier} onClose={() => setShowUpgradeModal(false)} />}
       </section>
     );
   }
 
-  // ===== CUSTOM SELECTION VIEW =====
   if (view === 'customSelection') {
+    const t = customTopic.trim();
+    const go = (topic) => { const v = (topic || '').trim(); if (!v) return; setCustomTopic(''); launchExam({ type: 'custom', subject: null, subjectName: v, title: v }); };
+    const EXAMPLES = ['Cycle de Krebs', 'Ostéologie du membre supérieur', 'Loi normale', 'Potentiel d’action', 'Pharmacocinétique', 'Liaisons chimiques'];
     return (
-      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium mb-8 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-            Retour
-          </button>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Sujet personnalis&eacute;</h2>
-            <p className="text-gray-500 text-base max-w-lg mx-auto">Choisissez une mati&egrave;re pour une &eacute;preuve de 20 questions en 30 min.</p>
-          </div>
-          {/* Exam info banner */}
-          <div className="bg-gradient-to-br from-primary-50 to-violet-50 rounded-2xl border-2 border-primary-200 p-5 mb-8 max-w-lg mx-auto relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary-100/50 rounded-full -translate-y-8 translate-x-8 pointer-events-none" />
-            <div className="relative flex items-center gap-4">
-              <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-              </div>
+          <BackButton onClick={() => setView('modeChoice')} className="mb-5" />
+          <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-8" style={{ boxShadow: '0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px rgba(124,58,237,0.28)' }}>
+            <div className="flex items-center gap-3.5 mb-6">
+              <span className="w-12 h-12 rounded-2xl bg-violet-600 text-white flex items-center justify-center shrink-0" style={{ boxShadow: '0 4px 12px rgba(124,58,237,0.35)' }}>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+              </span>
               <div>
-                <p className="text-sm font-bold text-gray-900">20 questions &middot; 30 minutes &middot; Correction &agrave; la fin</p>
-                <p className="text-xs text-gray-500 mt-0.5">&Eacute;preuve en conditions r&eacute;elles de concours</p>
+                <h2 className="font-jakarta text-[24px] md:text-[28px] font-black text-gray-900 tracking-tight leading-tight">Un th&egrave;me libre</h2>
+                <p className="text-[14px] text-gray-500 mt-0.5">&Eacute;preuve de <strong className="text-gray-800">20 questions en 30 minutes</strong>, correction &agrave; la fin.</p>
               </div>
             </div>
-          </div>
-          {/* Specific topic input */}
-          <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-8 max-w-lg mx-auto">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 bg-violet-100 rounded-xl shadow-sm flex items-center justify-center">
-                <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
-              </div>
-              <p className="text-base font-bold text-gray-900">Sujet pr&eacute;cis <span className="text-gray-400 font-normal text-sm">(optionnel)</span></p>
+
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Ton sujet</label>
+            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-slate-50 pl-5 pr-2.5 py-2.5 focus-within:bg-white focus-within:border-violet-400 focus-within:shadow-[0_0_0_4px_rgba(124,58,237,0.12)] transition-all">
+              <input
+                type="text"
+                autoFocus
+                value={customTopic}
+                onChange={e => setCustomTopic(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') go(customTopic); }}
+                placeholder="Ex. « Cycle de Krebs », « Loi normale »…"
+                className="flex-1 min-w-0 text-[16px] text-gray-800 placeholder-gray-400 outline-none bg-transparent py-2"
+              />
+              {t && <button onClick={() => go(customTopic)} className="h-10 px-5 shrink-0 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 transition-colors">Lancer</button>}
             </div>
-            <p className="text-xs text-gray-500 mb-4 ml-[52px]">Pr&eacute;cisez un th&egrave;me pour cibler les questions g&eacute;n&eacute;r&eacute;es</p>
-            <input
-              type="text"
-              value={customTopic}
-              onChange={e => setCustomTopic(e.target.value)}
-              placeholder="Ex : Ost&eacute;ologie du membre sup&eacute;rieur, Cycle de Krebs, Loi normale..."
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all placeholder:text-gray-400"
-            />
+
+            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mt-6 mb-2.5">Ou pars d&rsquo;un exemple</p>
+            <div className="flex flex-wrap gap-2">
+              {EXAMPLES.map(ex => (
+                <button key={ex} onClick={() => go(ex)} className="px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-[13px] font-semibold text-gray-700 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 transition-colors">{ex}</button>
+              ))}
+            </div>
+
+            <p className="text-xs text-gray-400 mt-6">Sois pr&eacute;cis : un chapitre ou une notion donne de meilleures questions qu&rsquo;une mati&egrave;re enti&egrave;re. L&rsquo;&eacute;preuve d&eacute;marre d&egrave;s que tu valides.</p>
           </div>
-          {/* Launch button */}
-          <button
-            onClick={() => { launchExam({ type: 'custom', subject: null, subjectName: customTopic.trim() || 'Toutes les matières PASS/LAS', title: customTopic.trim() || null }); setCustomTopic(''); }}
-            disabled={!customTopic.trim()}
-            className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Lancer l&apos;examen (20 questions &middot; 30 min)
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-          </button>
         </div>
         {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
         {showUpgradeModal && <UpgradeModal requiredTier={upgradeTier} onClose={() => setShowUpgradeModal(false)} />}
@@ -1094,46 +1090,47 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
     );
   }
 
-  // ===== LOADING VIEW =====
   if (view === 'loading') {
+    const ACCENT = { indigo: '#4f46e5', primary: '#4f46e5', emerald: '#059669', violet: '#7c3aed', cyan: '#0891b2', amber: '#d97706', rose: '#e11d48', sky: '#0284c7', teal: '#0d9488', fuchsia: '#c026d3' };
     const subject = selectedTopic?.subject ? SUBJECTS.find(s => s.id === selectedTopic.subject) : null;
-    const colors = selectedTopic?.type === 'mixed' ? getColors('emerald') : getColors(subject?.color);
-    const qCount = selectedTopic?.type === 'mixed' ? 40 : 20;
-    const topicTitle = selectedTopic?.type === 'mixed' ? 'Toutes les mati\u00e8res du tronc commun' : selectedTopic?.title;
+    const accent = selectedTopic?.type === 'mixed' ? '#059669' : (ACCENT[subject?.color] || (selectedTopic?.type === 'custom' ? '#7c3aed' : '#4f46e5'));
+    const count = selectedTopic?.type === 'mixed' ? 40 : (selectedTopic?.count || 20);
+    const title = 'Pico pr\u00e9pare ton \u00e9preuve';
+    const line = `${count} questions \u00b7 ${selectedTopic?.type === 'mixed' ? 'Tout le tronc commun' : (selectedTopic?.title || selectedTopic?.subjectName || '')}`;
     const tip = LOADING_TIPS[tipIndex];
+    const cancel = () => { onBack ? onBack() : setView('hero'); };
     return (
-      <div className={`bg-slate-50 flex items-center justify-center ${onBack ? 'min-h-[60vh]' : 'min-h-screen pt-16'}`}>
-        <div className="max-w-md mx-auto px-4 text-center w-full">
-          <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-sm">
-            <div className="mb-6">
-              <div className={`w-20 h-20 mx-auto rounded-2xl ${colors.bg} ${colors.border} border flex items-center justify-center animate-pulse`}>
-                {subject ? (
-                  <SubjectIcon subjectId={subject.id} className={`w-10 h-10 ${colors.icon}`} />
-                ) : (
-                  <svg className={`w-10 h-10 ${colors.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
-                  </svg>
-                )}
-              </div>
+      <div className={`bg-slate-50 flex items-center justify-center ${onBack ? 'min-h-[70vh]' : 'min-h-screen pt-16'}`}>
+        <div className="max-w-md mx-auto px-4 w-full">
+          <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 text-center" style={{ boxShadow: `0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px ${accent}55` }}>
+            {/* Icône entourée d'un anneau qui tourne */}
+            <div className="relative w-24 h-24 mx-auto mb-5">
+              <svg className="absolute inset-0 w-full h-full animate-spin" style={{ animationDuration: '1.6s' }} viewBox="0 0 96 96" fill="none" aria-hidden="true">
+                <circle cx="48" cy="48" r="44" stroke={`${accent}22`} strokeWidth="4" />
+                <path d="M48 4a44 44 0 0 1 44 44" stroke={accent} strokeWidth="4" strokeLinecap="round" />
+              </svg>
+              <span className="absolute inset-[14px] rounded-2xl flex items-center justify-center text-white" style={{ background: accent, boxShadow: `0 6px 16px ${accent}55` }}>
+                {subject ? <SubjectIcon subjectId={subject.id} className="w-7 h-7" /> : <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>}
+              </span>
             </div>
-            <h2 className="text-xl font-black text-gray-900 mb-2">Pr&eacute;paration de l&apos;&eacute;preuve...</h2>
-            <p className="text-sm text-gray-500 mb-1"><strong>{qCount} questions</strong> sur :</p>
-            <p className="text-sm text-gray-700 font-semibold mb-6">{topicTitle}</p>
+            <h2 className="font-jakarta text-[22px] font-black text-gray-900 tracking-tight leading-tight">{title}</h2>
+            <p className="text-[14px] text-gray-500 mt-1.5">{line}</p>
 
-            {/* Progress bar */}
-            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-6">
-              <div className="h-full bg-gradient-to-r from-primary-500 to-violet-500 rounded-full loading-progress" />
+            {/* Barre indéterminée */}
+            <div className="w-full h-1.5 rounded-full overflow-hidden my-6" style={{ background: `${accent}1a` }}>
+              <div className="h-full rounded-full loading-progress" style={{ background: accent }} />
             </div>
 
-            {/* Rotating tip */}
-            <div className="bg-primary-50 rounded-xl p-4 mb-6 min-h-[72px] flex items-center justify-center">
-              <p key={tipIndex} className="text-sm text-primary-800 leading-relaxed tip-fade">
-                <span className="mr-1.5">{tip.icon}</span>
-                {tip.text}
-              </p>
+            {/* Conseil qui tourne */}
+            <div className="rounded-2xl border border-gray-200 bg-slate-50 px-4 py-3.5 min-h-[64px] flex items-center gap-3 text-left">
+              <span className="text-xl shrink-0">{tip.icon}</span>
+              <p key={tipIndex} className="text-[13px] text-gray-600 leading-snug tip-fade">{tip.text}</p>
             </div>
 
-            <button onClick={() => { onBack ? onBack() : setView('hero'); }} className="text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors">Annuler</button>
+            <button onClick={cancel} className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-[13px] font-semibold text-gray-500 hover:border-gray-300 hover:text-gray-800 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+              Annuler
+            </button>
           </div>
         </div>
       </div>
@@ -1143,24 +1140,63 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
   // ===== ÉCRAN « PRÊT ? » (avant de lancer le chrono) =====
   if (view === 'ready') {
     const mins = examDuration;
+    const dk = darkFocus;
+    const accent = '#4f46e5';
+    const rules = [
+      ['Le chrono ne s\u2019arr\u00eate pas', 'Il d\u00e9marre quand tu cliques et tourne jusqu\u2019\u00e0 la fin.'],
+      ['Pas de correction pendant l\u2019\u00e9preuve', 'Tu peux revenir sur une question tant que tu n\u2019as pas rendu ta copie.'],
+      ['Note \u00e0 la fin', 'Score, note sur 20 au bar\u00e8me de ta fac et correction d\u00e9taill\u00e9e.'],
+    ];
     return (
-      <div className={`flex items-center justify-center ${onBack ? 'min-h-[60vh]' : 'min-h-screen pt-16'} ${darkFocus ? 'bg-[#0f1020]' : 'bg-slate-50'}`}>
-        <div className="max-w-md mx-auto px-4 text-center w-full">
-          <div className={`rounded-2xl border-2 p-8 shadow-sm ${darkFocus ? 'bg-[#1a1b2e] border-[#2a2c44]' : 'bg-white border-gray-200'}`}>
-            <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-5 ${darkFocus ? 'bg-violet-500/20' : 'bg-primary-50 border-2 border-primary-100'}`}>
-              <svg className={`w-8 h-8 ${darkFocus ? 'text-violet-300' : 'text-primary-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+      <div className={`flex items-center justify-center ${onBack ? 'min-h-[100dvh]' : 'min-h-screen pt-16'} ${dk ? 'bg-[#0f1020]' : 'bg-slate-50'}`}>
+        <div className="max-w-lg mx-auto px-4 sm:px-6 w-full py-8">
+          <div className={`rounded-3xl border p-6 sm:p-8 ${dk ? 'bg-[#171830] border-[#2a2c48]' : 'bg-white border-gray-100'}`} style={{ boxShadow: dk ? '0 30px 60px -30px rgba(0,0,0,0.6)' : `0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px ${accent}55` }}>
+            <div className="flex items-center gap-3.5 mb-6">
+              <span className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white" style={{ background: accent, boxShadow: `0 4px 12px ${accent}66` }}>
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+              </span>
+              <div className="min-w-0">
+                <p className={`text-[11px] font-bold uppercase tracking-wider ${dk ? 'text-indigo-300/70' : 'text-gray-400'}`}>{selectedTopic?.type === 'mixed' ? 'Examen complet' : selectedTopic?.title || 'Épreuve'}</p>
+                <h2 className={`font-jakarta text-[26px] md:text-[30px] font-black tracking-tight leading-tight ${dk ? 'text-white' : 'text-gray-900'}`}>Pr&ecirc;t&nbsp;?</h2>
+              </div>
             </div>
-            <h2 className={`text-xl font-black mb-2 ${darkFocus ? 'text-white' : 'text-gray-900'}`}>Prêt pour l'épreuve ?</h2>
-            <p className={`text-sm mb-1 ${darkFocus ? 'text-gray-300' : 'text-gray-500'}`}><strong className={darkFocus ? 'text-white' : 'text-gray-800'}>{questions.length} questions · {mins} minutes</strong></p>
-            <p className={`text-xs mb-6 ${darkFocus ? 'text-gray-400' : 'text-gray-500'}`}>Conditions réelles : le chrono ne s'arrête pas, la correction arrive à la fin. Le chrono démarre quand tu cliques.</p>
 
-            <button onClick={beginExam} className="w-full py-3.5 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center gap-2">
-              Commencer l'épreuve
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+            <div className="grid grid-cols-3 gap-2.5 mb-6">
+              {[[String(questions.length), 'questions'], [`${mins} min`, 'chrono'], ['Fin', 'correction']].map(([big, small]) => (
+                <div key={small} className={`rounded-2xl border py-3.5 text-center ${dk ? 'bg-white/[0.04] border-white/10' : 'bg-slate-50 border-gray-200'}`}>
+                  <span className={`font-jakarta block text-xl font-black leading-none ${dk ? 'text-white' : 'text-gray-900'}`}>{big}</span>
+                  <span className={`block text-[11px] mt-1.5 ${dk ? 'text-gray-400' : 'text-gray-400'}`}>{small}</span>
+                </div>
+              ))}
+            </div>
+
+            <ul className="space-y-3 mb-7">
+              {rules.map(([t, d]) => (
+                <li key={t} className="flex items-start gap-3">
+                  <span className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${dk ? 'bg-indigo-500/25 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                  </span>
+                  <span className="min-w-0">
+                    <span className={`block text-[14px] font-bold leading-tight ${dk ? 'text-gray-100' : 'text-gray-900'}`}>{t}</span>
+                    <span className={`block text-[12.5px] mt-0.5 leading-snug ${dk ? 'text-gray-400' : 'text-gray-500'}`}>{d}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <button onClick={beginExam} className="w-full py-4 rounded-2xl font-bold text-white text-[15px] flex items-center justify-center gap-2 transition-all hover:opacity-90 hover:-translate-y-px" style={{ background: accent, boxShadow: `0 8px 20px -8px ${accent}aa` }}>
+              Commencer l&rsquo;&eacute;preuve
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
             </button>
-            <button onClick={toggleDarkFocus} className={`mt-4 text-xs font-medium transition-colors ${darkFocus ? 'text-violet-300 hover:text-violet-200' : 'text-gray-400 hover:text-gray-600'}`}>
-              {darkFocus ? '☀️ Désactiver le mode focus' : '🌙 Activer le mode focus sombre'}
-            </button>
+            <div className="flex justify-center mt-4">
+              <button onClick={toggleDarkFocus} className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[12px] font-semibold transition-colors ${dk ? 'border-white/15 text-gray-300 hover:bg-white/5' : 'border-gray-200 text-gray-500 hover:text-gray-800 hover:border-gray-300'}`}>
+                {dk ? (
+                  <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>Mode clair</>
+                ) : (
+                  <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" /></svg>Mode focus sombre</>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1173,7 +1209,7 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
     const em = Math.floor(elapsed / 60), es = elapsed % 60;
     const nbAnswered = answers.filter(isAnswered).length;
     return (
-      <div className={`flex items-center justify-center ${onBack ? 'min-h-[60vh]' : 'min-h-screen'} ${darkFocus ? 'bg-[#0f1020]' : 'bg-slate-50'}`}>
+      <div className={`flex items-center justify-center ${onBack ? 'min-h-[100dvh]' : 'min-h-screen'} ${darkFocus ? 'bg-[#0f1020]' : 'bg-slate-50'}`}>
         <div className="text-center px-4 question-in">
           <div className="text-5xl mb-3 flame-pop">✍️</div>
           <h2 className={`text-2xl font-black mb-1 ${darkFocus ? 'text-white' : 'text-gray-900'}`}>Copie rendue !</h2>
@@ -1212,10 +1248,10 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
       pillDone: dk ? 'bg-violet-500/25 text-violet-200' : 'bg-primary-100 text-primary-700',
     };
     return (
-      <div className={`pb-8 ${onBack ? 'pt-6' : 'min-h-screen pt-20'} ${dk ? 'bg-[#0f1020]' : 'bg-slate-50'}`}>
-        <div className="max-w-3xl mx-auto px-4">
+      <div className={`flex flex-col overflow-hidden h-[100dvh] ${onBack ? 'pt-4 pb-4' : 'pt-20 pb-4'} ${dk ? 'bg-[#0f1020]' : 'bg-slate-50'}`}>
+        <div className="max-w-3xl mx-auto px-4 w-full flex-1 min-h-0 flex flex-col">
           {/* Top bar */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3 shrink-0">
             <button onClick={() => setShowQuitModal(true)} className={`text-sm flex items-center gap-1 font-medium ${dk ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
               Quitter
@@ -1234,13 +1270,13 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
           </div>
 
           {/* Question pills -- horizontal scroll */}
-          <div ref={pillsRef} className="flex gap-1.5 mb-5 overflow-x-auto scrollbar-hide snap-x pb-1">
+          <div ref={pillsRef} className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-hide snap-x pb-1 shrink-0">
             {questions.map((_, i) => {
               let cls = th.pillIdle; // unanswered
               if (i === currentQ) cls = 'bg-primary-600 text-white shadow-md shadow-primary-500/40';
               else if (isAnswered(answers[i])) cls = th.pillDone;
               return (
-                <button key={i} onClick={() => goToQuestion(i)} className={`w-8 h-8 rounded-lg text-xs font-bold transition-all shrink-0 snap-center relative ${cls}`}>
+                <button key={i} onClick={() => goToQuestion(i)} className={`w-7 h-7 rounded-lg text-[11px] font-bold transition-all shrink-0 snap-center relative ${cls}`}>
                   {i + 1}
                   {flags[i] && <span className="absolute -top-1 -right-1 text-[9px]">🚩</span>}
                 </button>
@@ -1249,8 +1285,8 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
           </div>
 
           {/* Question card */}
-          <div className={`question-in rounded-2xl border-2 p-6 md:p-8 shadow-sm ${dk ? 'bg-[#1a1b2e] border-[#2a2c44]' : 'bg-white border-gray-200'}`} key={currentQ}>
-            <div className="flex items-center justify-between mb-5">
+          <div className={`question-in rounded-2xl border p-4 sm:p-5 md:p-6 shadow-sm min-h-0 flex flex-col ${dk ? 'bg-[#1a1b2e] border-[#2a2c44]' : 'bg-white border-gray-200'}`} key={currentQ}>
+            <div className="flex items-center justify-between mb-2 shrink-0">
               <span className={`text-sm font-medium ${dk ? 'text-gray-400' : 'text-gray-500'}`}>Question {currentQ + 1}/{total}{selectedTopic?.type === 'ue' && q.multi && <span className={`hidden sm:inline ml-2 text-[11px] font-semibold ${dk ? 'text-violet-300' : 'text-indigo-600'}`}>· {strategyFor(getProfile(user).bareme).title}</span>}</span>
               <div className="flex items-center gap-2">
                 <button
@@ -1263,15 +1299,16 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
                 <span className="px-3 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full">{badgeText}</span>
               </div>
             </div>
-            <p className={`text-lg md:text-xl font-bold mb-2 leading-relaxed ${dk ? 'text-white' : 'text-gray-900'}`}>{q.question}</p>
+            <p className={`text-[16px] md:text-lg font-bold mb-2 leading-snug shrink-0 ${dk ? 'text-white' : 'text-gray-900'}`}>{q.question}</p>
             {q.multi && (
-              <p className={`text-xs font-semibold mb-4 flex items-center gap-1.5 ${dk ? 'text-violet-300' : 'text-primary-600'}`}>
+              <p className={`text-xs font-semibold mb-2 flex items-center gap-1.5 shrink-0 ${dk ? 'text-violet-300' : 'text-primary-600'}`}>
                 <span className={`inline-block rounded px-1.5 py-0.5 text-[9px] font-bold ${dk ? 'bg-violet-500/25 text-violet-200' : 'bg-primary-100 text-primary-700'}`}>RÉPONSES MULTIPLES</span>
                 Cochez toutes les propositions exactes
               </p>
             )}
 
-            <div className="space-y-3 mb-6">
+            {/* Propositions : seule zone qui défile si l'écran est trop petit */}
+            <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-0.5 -mr-0.5 mt-1">
               {q.options.map((opt, i) => {
                 const cur = answers[currentQ];
                 const isSelected = q.multi ? (Array.isArray(cur) && cur.includes(i)) : cur === i;
@@ -1280,18 +1317,18 @@ export default function ExamenPage({ onBack = null, onViewChange = null }) {
                   : (dk ? 'border-[#2a2c44] text-gray-200 hover:border-violet-500 hover:bg-violet-500/10' : 'border-gray-200 text-gray-700 hover:border-primary-400 hover:bg-primary-50/50');
                 const badgeCls = isSelected ? 'bg-primary-600 text-white' : (dk ? 'bg-[#23243a] text-gray-400' : 'bg-gray-100 text-gray-500');
                 return (
-                  <button key={i} onClick={() => selectOption(i)} className={`w-full text-left px-5 py-4 rounded-xl border-2 text-sm md:text-base font-medium flex items-center gap-3 transition-all ${optCls}`}>
-                    <span className={`w-8 h-8 ${q.multi ? 'rounded-md' : 'rounded-lg'} ${badgeCls} flex items-center justify-center text-sm font-bold shrink-0`}>
+                  <button key={i} onClick={() => selectOption(i)} className={`w-full text-left px-4 py-2.5 md:py-3 rounded-xl border-2 text-[14px] md:text-[15px] font-medium flex items-center gap-3 transition-all ${optCls}`}>
+                    <span className={`w-7 h-7 ${q.multi ? 'rounded-md' : 'rounded-lg'} ${badgeCls} flex items-center justify-center text-[13px] font-bold shrink-0`}>
                       {q.multi ? (isSelected ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> : String.fromCharCode(65 + i)) : String.fromCharCode(65 + i)}
                     </span>
-                    <span className="flex-1">{opt.text}</span>
+                    <span className="flex-1 leading-snug">{opt.text}</span>
                   </button>
                 );
               })}
             </div>
 
             {/* Nav buttons */}
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3 pt-3 shrink-0">
               <button onClick={prevQuestion} className={`px-5 py-3 font-bold rounded-xl border-2 transition-colors text-sm ${currentQ === 0 ? 'invisible' : ''} ${dk ? 'bg-[#23243a] text-gray-200 border-[#2a2c44] hover:border-[#3a3c5a]' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'}`} disabled={currentQ === 0}>
                 Pr&eacute;c&eacute;dent
               </button>

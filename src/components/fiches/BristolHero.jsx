@@ -10,7 +10,7 @@ const HL = {
   green: 'linear-gradient(104deg, rgba(110,240,140,0) 0.9%, rgba(110,240,140,0.8) 2.4%, rgba(110,240,140,0.5) 5.8%, rgba(110,240,140,0.14) 93%, rgba(110,240,140,0.65) 96%, rgba(110,240,140,0) 98%)',
 };
 const Mark = ({ c = 'yellow', children }) => (
-  <mark style={{ background: HL[c], backgroundSize: '100% 78%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 60%', color: 'inherit', padding: '0 3px', margin: '0 -3px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{children}</mark>
+  <mark style={{ backgroundImage: HL[c], backgroundSize: '100% 78%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 60%', color: 'inherit', padding: '0 3px', margin: '0 -3px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{children}</mark>
 );
 
 function Card({ accent, subject, title, rotate, z, children, style }) {

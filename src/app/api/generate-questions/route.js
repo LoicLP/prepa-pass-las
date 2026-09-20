@@ -179,7 +179,7 @@ export async function POST(request) {
         return true;
       })
       .map((q, index) => {
-        const raw = q.options.map(o => ({ text: o.text, correct: o.correct === true }));
+        const raw = q.options.map(o => ({ text: String(o.text).replace(/^\s*[A-Fa-f][.)]\s+/, '').trim(), correct: o.correct === true }));
         const isF = (o) => /toutes les propositions pr[ée]c[ée]dentes/i.test(o.text);
         const isVF = raw.length === 2 && raw.every(o => /^(vrai|faux)$/i.test(o.text.trim()));
         const options = isVF ? raw : (raw.some(isF) ? [...shuffleArray(raw.filter(o => !isF(o))), raw.find(isF)] : shuffleArray(raw));

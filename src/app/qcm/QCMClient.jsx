@@ -22,6 +22,7 @@ import { levelOf } from '@/lib/mastery';
 import { useSupabaseStats } from '@/hooks/useSupabaseStats';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
 import UpgradeModal from '@/components/ui/UpgradeModal';
+import { FLUO_HEX } from '@/components/fiches/BristolCard';
 import { xpForSession } from '@/lib/gamification';
 
 /* ========== CONSTANTS ========== */
@@ -53,6 +54,19 @@ function getIconPath(subjectId) {
 }
 
 /* ========== SUB-COMPONENTS ========== */
+
+/* Bouton retour commun aux écrans de préparation : pastille blanche, flèche dans un disque,
+   la flèche glisse vers la gauche au survol. */
+function BackButton({ onClick, children = 'Retour', className = '' }) {
+  return (
+    <button onClick={onClick} className={`group inline-flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full bg-white border border-gray-200 text-[13px] font-semibold text-gray-600 shadow-[0_1px_2px_rgba(15,16,32,0.04)] hover:border-indigo-300 hover:text-indigo-700 hover:shadow-[0_4px_12px_-4px_rgba(79,70,229,0.25)] transition-all ${className}`}>
+      <span className="w-7 h-7 rounded-full bg-slate-100 group-hover:bg-indigo-50 flex items-center justify-center transition-colors">
+        <svg className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+      </span>
+      {children}
+    </button>
+  );
+}
 
 function SubjectIcon({ subjectId, className = 'w-5 h-5' }) {
   const path = getIconPath(subjectId);
@@ -177,6 +191,9 @@ const QCM_SUBJECT_DATA = [
   { code: 'UE4', id: 'biostats',    name: 'Biostatistiques',      accent: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
   { code: 'UE5', id: 'anatomie',    name: 'Anatomie',             accent: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
   { code: 'UE6', id: 'ssh',         name: 'SSH / Éthique',        accent: '#e11d48', bg: '#fff1f2', border: '#fecdd3' },
+  { code: 'UE7', id: 'physiologie', name: 'Physiologie',          accent: '#0284c7', bg: '#f0f9ff', border: '#bae6fd' },
+  { code: 'UE8', id: 'medicament',  name: 'Médicament',           accent: '#0d9488', bg: '#f0fdfa', border: '#99f6e4' },
+  { code: 'UE9', id: 'histo',       name: 'Histologie / Embryologie', accent: '#c026d3', bg: '#fdf4ff', border: '#f5d0fe' },
 ];
 
 // Normalisation pour une recherche insensible à la casse et aux accents
@@ -215,7 +232,6 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
   const [tipIndex, setTipIndex] = useState(0);
   const [correctionOpen, setCorrectionOpen] = useState(true);
   const [aiGenerated, setAiGenerated] = useState(false);
-  const [selectedSubjectId, setSelectedSubjectId] = useState(null);
   const [reviewPool, setReviewPool] = useState([]); // pile « À consolider » en attente de choix du nombre
   const [reviewCountChoice, setReviewCountChoice] = useState(10); // nombre de questions choisi par l'utilisateur
   const [xpPop, setXpPop] = useState(null); // animation « +X XP » sur bonne réponse
@@ -245,20 +261,6 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
 
   // ----- Données d'accès rapide (matières récentes + pile à consolider) -----
   const reviewQueueCount = stats.reviewQueue?.length || 0;
-  const recentSubjects = useMemo(() => {
-    const seen = new Set();
-    const out = [];
-    for (const s of (stats.sessions || [])) {
-      if (!s.subject || s.subject === 'custom' || s.subject === 'review') continue;
-      if (seen.has(s.subject)) continue;
-      const meta = QCM_SUBJECT_DATA.find(x => x.id === s.subject);
-      if (!meta) continue;
-      seen.add(s.subject);
-      out.push(meta);
-      if (out.length >= 3) break;
-    }
-    return out;
-  }, [stats.sessions]);
 
   // ----- Static question selection (fallback) -----
   const generateStaticQuestions = useCallback((topic, count) => {
@@ -388,13 +390,6 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
   }, [user, isEssentiel, questionCount, generateStaticQuestions, generateAIQuestions, launchWithQuestions]);
 
   // ----- Fiche selection flow -----
-  const selectFiche = useCallback((ficheId) => {
-    const fiche = FICHES_DATA.find(f => f.id === ficheId);
-    if (!fiche) return;
-    const subject = SUBJECTS.find(s => s.id === fiche.subject);
-    setPendingFiche({ fiche, subject });
-  }, []);
-
   const confirmFicheStart = useCallback(() => {
     if (!pendingFiche) return;
     const { fiche, subject } = pendingFiche;
@@ -925,7 +920,6 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
   if (view === 'modeChoice') {
     const q = launcherQuery.trim();
     const nq = norm(q);
-    const hasQuick = reviewQueueCount > 0 || recentSubjects.length > 0;
 
     const subjectMatches = q ? QCM_SUBJECT_DATA.filter(s => norm(s.name).includes(nq) || norm(s.code).includes(nq)) : [];
     const ficheMatches = q ? FICHES_DATA.filter(f => norm(f.title).includes(nq)).slice(0, 4) : [];
@@ -947,19 +941,20 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     const subjectMeta = (id) => QCM_SUBJECT_DATA.find(s => s.id === id);
 
     return (
-      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* En-tête compact */}
-          <div className="mb-5">
-            <div className="inline-flex items-center gap-1.5 text-primary-600 mb-2">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
-              <span className="text-xs font-bold uppercase tracking-wider">Nouveau QCM</span>
-            </div>
-            <h2 className="text-2xl md:text-[28px] font-black text-gray-900 tracking-tight">Que veux-tu travailler&nbsp;?</h2>
+          {onBack && (
+            <BackButton onClick={onBack} className="md:hidden mb-5">Tableau de bord</BackButton>
+          )}
+          <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-8" style={{ boxShadow: '0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px rgba(79,70,229,0.18)' }}>
+          {/* En-tête */}
+          <div className="mb-6">
+            <h2 className="font-jakarta text-[28px] md:text-[34px] font-black text-gray-900 tracking-tight leading-tight">Que veux-tu travailler&nbsp;?</h2>
+            <p className="text-[15px] text-gray-500 mt-1.5">Tape une mati&egrave;re, une fiche ou un th&egrave;me, puis Entr&eacute;e.</p>
           </div>
 
           {/* Barre de recherche unifiée */}
-          <div className="flex items-center gap-2 rounded-2xl border-2 border-indigo-500 bg-white pl-4 pr-2 py-2 shadow-[0_0_0_4px_rgba(79,70,229,0.08)] transition-all">
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-slate-50 pl-5 pr-2.5 py-2.5 focus-within:bg-white focus-within:border-indigo-400 focus-within:shadow-[0_0_0_4px_rgba(79,70,229,0.12)] transition-all">
             <svg className="w-5 h-5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
             <input
               type="text"
@@ -967,22 +962,22 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
               value={launcherQuery}
               onChange={e => setLauncherQuery(e.target.value)}
               onKeyDown={onLauncherKey}
-              placeholder="Une matière, une fiche, un thème…"
-              className="flex-1 min-w-0 text-[15px] text-gray-800 placeholder-gray-400 outline-none bg-transparent py-1"
+              placeholder="Ex. « anatomie », « membrane », « cycle de Krebs »…"
+              className="flex-1 min-w-0 text-[16px] text-gray-800 placeholder-gray-400 outline-none bg-transparent py-2"
             />
-            <button
-              onClick={() => { if (subjectMatches.length) launchSubject(subjectMatches[0]); else if (ficheMatches.length) launchFiche(ficheMatches[0]); else launchFree(); }}
-              disabled={!q}
-              className="w-9 h-9 shrink-0 rounded-xl bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label="Lancer le QCM"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-            </button>
+            {q && (
+              <button
+                onClick={() => { if (subjectMatches.length) launchSubject(subjectMatches[0]); else if (ficheMatches.length) launchFiche(ficheMatches[0]); else launchFree(); }}
+                className="h-10 px-5 shrink-0 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition-colors"
+              >
+                Lancer
+              </button>
+            )}
           </div>
 
           {/* Suggestions (quand on tape) OU reprise rapide (à vide) */}
           {q ? (
-            <div className="mt-3 rounded-2xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-100">
+            <div className="mt-2 rounded-2xl border border-gray-200 bg-white shadow-lg overflow-hidden divide-y divide-gray-100">
               {subjectMatches.map(s => (
                 <button key={`s-${s.id}`} onClick={() => launchSubject(s)} className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-gray-50 transition-colors">
                   <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: s.bg }}>
@@ -1012,59 +1007,46 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
                 <span className="text-[10px] font-bold uppercase tracking-wide text-violet-400 shrink-0">Sujet libre</span>
               </button>
             </div>
-          ) : hasQuick && (
-            <div className="mt-5">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2.5">Reprise rapide</p>
-              <div className="flex flex-wrap gap-2">
-                {reviewQueueCount > 0 && (
-                  <button
-                    onClick={() => startReviewQuiz({ reviewQuestions: stats.reviewQueue })}
-                    className="inline-flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-xl bg-white border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all"
-                  >
-                    <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.9"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
-                    <span className="text-sm font-semibold text-gray-800">&Agrave; consolider</span>
-                    <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">{reviewQueueCount}</span>
-                  </button>
-                )}
-                {recentSubjects.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => launchSubject(s)}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-gray-200 hover:shadow-sm transition-all"
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = s.accent; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb'; }}
-                  >
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.accent }} />
-                    <span className="text-sm font-semibold text-gray-800">{s.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+          ) : reviewQueueCount > 0 && (
+            <button
+              onClick={() => startReviewQuiz({ reviewQuestions: stats.reviewQueue })}
+              className="mt-4 w-full flex items-center gap-3.5 rounded-2xl border border-amber-200 bg-amber-50 px-4 sm:px-5 py-3.5 text-left hover:bg-amber-100/70 hover:border-amber-300 transition-colors"
+            >
+              <span className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/30">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-[15px] font-bold text-gray-900">Rejouer mes {reviewQueueCount} question{reviewQueueCount > 1 ? 's' : ''} rat&eacute;e{reviewQueueCount > 1 ? 's' : ''}</span>
+                <span className="block text-xs text-amber-700/80 mt-0.5">Le plus efficace pour progresser</span>
+              </span>
+              <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+            </button>
           )}
 
           {/* Modes secondaires — pour explorer plutôt que chercher */}
           <div className="mt-8">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2.5">Ou parcours par mode</p>
-            <div className="grid grid-cols-3 gap-2.5">
-              <button onClick={() => setView('subjectSelection')} className="group flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-left hover:border-indigo-400 hover:shadow-sm transition-all">
-                <span className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Ou choisis</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button onClick={() => setView('subjectSelection')} className="group flex sm:flex-col items-center sm:items-start gap-3 rounded-2xl border border-gray-200 bg-slate-50 p-4 text-left hover:bg-indigo-50 hover:border-indigo-300 transition-all">
+                <span className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-600/30">
+                  <svg className="w-[18px] h-[18px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>
                 </span>
-                <span className="min-w-0"><span className="block text-[13px] font-bold text-gray-900 leading-tight">Par matière</span><span className="block text-[11px] text-gray-400">6 UE</span></span>
+                <span className="min-w-0"><span className="block text-[14px] font-bold text-gray-900 leading-tight">Une mati&egrave;re</span><span className="block text-[11px] text-gray-400 mt-0.5">{QCM_SUBJECT_DATA.length} UE</span></span>
               </button>
-              <button onClick={() => setView('fichesSelection')} className="group flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-left hover:border-amber-400 hover:shadow-sm transition-all">
-                <span className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
+              <button onClick={() => setView('fichesSelection')} className="group flex sm:flex-col items-center sm:items-start gap-3 rounded-2xl border border-gray-200 bg-slate-50 p-4 text-left hover:bg-emerald-50 hover:border-emerald-300 transition-all">
+                <span className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0 shadow-sm shadow-emerald-500/30">
+                  <svg className="w-[18px] h-[18px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
                 </span>
-                <span className="min-w-0"><span className="block text-[13px] font-bold text-gray-900 leading-tight">Par fiche</span><span className="block text-[11px] text-gray-400">{fichesCount} fiches</span></span>
+                <span className="min-w-0"><span className="block text-[14px] font-bold text-gray-900 leading-tight">Une fiche</span><span className="block text-[11px] text-gray-400 mt-0.5">{fichesCount} fiches</span></span>
               </button>
-              <button onClick={() => setView('customSelection')} className="group flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-left hover:border-violet-400 hover:shadow-sm transition-all">
-                <span className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+              <button onClick={() => setView('customSelection')} className="group flex sm:flex-col items-center sm:items-start gap-3 rounded-2xl border border-gray-200 bg-slate-50 p-4 text-left hover:bg-violet-50 hover:border-violet-300 transition-all">
+                <span className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center shrink-0 shadow-sm shadow-violet-600/30">
+                  <svg className="w-[18px] h-[18px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
                 </span>
-                <span className="min-w-0"><span className="block text-[13px] font-bold text-gray-900 leading-tight">Sujet libre</span><span className="block text-[11px] text-gray-400">Thème précis</span></span>
+                <span className="min-w-0"><span className="block text-[14px] font-bold text-gray-900 leading-tight">Un th&egrave;me libre</span><span className="block text-[11px] text-gray-400 mt-0.5">QCM g&eacute;n&eacute;r&eacute; par l&rsquo;IA</span></span>
               </button>
             </div>
+          </div>
           </div>
         </div>
         {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
@@ -1173,65 +1155,59 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
       setFlashConfig(null);
       startQuiz(t);
     };
-    const facts = [
-      { k: 'q', v: `${flashCount} questions`, d: 'format court', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /> },
-      { k: 't', v: '~5 min', d: 'chrono', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /> },
-      { k: 'x', v: 'XP bonus', d: 'x2 par bonne réponse', icon: <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /> },
-    ];
+    const ordered = [...prog.subjects, ...prog.others].map(su => ({ ...(QCM_SUBJECT_DATA.find(m => m.id === su.id) || {}), facLabel: su.facLabel })).filter(m => m.id);
+    const facts = [[`${flashCount}`, 'questions'], ['5 min', 'environ'], ['XP ×2', 'par bonne réponse']];
     return (
-      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
-        {!onBack && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-            <button onClick={() => { setFlashConfig(null); setView('hero'); }} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-              Retour
-            </button>
-          </div>
-        )}
-        <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-7 shadow-sm">
-            {/* En-tête éclair */}
-            <div className="flex items-center gap-3.5 mb-5">
-              <span className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: '#fef4e4' }}>
-                <svg className="w-6 h-6" style={{ color: accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          {onBack
+            ? <BackButton onClick={onBack} className="md:hidden mb-5">Tableau de bord</BackButton>
+            : <BackButton onClick={() => { setFlashConfig(null); setView('hero'); }} className="mb-5" />}
+          <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-8" style={{ boxShadow: '0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px rgba(217,119,6,0.3)' }}>
+            {/* En-tête */}
+            <div className="flex items-center gap-3.5 mb-6">
+              <span className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white" style={{ background: accent, boxShadow: '0 4px 12px rgba(217,119,6,0.4)' }}>
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>
               </span>
               <div>
-                <h2 className="text-xl font-black text-gray-900 tracking-tight leading-tight">Session éclair</h2>
-                <p className="text-[13px] text-gray-500">Un sprint de {flashCount} questions, parfait entre deux cours.</p>
+                <h2 className="font-jakarta text-[24px] md:text-[28px] font-black text-gray-900 tracking-tight leading-tight">Session &eacute;clair</h2>
+                <p className="text-[14px] text-gray-500 mt-0.5">Un sprint de {flashCount} questions, parfait entre deux cours.</p>
               </div>
             </div>
 
-            {/* Ce que c'est */}
+            {/* Format */}
             <div className="grid grid-cols-3 gap-2.5 mb-6">
-              {facts.map(f => (
-                <div key={f.k} className="rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-3 text-center">
-                  <svg className="w-5 h-5 mx-auto mb-1.5" style={{ color: accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.9">{f.icon}</svg>
-                  <div className="text-[13px] font-bold text-gray-900 leading-tight">{f.v}</div>
-                  <div className="text-[10.5px] text-gray-400 leading-tight mt-0.5">{f.d}</div>
+              {facts.map(([big, small]) => (
+                <div key={small} className="rounded-2xl border border-gray-200 bg-slate-50 py-3.5 text-center">
+                  <span className="font-jakarta block text-xl font-black leading-none text-gray-900">{big}</span>
+                  <span className="block text-[11px] text-gray-400 mt-1.5">{small}</span>
                 </div>
               ))}
             </div>
 
-            {/* Choix de la matière */}
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2.5">Matière</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
-              {QCM_SUBJECT_DATA.map(s => {
-                const active = flashSubjectId === s.id;
+            {/* Matière */}
+            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2.5">Mati&egrave;re</p>
+            <div className="rounded-2xl border border-gray-200 overflow-hidden mb-6">
+              {ordered.map((m, i) => {
+                const active = flashSubjectId === m.id;
                 return (
-                  <button key={s.id} onClick={() => setFlashSubjectId(s.id)}
-                    className="flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all"
-                    style={{ borderColor: active ? s.accent : '#e5e7eb', background: active ? s.bg : '#fff', boxShadow: active ? `0 0 0 3px ${s.accent}18` : 'none' }}
-                  >
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.accent }} />
-                    <span className="text-[12.5px] font-semibold text-gray-800 leading-tight truncate">{s.name}</span>
+                  <button key={m.id} onClick={() => setFlashSubjectId(m.id)} className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${i < ordered.length - 1 ? 'border-b border-gray-100' : ''} ${active ? '' : 'hover:bg-slate-50'}`} style={active ? { background: m.bg } : undefined}>
+                    <span className="w-11 shrink-0 text-center text-[11px] font-extrabold tracking-wide rounded-md py-1" style={{ background: active ? m.accent : m.bg, color: active ? '#fff' : m.accent }}>{m.code}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[14px] font-bold leading-tight" style={{ color: active ? m.accent : '#0f1020' }}>{m.name}</span>
+                      {m.facLabel && m.facLabel !== m.name && <span className="hidden sm:block text-[11px] text-gray-400 truncate">{m.facLabel}</span>}
+                    </span>
+                    <span className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors" style={{ borderColor: active ? m.accent : '#d1d5db', background: active ? m.accent : '#fff' }}>
+                      {active && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
+                    </span>
                   </button>
                 );
               })}
             </div>
 
-            <button onClick={goFlash} className="w-full py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-opacity hover:opacity-90" style={{ background: accent }}>
+            <button onClick={goFlash} className="w-full py-4 rounded-2xl font-bold text-white text-[15px] flex items-center justify-center gap-2 transition-all hover:opacity-90 hover:-translate-y-px" style={{ background: accent, boxShadow: '0 8px 20px -8px rgba(217,119,6,0.7)' }}>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>
-              Lancer la session éclair
+              Lancer la session &eacute;clair · {flashName}
             </button>
           </div>
         </div>
@@ -1246,46 +1222,47 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     if (!pendingLaunch) { setView('modeChoice'); return null; }
     const { topic, label, sub, accent = '#4f46e5', bg = '#eef2ff' } = pendingLaunch;
     const go = () => { const t = { ...topic, count: questionCount }; setPendingLaunch(null); startQuiz(t); };
+    const back = () => { setPendingLaunch(null); setView('modeChoice'); };
+    const COUNTS = [{ n: 5, min: 3 }, { n: 10, min: 6 }, { n: 20, min: 12 }, { n: 30, min: 18 }];
     return (
-      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-          <button onClick={() => { setPendingLaunch(null); setView('modeChoice'); }} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-            Retour
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <BackButton onClick={back} className="mb-5">Changer de sujet</BackButton>
+
+          <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-8" style={{ boxShadow: `0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px ${accent}44` }}>
+          {/* Sujet retenu */}
+          <div className="flex items-center gap-3.5 mb-7">
+            <span className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: accent, boxShadow: `0 4px 12px ${accent}55` }}>
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">{sub}</p>
+              <p className="font-jakarta text-[22px] md:text-[26px] font-black text-gray-900 tracking-tight leading-tight truncate">{label}</p>
+            </div>
+          </div>
+
+          {/* Longueur de la session */}
+          <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Combien de questions&nbsp;?</p>
+          <div className="grid grid-cols-4 gap-3 mb-5">
+            {COUNTS.map(({ n, min }) => {
+              const active = questionCount === n;
+              return (
+                <button key={n} onClick={() => setQuestionCount(n)}
+                  className="rounded-2xl border py-4 text-center transition-all"
+                  style={{ borderColor: active ? accent : '#e5e7eb', background: active ? bg : '#f8fafc', boxShadow: active ? `0 0 0 3px ${accent}26` : undefined }}
+                >
+                  <span className="font-jakarta block text-2xl font-black leading-none" style={{ color: active ? accent : '#0f1020' }}>{n}</span>
+                  <span className="block text-[11px] text-gray-400 mt-1.5">&asymp; {min} min</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <button onClick={go} className="w-full py-4 rounded-2xl font-bold text-white text-[15px] flex items-center justify-center gap-2 transition-all hover:opacity-90 hover:-translate-y-px" style={{ background: accent, boxShadow: `0 8px 20px -8px ${accent}99` }}>
+            Lancer le QCM · {questionCount} questions
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
           </button>
-        </div>
-        <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-            {/* Ce qui va être lancé */}
-            <div className="flex items-center gap-3 mb-6 pb-5 border-b border-gray-100">
-              <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: bg }}>
-                <svg className="w-5 h-5" style={{ color: accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
-              </span>
-              <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{sub}</div>
-                <div className="text-[15px] font-bold text-gray-900 truncate">{label}</div>
-              </div>
-            </div>
-
-            <p className="text-sm font-semibold text-gray-700 mb-3">Combien de questions&nbsp;?</p>
-            <div className="grid grid-cols-4 gap-2 mb-6">
-              {[5, 10, 20, 30].map(n => {
-                const active = questionCount === n;
-                return (
-                  <button key={n} onClick={() => setQuestionCount(n)}
-                    className="py-2.5 rounded-xl text-sm font-bold border transition-all"
-                    style={{ borderColor: active ? accent : '#e5e7eb', background: active ? accent : '#fff', color: active ? '#fff' : '#6b7280' }}
-                  >
-                    {n}
-                  </button>
-                );
-              })}
-            </div>
-
-            <button onClick={go} className="w-full py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-opacity hover:opacity-90" style={{ background: accent }}>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-              Lancer le QCM · {questionCount} questions
-            </button>
+          <p className="text-xs text-gray-400 text-center mt-3">Correction et explication apr&egrave;s chaque question.</p>
           </div>
         </div>
         {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
@@ -1296,60 +1273,57 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
 
   // ===== SUBJECT SELECTION VIEW =====
   if (view === 'subjectSelection') {
-    const selectedSubject = QCM_SUBJECT_DATA.find(s => s.id === selectedSubjectId);
-
+    const pick = (m) => { setPendingLaunch({ topic: { type: 'custom', subject: m.id, subjectName: m.name, title: m.name }, label: m.name, sub: `Matière · ${m.code}`, accent: m.accent, bg: m.bg }); setView('countChoice'); };
+    // Moyenne /20 et sessions par UE
+    const perUE = {};
+    for (const x of (stats.sessions || [])) {
+      if (!x.subject) continue;
+      const pct = Number.isFinite(x.percentage) ? x.percentage : (x.total > 0 ? Math.round((x.correct / x.total) * 100) : null);
+      const e = (perUE[x.subject] ||= { n: 0, sum: 0, k: 0 }); e.n++; if (pct != null) { e.sum += pct; e.k++; }
+    }
+    const noteOf = (id) => { const e = perUE[id]; return e && e.k ? Math.round((e.sum / e.k) * 2) / 10 : null; };
+    const ink = (n) => (n >= 14 ? '#15803d' : n >= 10 ? '#374151' : '#dc2626');
+    const meta = (id) => QCM_SUBJECT_DATA.find(m => m.id === id);
+    const main = (prog.known ? prog.subjects : SUBJECTS).map(su => ({ ...meta(su.id), facLabel: su.facLabel, description: su.description })).filter(m => m.id);
+    const others = prog.known ? prog.others.map(su => ({ ...meta(su.id), description: su.description })).filter(m => m.id) : [];
+    const Card = (m) => {
+      const note = noteOf(m.id); const e = perUE[m.id];
+      return (
+        <button key={m.id} onClick={() => pick(m)} className="group h-full flex flex-col text-left rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 hover:-translate-y-0.5 hover:shadow-md transition-all" style={{ boxShadow: '0 1px 2px rgba(15,16,32,0.04)' }} onMouseEnter={ev => { ev.currentTarget.style.borderColor = m.accent; }} onMouseLeave={ev => { ev.currentTarget.style.borderColor = '#e5e7eb'; }}>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <span className="text-[11px] font-extrabold tracking-wide rounded-md px-2 py-1" style={{ background: m.bg, color: m.accent }}>{m.code}</span>
+            {note != null
+              ? <span className="text-[13px] font-extrabold tabular-nums" style={{ color: ink(note) }}>{String(note).replace('.', ',')}<span className="text-[11px] font-semibold text-gray-400"> /20</span></span>
+              : <span className="text-[11px] font-semibold text-gray-300">Pas encore</span>}
+          </div>
+          <p className="font-jakarta text-[16px] font-bold text-gray-900 leading-tight">{m.name}</p>
+          {m.facLabel && m.facLabel !== m.name && <p className="text-[11px] font-semibold mt-0.5" style={{ color: m.accent }}>{m.facLabel}</p>}
+          <p className="text-[12px] text-gray-400 mt-1.5 leading-snug line-clamp-2">{m.description}</p>
+          <p className="mt-auto pt-3 text-[12px] font-bold flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity" style={{ color: m.accent }}>
+            {e ? `${e.n} session${e.n > 1 ? 's' : ''} · continuer` : 'Commencer'}
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+          </p>
+        </button>
+      );
+    };
+    const facName = facById(prog.fac)?.name?.replace(/^Université (de |d’|d')?/i, '');
     return (
-      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-            Retour
-          </button>
-        </div>
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Choisissez une mati&egrave;re</h2>
-            <p className="text-gray-500 text-base">Le QCM couvrira l&rsquo;ensemble du programme de cette mati&egrave;re.</p>
+          <BackButton onClick={() => setView('modeChoice')} className="mb-5" />
+          <div className="mb-6">
+            <h2 className="font-jakarta text-[28px] md:text-[34px] font-black text-gray-900 tracking-tight leading-tight">Choisis une mati&egrave;re</h2>
+            <p className="text-[15px] text-gray-500 mt-1.5">{prog.known && facName ? `Le programme de ${facName}. ` : ''}Le QCM couvre l&rsquo;ensemble de l&rsquo;UE.</p>
           </div>
-          {/* Grille des matières */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            {QCM_SUBJECT_DATA.map(({ code, id, name, accent, bg, border }) => {
-              const isSelected = selectedSubjectId === id;
-              return (
-                <button key={id} onClick={() => setSelectedSubjectId(isSelected ? null : id)}
-                  className="text-left rounded-2xl p-5 transition-all hover:-translate-y-0.5"
-                  style={{ border: `2px solid ${isSelected ? accent : border}`, background: isSelected ? accent : bg, boxShadow: isSelected ? `0 4px 14px ${accent}33` : 'none' }}
-                >
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.4, color: isSelected ? 'rgba(255,255,255,0.7)' : accent, marginBottom: 6 }}>{code}</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: isSelected ? '#fff' : '#0f1020', lineHeight: 1.3 }}>{name}</div>
-                </button>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+            {main.map(Card)}
           </div>
-          {/* Panneau de configuration (visible quand une matière est sélectionnée) */}
-          {selectedSubject && (
-            <div className="bg-white rounded-2xl border-2 p-6 transition-all" style={{ borderColor: selectedSubject.accent + '40' }}>
-              <p className="text-sm text-gray-600 mb-4">
-                QCM sur <strong className="text-gray-900">{selectedSubject.name}</strong> — combien de questions ?
-              </p>
-              <div className="flex gap-3 mb-5">
-                {[5, 10, 20, 30].map(n => (
-                  <button key={n} onClick={() => setQuestionCount(n)}
-                    className="flex-1 py-3 rounded-xl text-sm font-bold border-2 transition-all"
-                    style={{ borderColor: questionCount === n ? selectedSubject.accent : '#e5e7eb', background: questionCount === n ? selectedSubject.accent : '#fff', color: questionCount === n ? '#fff' : '#6b7280' }}
-                  >
-                    {n}
-                  </button>
-                ))}
+          {others.length > 0 && (
+            <div className="mt-8">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Hors programme de ta fac</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 opacity-80">
+                {others.map(Card)}
               </div>
-              <button
-                onClick={() => startQuiz({ type: 'custom', subject: selectedSubject.id, subjectName: selectedSubject.name, title: selectedSubject.name, count: questionCount })}
-                className="w-full py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
-                style={{ background: selectedSubject.accent }}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5" /></svg>
-                Lancer le QCM · {questionCount} questions
-              </button>
             </div>
           )}
         </div>
@@ -1362,121 +1336,105 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
   // ===== FICHES SELECTION VIEW =====
   if (view === 'fichesSelection') {
     const filteredFiches = getFilteredFiches();
-    const countPills = [5, 10, 15, 20];
+    const pickFiche = (f) => {
+      const subj = SUBJECTS.find(x => x.id === f.subject); const m = QCM_SUBJECT_DATA.find(x => x.id === f.subject);
+      setPendingLaunch({ topic: { type: 'fiche', subject: f.subject, subjectName: subj?.name || '', title: f.title, summary: f.summary, content: f.content || null }, label: f.title, sub: `Fiche${m ? ` · ${m.code}` : ''}`, accent: m?.accent || '#4f46e5', bg: m?.bg || '#eef2ff' });
+      setView('countChoice');
+    };
+    const orderedSubjects = [...prog.subjects, ...prog.others];
+    const countOf = (id) => FICHES_DATA.filter(f => f.subject === id).length;
+    const stroke = (fluo, strong) => `linear-gradient(104deg, ${fluo}00 0.9%, ${fluo}${strong ? 'e6' : '99'} 2.4%, ${fluo}${strong ? 'bf' : '73'} 5.8%, ${fluo}${strong ? '66' : '26'} 93%, ${fluo}${strong ? 'cc' : '8c'} 96%, ${fluo}00 98%)`;
+    const renderCard = (f) => {
+      const sub = SUBJECTS.find(s => s.id === f.subject);
+      const fluo = FLUO_HEX[sub?.color] || FLUO_HEX.primary;
+      return (
+        <div key={f.id} role="button" tabIndex={0} onClick={() => pickFiche(f)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickFiche(f); } }}
+          className="qcm-fiche-mini group"
+          style={{ position: 'relative', backgroundColor: '#fff', borderRadius: 14, border: '1px solid #e5e7f0', cursor: 'pointer', padding: '14px 16px 12px 22px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'transform .18s, box-shadow .18s', boxShadow: '0 2px 6px rgba(15,16,32,0.04)', backgroundImage: 'repeating-linear-gradient(transparent 0, transparent 21px, #eef0f4 21px, #eef0f4 22px)', backgroundPosition: '0 10px' }}>
+          <span aria-hidden="true" style={{ position: 'absolute', left: 12, top: 0, bottom: 0, width: 1.5, background: '#f6cfcf', borderRadius: 1 }} />
+          <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0f1020', lineHeight: '22px', margin: 0 }} className="group-hover:text-indigo-800 transition-colors">
+            <span style={{ backgroundImage: stroke(fluo, false), backgroundSize: '100% 66%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 65%', padding: '0 4px', margin: '0 -4px', borderRadius: 3, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{f.title}</span>
+          </h4>
+          <p style={{ fontSize: 12.5, color: '#5f6280', lineHeight: '22px', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{f.summary}</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 2, fontSize: 11.5, lineHeight: '22px' }}>
+            <span style={{ fontWeight: 700, color: '#4f46e5', whiteSpace: 'nowrap' }}>Me tester &rarr;</span>
+            <span style={{ color: '#9ca3af', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub?.name}</span>
+          </div>
+        </div>
+      );
+    };
+    const groups = (subjectFilter === 'all' && !searchQuery)
+      ? orderedSubjects.map(s => ({ s, items: filteredFiches.filter(f => f.subject === s.id) })).filter(g => g.items.length > 0)
+      : null;
     return (
-      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-            Retour
-          </button>
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
+        <style>{`.qcm-fiche-mini:hover { transform: translateY(-3px) rotate(-0.6deg); box-shadow: 0 14px 28px -14px rgba(15,16,32,0.25); }`}</style>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <BackButton onClick={() => setView('modeChoice')} className="mb-5" />
+          <div className="mb-6">
+            <h2 className="font-jakarta text-[28px] md:text-[34px] font-black text-gray-900 tracking-tight leading-tight">Choisis une fiche</h2>
+            <p className="text-[15px] text-gray-500 mt-1.5">Le QCM porte uniquement sur le contenu de la fiche.</p>
+          </div>
+
+          {/* Recherche */}
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white pl-5 pr-4 py-2.5 shadow-[0_1px_2px_rgba(15,16,32,0.04)] focus-within:border-indigo-400 focus-within:shadow-[0_0_0_4px_rgba(79,70,229,0.12)] transition-all mb-4">
+            <svg className="w-5 h-5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+            <input type="text" placeholder="Rechercher une fiche…" className="flex-1 min-w-0 text-[15px] text-gray-800 placeholder-gray-400 outline-none bg-transparent py-1.5" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            {searchQuery && <button onClick={() => setSearchQuery('')} className="text-xs font-semibold text-gray-400 hover:text-gray-700">Effacer</button>}
+          </div>
+
+          {/* Filtres à trait de fluo */}
+          <div className="flex flex-wrap gap-2 mb-7">
+            {(() => { const isSel = subjectFilter === 'all'; return (
+              <button onClick={() => setSubjectFilter('all')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${isSel ? '#0f1020' : '#e5e7f0'}`, background: isSel ? '#0f1020' : '#fff', color: isSel ? '#fff' : '#2a2c44' }} className="transition-colors hover:border-gray-400">
+                Toutes <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.7 }}>{fichesCount}</span>
+              </button>
+            ); })()}
+            {orderedSubjects.map(s => {
+              const fluo = FLUO_HEX[s.color] || FLUO_HEX.primary; const isSel = subjectFilter === s.id; const outside = prog.known && !prog.has(s.id);
+              return (
+                <button key={s.id} onClick={() => setSubjectFilter(s.id)} title={outside ? 'Hors programme de ta fac' : (s.facLabel || undefined)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${isSel ? '#c9cbe0' : '#e5e7f0'}`, background: '#fff', color: '#0f1020', boxShadow: isSel ? '0 0 0 2px #eef0f7' : 'none', opacity: outside ? 0.6 : 1 }} className="transition-colors hover:border-gray-400">
+                  <span style={{ backgroundImage: stroke(fluo, isSel), backgroundSize: '100% 62%', backgroundRepeat: 'no-repeat', backgroundPosition: '0 70%', padding: '0 4px', margin: '0 -4px', borderRadius: 2 }}>{s.name}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#8a8ea8' }}>{countOf(s.id)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Fiches */}
+          {filteredFiches.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 24px', color: '#5f6280' }}>
+              <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Aucune fiche trouv&eacute;e</p>
+              <p style={{ fontSize: 13 }}>Essaie un autre terme ou change de mati&egrave;re.</p>
+            </div>
+          ) : groups ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
+              {groups.map(({ s, items }) => {
+                const colors = getColors(s.color); const outside = prog.known && !prog.has(s.id);
+                return (
+                  <div key={s.id}>
+                    <div className="flex items-center gap-2.5 mb-3 flex-wrap">
+                      <span className={`w-7 h-7 rounded-lg ${colors.bg} ${colors.border} border flex items-center justify-center shrink-0`}>
+                        <SubjectIcon subjectId={s.id} className={`w-4 h-4 ${colors.icon}`} />
+                      </span>
+                      <h3 className="font-jakarta text-[15px] font-extrabold text-gray-900">{s.name}</h3>
+                      {s.facLabel && s.facLabel !== s.name && <span className="hidden sm:inline text-[11px] font-semibold text-indigo-600 bg-indigo-50 rounded-full px-2 py-0.5">{s.facLabel}</span>}
+                      {outside && <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">hors programme de ta fac</span>}
+                      <span className="text-xs text-gray-400">{items.length} fiche{items.length > 1 ? 's' : ''}</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }}>{items.map(renderCard)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-gray-400 font-medium mb-3">{filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''} sur {fichesCount}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }}>{filteredFiches.map(renderCard)}</div>
+            </>
+          )}
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Choisissez votre fiche</h2>
-            <p className="text-gray-500 text-base max-w-lg mx-auto">S&eacute;lectionnez un sujet parmi nos fiches de r&eacute;vision pour g&eacute;n&eacute;rer votre QCM.</p>
-          </div>
-          {/* Question count */}
-          <div className="bg-gradient-to-br from-primary-50 to-violet-50 rounded-2xl border-2 border-primary-200 p-6 mb-8 max-w-lg mx-auto relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary-100/50 rounded-full -translate-y-8 translate-x-8 pointer-events-none" />
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
-                  <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5-3.9 19.5m-2.1-19.5-3.9 19.5" /></svg>
-                </div>
-                <p className="text-base font-bold text-gray-900">Combien de questions ?</p>
-              </div>
-              <p className="text-xs text-gray-500 mb-4 ml-[52px]">S&eacute;lectionnez le nombre de questions pour votre QCM</p>
-              <div className="flex flex-wrap gap-2.5">
-                {countPills.map(n => (
-                  <button key={n} onClick={() => setQuestionCount(n)} className={`flex-1 min-w-[56px] py-3 rounded-xl text-sm font-bold border-2 shadow-sm transition-all ${n === questionCount ? 'bg-primary-600 text-white border-primary-600 shadow-primary-500/30' : 'border-white bg-white text-gray-600 hover:border-primary-300'}`}>
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          {/* Search + filters */}
-          <div className="max-w-5xl mx-auto mb-6">
-            <div className="relative flex-1 w-full">
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
-              <input type="text" placeholder="Rechercher un sujet..." className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-            </div>
-            <div className="flex flex-wrap gap-2 mt-3">
-              <button onClick={() => setSubjectFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${subjectFilter === 'all' ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 bg-white text-gray-600'}`}>Toutes</button>
-              {[...prog.subjects, ...prog.others].map(s => (
-                <button key={s.id} title={prog.known && !prog.has(s.id) ? 'Hors programme de ta fac' : (s.facLabel || undefined)} style={prog.known && !prog.has(s.id) ? { opacity: 0.55 } : undefined} onClick={() => setSubjectFilter(s.id)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${subjectFilter === s.id ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 bg-white text-gray-600'}`}>{s.name}</button>
-              ))}
-            </div>
-            {(searchQuery || subjectFilter !== 'all') && (
-              <p className="text-xs text-gray-400 font-medium mt-2 text-center">{filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''} trouv&eacute;e{filteredFiches.length > 1 ? 's' : ''} sur {fichesCount}</p>
-            )}
-          </div>
-          {/* Fiches grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-5xl mx-auto">
-            {filteredFiches.length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
-                <p className="text-sm text-gray-400 font-medium">Aucune fiche ne correspond &agrave; votre recherche.</p>
-              </div>
-            ) : (
-              <>
-                {subjectFilter === 'all' && !searchQuery ? (
-                  [...prog.subjects, ...prog.others].map(s => {
-                    const subjectFiches = filteredFiches.filter(f => f.subject === s.id);
-                    if (subjectFiches.length === 0) return null;
-                    const colors = getColors(s.color);
-                    const outside = prog.known && !prog.has(s.id);
-                    return (
-                      <div key={s.id} className="contents">
-                        <div className="col-span-full mt-6 first:mt-0">
-                          <div className="flex items-center gap-2.5 mb-3">
-                            <div className={`w-8 h-8 rounded-lg ${colors.bg} ${colors.border} border flex items-center justify-center`}>
-                              <SubjectIcon subjectId={s.id} className={`w-4 h-4 ${colors.icon}`} />
-                            </div>
-                            <h3 className="font-bold text-gray-900">{s.name}</h3>
-                            {s.facLabel && <span className="hidden sm:inline text-[11px] font-semibold text-indigo-600 bg-indigo-50 rounded-full px-2 py-0.5">{s.facLabel}</span>}
-                            {outside && <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">hors programme de ta fac</span>}
-                            <span className="text-xs text-gray-400 font-medium">{subjectFiches.length} sujets</span>
-                          </div>
-                        </div>
-                        {subjectFiches.map(f => {
-                          const fColors = getColors(s.color);
-                          return (
-                            <button key={f.id} onClick={() => selectFiche(f.id)} className="bg-white rounded-xl p-4 text-left border border-gray-200 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-500/10 hover:border-primary-300 cursor-pointer">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${fColors.badge}`}>{s.name}</span>
-                                <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-                              </div>
-                              <h4 className="text-sm font-bold text-gray-900 mb-1 leading-snug">{f.title}</h4>
-                              <p className="text-xs text-gray-500 line-clamp-2">{f.summary}</p>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    );
-                  })
-                ) : (
-                  filteredFiches.map(f => {
-                    const subject = SUBJECTS.find(s => s.id === f.subject);
-                    const fColors = getColors(subject?.color);
-                    return (
-                      <button key={f.id} onClick={() => selectFiche(f.id)} className="bg-white rounded-xl p-4 text-left border border-gray-200 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-500/10 hover:border-primary-300 cursor-pointer">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${fColors.badge}`}>{subject?.name || ''}</span>
-                          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-                        </div>
-                        <h4 className="text-sm font-bold text-gray-900 mb-1 leading-snug">{f.title}</h4>
-                        <p className="text-xs text-gray-500 line-clamp-2">{f.summary}</p>
-                      </button>
-                    );
-                  })
-                )}
-              </>
-            )}
-          </div>
-        </div>
-        {/* Start confirmation modal */}
+        {/* Démarrage direct depuis ?fiche=<id> */}
         {pendingFiche && (
           <StartConfirmModal
             fiche={pendingFiche.fiche}
@@ -1494,67 +1452,47 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
 
   // ===== CUSTOM SELECTION VIEW =====
   if (view === 'customSelection') {
-    const countPills = [5, 10, 15, 20];
+    const t = customTopic.trim();
+    const goTopic = (topic) => { const v = (topic || '').trim(); if (!v) return; setCustomTopic(''); setPendingLaunch({ topic: { type: 'custom', subject: null, subjectName: v, title: v }, label: v, sub: 'Thème libre', accent: '#7c3aed', bg: '#f5f3ff' }); setView('countChoice'); };
+    const EXAMPLES = ['Cycle de Krebs', 'Ostéologie du membre supérieur', 'Loi normale', 'Potentiel d’action', 'Pharmacocinétique', 'Liaisons chimiques'];
     return (
-      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-8' : 'pt-24 md:pt-28 min-h-screen'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-          <button onClick={() => setView('modeChoice')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-            Retour
-          </button>
-        </div>
+      <section className={`pb-16 bg-slate-50 ${onBack ? 'pt-6 md:pt-16' : 'pt-24 md:pt-28 min-h-screen'}`}>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Sujet personnalis&eacute;</h2>
-            <p className="text-gray-500 text-base max-w-lg mx-auto">Choisissez une mati&egrave;re et le nombre de questions pour g&eacute;n&eacute;rer votre QCM.</p>
-          </div>
-          {/* Topic input */}
-          <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-6 max-w-lg mx-auto">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 bg-violet-100 rounded-xl shadow-sm flex items-center justify-center">
-                <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
-              </div>
-              <p className="text-base font-bold text-gray-900">Quel sujet souhaitez-vous r&eacute;viser ?</p>
-            </div>
-            <p className="text-xs text-gray-500 mb-4 ml-[52px]">Des questions cibl&eacute;es seront g&eacute;n&eacute;r&eacute;es sur votre sujet</p>
-            <input
-              type="text"
-              value={customTopic}
-              onChange={e => setCustomTopic(e.target.value)}
-              placeholder="Ex : Ost&eacute;ologie du membre sup&eacute;rieur, Cycle de Krebs, Loi normale..."
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all placeholder:text-gray-400"
-              onKeyDown={e => { if (e.key === 'Enter' && customTopic.trim()) { startQuiz({ type: 'custom', subject: null, subjectName: customTopic.trim(), title: customTopic.trim() }); setCustomTopic(''); } }}
-            />
-          </div>
-          {/* Question count */}
-          <div className="bg-gradient-to-br from-primary-50 to-violet-50 rounded-2xl border-2 border-primary-200 p-6 mb-8 max-w-lg mx-auto relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary-100/50 rounded-full -translate-y-8 translate-x-8 pointer-events-none" />
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
-                  <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5-3.9 19.5m-2.1-19.5-3.9 19.5" /></svg>
-                </div>
-                <p className="text-base font-bold text-gray-900">Combien de questions ?</p>
-              </div>
-              <p className="text-xs text-gray-500 mb-4 ml-[52px]">S&eacute;lectionnez le nombre de questions pour votre QCM</p>
-              <div className="flex flex-wrap gap-2.5">
-                {countPills.map(n => (
-                  <button key={n} onClick={() => setQuestionCount(n)} className={`flex-1 min-w-[56px] py-3 rounded-xl text-sm font-bold border-2 shadow-sm transition-all ${n === questionCount ? 'bg-primary-600 text-white border-primary-600 shadow-primary-500/30' : 'border-white bg-white text-gray-600 hover:border-primary-300'}`}>
-                    {n}
-                  </button>
-                ))}
+          <BackButton onClick={() => setView('modeChoice')} className="mb-5" />
+          <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-8" style={{ boxShadow: '0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px rgba(124,58,237,0.28)' }}>
+            <div className="flex items-center gap-3.5 mb-6">
+              <span className="w-12 h-12 rounded-2xl bg-violet-600 text-white flex items-center justify-center shrink-0" style={{ boxShadow: '0 4px 12px rgba(124,58,237,0.35)' }}>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+              </span>
+              <div>
+                <h2 className="font-jakarta text-[24px] md:text-[28px] font-black text-gray-900 tracking-tight leading-tight">Un th&egrave;me libre</h2>
+                <p className="text-[14px] text-gray-500 mt-0.5">L&rsquo;IA g&eacute;n&egrave;re des questions cibl&eacute;es sur le point que tu choisis.</p>
               </div>
             </div>
+
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Ton sujet</label>
+            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-slate-50 pl-5 pr-2.5 py-2.5 focus-within:bg-white focus-within:border-violet-400 focus-within:shadow-[0_0_0_4px_rgba(124,58,237,0.12)] transition-all">
+              <input
+                type="text"
+                autoFocus
+                value={customTopic}
+                onChange={e => setCustomTopic(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') goTopic(customTopic); }}
+                placeholder="Ex. « Cycle de Krebs », « Loi normale »…"
+                className="flex-1 min-w-0 text-[16px] text-gray-800 placeholder-gray-400 outline-none bg-transparent py-2"
+              />
+              {t && <button onClick={() => goTopic(customTopic)} className="h-10 px-5 shrink-0 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 transition-colors">Continuer</button>}
+            </div>
+
+            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mt-6 mb-2.5">Ou pars d&rsquo;un exemple</p>
+            <div className="flex flex-wrap gap-2">
+              {EXAMPLES.map(ex => (
+                <button key={ex} onClick={() => goTopic(ex)} className="px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-[13px] font-semibold text-gray-700 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 transition-colors">{ex}</button>
+              ))}
+            </div>
+
+            <p className="text-xs text-gray-400 mt-6">Sois pr&eacute;cis : un chapitre ou une notion donne de meilleures questions qu&rsquo;une mati&egrave;re enti&egrave;re.</p>
           </div>
-          {/* Launch button */}
-          <button
-            disabled={!customTopic.trim()}
-            onClick={() => { startQuiz({ type: 'custom', subject: null, subjectName: customTopic.trim(), title: customTopic.trim() }); setCustomTopic(''); }}
-            className={`w-full max-w-lg mx-auto block py-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${customTopic.trim() ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-            Lancer le QCM
-          </button>
         </div>
         {showLoginModal && <LoginRequiredModal onClose={() => setShowLoginModal(false)} />}
         {showUpgradeModal && <UpgradeModal requiredTier="essentiel" onClose={() => setShowUpgradeModal(false)} />}
@@ -1600,39 +1538,45 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
   // ===== LOADING VIEW =====
   if (view === 'loading') {
     const subject = selectedTopic?.subject ? SUBJECTS.find(s => s.id === selectedTopic.subject) : null;
-    const colors = getColors(subject?.color);
+    const meta = selectedTopic?.subject ? QCM_SUBJECT_DATA.find(m => m.id === selectedTopic.subject) : null;
+    const accent = selectedTopic?.flash ? '#d97706' : (meta?.accent || (selectedTopic?.type === 'fiche' ? '#d97706' : selectedTopic?.type === 'custom' && !selectedTopic?.subject ? '#7c3aed' : '#4f46e5'));
+    const count = selectedTopic?.count || questionCount;
+    const title = selectedTopic?.flash ? 'Pico pr\u00e9pare ta session \u00e9clair' : 'Pico pr\u00e9pare ton QCM';
+    const line = `${count} question${count > 1 ? 's' : ''}${selectedTopic?.title || selectedTopic?.subjectName ? ` \u00b7 ${selectedTopic?.title || selectedTopic?.subjectName}` : ''}`;
     const tip = LOADING_TIPS[tipIndex];
+    const cancel = () => { onBack ? onBack() : setView('hero'); };
     return (
-      <div className={`bg-slate-50 flex items-center justify-center ${onBack ? 'min-h-[60vh]' : 'min-h-screen pt-16'}`}>
-        <div className="max-w-md mx-auto px-4 text-center w-full">
-          <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-sm">
-            <div className="mb-6">
-              <div className={`w-20 h-20 mx-auto rounded-2xl ${colors.bg} ${colors.border} border-2 flex items-center justify-center`}>
-                {subject ? (
-                  <SubjectIcon subjectId={subject.id} className={`w-10 h-10 ${colors.icon} animate-pulse`} />
-                ) : (
-                  <svg className={`w-10 h-10 ${colors.icon} animate-pulse`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
-                  </svg>
-                )}
-              </div>
+      <div className={`bg-slate-50 flex items-center justify-center ${onBack ? 'min-h-[70vh]' : 'min-h-screen pt-16'}`}>
+        <div className="max-w-md mx-auto px-4 w-full">
+          <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 text-center" style={{ boxShadow: `0 1px 2px rgba(15,16,32,0.04), 0 24px 48px -24px ${accent}55` }}>
+            {/* Icône entourée d'un anneau qui tourne */}
+            <div className="relative w-24 h-24 mx-auto mb-5">
+              <svg className="absolute inset-0 w-full h-full animate-spin" style={{ animationDuration: '1.6s' }} viewBox="0 0 96 96" fill="none" aria-hidden="true">
+                <circle cx="48" cy="48" r="44" stroke={`${accent}22`} strokeWidth="4" />
+                <path d="M48 4a44 44 0 0 1 44 44" stroke={accent} strokeWidth="4" strokeLinecap="round" />
+              </svg>
+              <span className="absolute inset-[14px] rounded-2xl flex items-center justify-center text-white" style={{ background: accent, boxShadow: `0 6px 16px ${accent}55` }}>
+                {subject ? <SubjectIcon subjectId={subject.id} className="w-7 h-7" /> : <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>}
+              </span>
             </div>
-            <h2 className="text-xl font-black text-gray-900 mb-2">Pr&eacute;paration du QCM...</h2>
-            <p className="text-sm text-gray-500 mb-1"><strong>{selectedTopic?.count || questionCount} questions</strong> sur :</p>
-            <p className="text-sm text-gray-700 font-semibold mb-6">{selectedTopic?.title || selectedTopic?.subjectName}</p>
+            <h2 className="font-jakarta text-[22px] font-black text-gray-900 tracking-tight leading-tight">{title}</h2>
+            <p className="text-[14px] text-gray-500 mt-1.5">{line}</p>
 
-            {/* Indeterminate progress bar */}
-            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-6">
-              <div className="h-full bg-primary-500 rounded-full loading-progress" />
+            {/* Barre indéterminée */}
+            <div className="w-full h-1.5 rounded-full overflow-hidden my-6" style={{ background: `${accent}1a` }}>
+              <div className="h-full rounded-full loading-progress" style={{ background: accent }} />
             </div>
 
-            {/* Rotating tip */}
-            <div className="bg-primary-50 rounded-xl p-4 border border-primary-100 min-h-[72px] flex items-center gap-3 text-left">
-              <span className="text-2xl shrink-0">{tip.icon}</span>
-              <p key={tipIndex} className="text-xs text-primary-700 font-medium leading-relaxed tip-fade">{tip.text}</p>
+            {/* Conseil qui tourne */}
+            <div className="rounded-2xl border border-gray-200 bg-slate-50 px-4 py-3.5 min-h-[64px] flex items-center gap-3 text-left">
+              <span className="text-xl shrink-0">{tip.icon}</span>
+              <p key={tipIndex} className="text-[13px] text-gray-600 leading-snug tip-fade">{tip.text}</p>
             </div>
 
-            <button onClick={() => { onBack ? onBack() : setView('hero'); }} className="mt-6 text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors">Annuler</button>
+            <button onClick={cancel} className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-[13px] font-semibold text-gray-500 hover:border-gray-300 hover:text-gray-800 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.4"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+              Annuler
+            </button>
           </div>
         </div>
       </div>
@@ -1653,10 +1597,10 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
     const correctIndex = q.options.findIndex(o => o.correct);
 
     return (
-      <div className={`bg-slate-50 pb-8 ${onBack ? 'pt-6' : 'min-h-screen pt-20'}`}>
-        <div className="max-w-3xl mx-auto px-4">
+      <div className={`bg-slate-50 flex flex-col overflow-hidden ${onBack ? 'h-[100dvh] pt-4 pb-4' : 'h-[100dvh] pt-20 pb-4'}`}>
+        <div className="max-w-3xl mx-auto px-4 w-full flex-1 min-h-0 flex flex-col">
           {/* Top bar */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3 shrink-0">
             <button onClick={() => setShowQuitModal(true)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 font-medium">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
               Quitter
@@ -1694,38 +1638,39 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
           </div>
 
           {/* Progress bar */}
-          <div className="w-full h-2 bg-gray-200 rounded-full mb-4">
-            <div className="h-2 bg-primary-500 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
+          <div className="w-full h-1.5 bg-gray-200 rounded-full mb-3 shrink-0">
+            <div className="h-1.5 bg-primary-500 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
           </div>
 
           {/* Question pills — horizontal scroll on mobile */}
-          <div ref={pillsRef} className="flex gap-1.5 mb-5 overflow-x-auto pb-2 scrollbar-hide snap-x">
+          <div ref={pillsRef} className="flex gap-1.5 mb-3 overflow-x-auto pb-1 scrollbar-hide snap-x shrink-0">
             {questions.map((_, i) => {
               let cls = 'bg-gray-100 text-gray-400'; // unanswered
               if (i === currentIndex) cls = 'bg-primary-600 text-white shadow-md shadow-primary-500/40';
               else if (answers[i] !== null) cls = answers[i].correct ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
               const canClick = answers[i] !== null || i === currentIndex;
               return (
-                <button key={i} onClick={() => canClick && goToQuestion(i)} disabled={!canClick} className={`w-8 h-8 shrink-0 rounded-lg text-xs font-bold transition-all snap-center ${cls}`}>{i + 1}</button>
+                <button key={i} onClick={() => canClick && goToQuestion(i)} disabled={!canClick} className={`w-7 h-7 shrink-0 rounded-lg text-[11px] font-bold transition-all snap-center ${cls}`}>{i + 1}</button>
               );
             })}
           </div>
 
           {/* Question card */}
-          <div key={currentIndex} className="question-in bg-white rounded-2xl border-2 border-gray-200 p-6 md:p-8 shadow-sm relative">
+          <div key={currentIndex} className="question-in bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 md:p-6 shadow-sm relative min-h-0 flex flex-col">
             {/* Animation +X XP sur bonne réponse */}
             {xpPop && xpPop.key === currentIndex && alreadyAnswered?.correct && (
               <span key={xpPop.key} className="xp-pop" style={{ position: 'absolute', top: 14, right: 16, background: '#7c3aed', color: '#fff', fontSize: 12, fontWeight: 800, padding: '4px 11px', borderRadius: 14, boxShadow: '0 4px 14px rgba(124,58,237,0.35)', pointerEvents: 'none', zIndex: 5 }}>
                 +{xpPop.amount} XP
               </span>
             )}
-            <div className="flex items-center justify-between mb-5">
-              <span className="text-sm font-medium text-gray-500">Question {currentIndex + 1}</span>
-              <span className={`px-3 py-1 ${colors.badge} text-xs font-bold rounded-full`}>{selectedTopic?.title || badgeText}</span>
+            <div className="flex items-center justify-between mb-2 shrink-0">
+              <span className="text-xs font-medium text-gray-500">Question {currentIndex + 1}</span>
+              <span className={`px-2.5 py-0.5 ${colors.badge} text-[11px] font-bold rounded-full truncate max-w-[60%]`}>{selectedTopic?.title || badgeText}</span>
             </div>
-            <p className="text-lg md:text-xl font-bold text-gray-900 mb-6 leading-relaxed">{q.question}</p>
+            <p className="text-[16px] md:text-lg font-bold text-gray-900 mb-3 leading-snug shrink-0">{q.question}</p>
 
-            <div className="space-y-3 mb-6">
+            {/* Propositions : seule zone qui défile si l'écran est trop petit */}
+            <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-0.5 -mr-0.5">
               {q.options.map((opt, i) => {
                 let btnClass = 'border-2 border-gray-200 text-gray-700 hover:border-primary-400 hover:bg-primary-50';
                 let badgeClass = 'bg-gray-100 text-gray-500';
@@ -1753,47 +1698,50 @@ export default function QCMPage({ initialConfig = null, onBack = null, onViewCha
                 }
 
                 return (
-                  <button key={i} onClick={() => answerQuestion(i)} disabled={disabled} className={`w-full text-left px-5 py-4 rounded-xl text-sm md:text-base font-medium flex items-center gap-3 transition-all ${btnClass} ${animClass} ${!alreadyAnswered ? 'option-slide-in' : ''}`} style={!alreadyAnswered ? { animationDelay: `${i * 80}ms` } : undefined}>
-                    <span className={`w-8 h-8 rounded-lg ${badgeClass} flex items-center justify-center text-sm font-bold shrink-0`}>{String.fromCharCode(65 + i)}</span>
-                    <span className="flex-1">{opt.text}</span>
+                  <button key={i} onClick={() => answerQuestion(i)} disabled={disabled} className={`w-full text-left px-4 py-2.5 md:py-3 rounded-xl text-[14px] md:text-[15px] font-medium flex items-center gap-3 transition-all ${btnClass} ${animClass} ${!alreadyAnswered ? 'option-slide-in' : ''}`} style={!alreadyAnswered ? { animationDelay: `${i * 80}ms` } : undefined}>
+                    <span className={`w-7 h-7 rounded-lg ${badgeClass} flex items-center justify-center text-[13px] font-bold shrink-0`}>{String.fromCharCode(65 + i)}</span>
+                    <span className="flex-1 leading-snug">{opt.text}</span>
                     {icon}
                   </button>
                 );
               })}
             </div>
 
+            <div className="shrink-0 pt-3">
             {/* « Je ne sais pas » : honnêteté récompensée, la question part en consolidation */}
             {!isValidated && (
               <button
                 onClick={answerDontKnow}
-                className="w-full py-2.5 text-sm font-medium text-gray-400 border border-dashed border-gray-300 rounded-xl hover:text-gray-600 hover:border-gray-400 transition-colors"
+                className="w-full py-2 text-[13px] font-medium text-gray-400 border border-dashed border-gray-300 rounded-xl hover:text-gray-600 hover:border-gray-400 transition-colors"
               >
                 🤷 Je ne sais pas — voir la réponse
               </button>
             )}
 
+            {/* Explanation */}
+            {isValidated && alreadyAnswered && (
+              <div className={`mb-3 px-4 py-3 rounded-xl text-[13px] font-medium leading-snug max-h-[26vh] overflow-y-auto ${alreadyAnswered.correct ? 'bg-green-50 text-green-700 border border-green-200' : alreadyAnswered.idk ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                <strong>{alreadyAnswered.correct ? 'Bonne r\u00e9ponse !' : alreadyAnswered.idk ? 'Bien vu de ne pas deviner \u2014 elle part dans ta pile \u00ab \u00c0 consolider \u00bb.' : 'Mauvaise r\u00e9ponse.'}</strong>{' '}
+                {q.explanation}
+              </div>
+            )}
+
             {/* Next button */}
             {isValidated && (
-              <button onClick={handleNextOrResults} className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors">
+              <button onClick={handleNextOrResults} className="w-full py-3 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors">
                 {answeredCount >= total ? 'Voir les r\u00e9sultats' : 'Question suivante'}
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
               </button>
             )}
 
             {/* Keyboard hints */}
-            <div className="hidden sm:flex items-center justify-center gap-4 mt-3 text-[10px] text-gray-400">
+            <div className="hidden md:flex items-center justify-center gap-4 mt-2 text-[10px] text-gray-400">
               <span><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono text-[9px]">A-D</kbd> Choisir</span>
               <span><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono text-[9px]">Entr&eacute;e</kbd> Suivante</span>
               <span><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono text-[9px]">Esc</kbd> Quitter</span>
             </div>
 
-            {/* Explanation */}
-            {isValidated && alreadyAnswered && (
-              <div className={`mt-4 p-4 rounded-xl text-sm font-medium ${alreadyAnswered.correct ? 'bg-green-50 text-green-700 border border-green-200' : alreadyAnswered.idk ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                <strong>{alreadyAnswered.correct ? 'Bonne r\u00e9ponse !' : alreadyAnswered.idk ? 'Bien vu de ne pas deviner \u2014 elle part dans ta pile \u00ab \u00c0 consolider \u00bb.' : 'Mauvaise r\u00e9ponse.'}</strong>{' '}
-                {q.explanation}
-              </div>
-            )}
+            </div>
           </div>
         </div>
 
