@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { sendMail, layout, summarize, SITE, esc } from '@/lib/mailer';
+import { sendMail, layout, summarize, canEmail, SITE, esc } from '@/lib/mailer';
 import { isPromoActive, HEADLINE } from '@/lib/promo';
 import { facById } from '@/data/facs';
 import { facExams, fmtMinutes } from '@/data/facExams';
@@ -10,7 +10,6 @@ import { facExams, fmtMinutes } from '@/data/facExams';
    Chaque envoi est marqué dans app_metadata.lifecycle pour ne jamais être
    renvoyé. `?dry=1` liste sans envoyer. */
 
-const INTERNES = new Set(['test.local@prepa-pass-las.fr', 'loic.gautier11@outlook.fr', 'admin.lplabs@gmail.com', 'loic.gautier@breizhpose.fr', 'loicgautier.bp@gmail.com']);
 const TRIAL_DAYS = 7;
 const PROMO_REMINDERS = ['2026-10-24', '2026-10-30'];
 const DAY = 86400000;
@@ -102,7 +101,7 @@ export async function GET(request) {
 
   const plan = [];
   for (const u of users) {
-    if (!u.email || INTERNES.has(u.email)) continue;
+    if (!canEmail(u)) continue;
     const p = P[u.id] || {}; const lc = u.app_metadata?.lifecycle || {};
     const age = (now - new Date(u.created_at).getTime()) / DAY;
     const paid = p.tier === 'premium+' || p.tier === 'essentiel';

@@ -1,10 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { sendMail, layout, summarize, SITE, esc } from '@/lib/mailer';
+import { sendMail, layout, summarize, canEmail, SITE, esc } from '@/lib/mailer';
 
 /* Cron du dimanche (vercel.json). Bilan de la semaine aux comptes actifs
    dans les 14 derniers jours : sessions, moyenne, point fort, pile à rejouer. */
-const INTERNES = new Set(['test.local@prepa-pass-las.fr', 'loic.gautier11@outlook.fr', 'admin.lplabs@gmail.com', 'loic.gautier@breizhpose.fr', 'loicgautier.bp@gmail.com']);
 
 export async function GET(request) {
   const auth = request.headers.get('authorization');
@@ -21,7 +20,7 @@ export async function GET(request) {
   const P = Object.fromEntries((profils || []).map((p) => [p.id, p]));
   const plan = [];
   for (const u of users) {
-    if (!u.email || INTERNES.has(u.email)) continue;
+    if (!canEmail(u)) continue;
     const p = P[u.id]; if (!p) continue;
     const week = summarize(p, 7); const fortnight = summarize(p, 14);
     if (fortnight.recent === 0) continue;

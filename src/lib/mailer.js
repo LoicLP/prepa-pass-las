@@ -17,6 +17,22 @@ export function getTransporter() {
   });
 }
 
+/* Comptes internes (tests, admins) : jamais de mails automatiques. Toute adresse du domaine
+   du site est aussi considérée interne (comptes de test locaux sans boîte réelle). */
+export const INTERNES = new Set(['test.local@prepa-pass-las.fr', 'loic.gautier11@outlook.fr', 'admin.lplabs@gmail.com', 'loic.gautier@breizhpose.fr', 'loicgautier.bp@gmail.com']);
+export function isInternal(email) {
+  const e = String(email || '').toLowerCase();
+  return !e || INTERNES.has(e) || e.endsWith('@prepa-pass-las.fr');
+}
+/* Adresse en liste de suppression (bounce définitif enregistré par /api/bounces dans app_metadata.mail). */
+export function isSuppressed(user) {
+  return Boolean(user?.app_metadata?.mail?.suppressed);
+}
+/* Un mail automatique (cycle de vie, bilan, relance, panier) peut-il partir vers cet utilisateur ? */
+export function canEmail(user) {
+  return Boolean(user?.email) && !isInternal(user.email) && !isSuppressed(user);
+}
+
 export async function sendMail({ to, subject, html }) {
   const transporter = getTransporter();
   return transporter.sendMail({ from: `"Pico · Prépa PASS/LAS" <${process.env.SMTP_USER}>`, to, subject, html });

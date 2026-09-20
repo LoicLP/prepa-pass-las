@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getStripe } from '@/lib/stripe';
-import { sendMail, layout, esc } from '@/lib/mailer';
+import { sendMail, layout, canEmail, esc } from '@/lib/mailer';
 import { isPromoActive, HEADLINE } from '@/lib/promo';
 
 const supabaseAdmin = createClient(
@@ -52,7 +52,7 @@ export async function POST(request) {
         const userId = session.metadata?.user_id;
         if (!url || !userId || session.metadata?.site !== 'prepa-pass-las') break;
         const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
-        const u = data?.user; if (!u?.email) break;
+        const u = data?.user; if (!canEmail(u)) break;
         const firstName = (u.user_metadata?.full_name || u.email).split(/[ @]/)[0];
         const period = session.metadata?.billing_period === 'yearly' ? 'annuel' : 'mensuel';
         const offer = isPromoActive()

@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { canEmail } from '@/lib/mailer';
 
 // Relance J+1 : email aux inscrits de 20 h à 72 h qui n'ont fait aucune session.
 // Appelée chaque jour par le cron Vercel (vercel.json). `?dry=1` liste sans envoyer.
 
-const INTERNES = new Set(['test.local@prepa-pass-las.fr', 'loic.gautier11@outlook.fr', 'admin.lplabs@gmail.com']);
 
 function emailHtml(firstName, trialLeftHours) {
   const trialLine = trialLeftHours > 0
@@ -67,7 +67,7 @@ export async function GET(request) {
   if (listErr) return NextResponse.json({ error: listErr.message }, { status: 500 });
 
   const candidats = list.users.filter(u => {
-    if (!u.email || INTERNES.has(u.email)) return false;
+    if (!canEmail(u)) return false;
     if (u.app_metadata?.relance_j1) return false;
     const age = now - new Date(u.created_at).getTime();
     return age >= 20 * H && age <= 72 * H;
