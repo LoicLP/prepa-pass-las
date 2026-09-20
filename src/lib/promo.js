@@ -1,55 +1,35 @@
-// Source unique de vérité pour l'offre de rentrée.
-// Utilisée par la home, la page Tarifs et la création de session Stripe.
+// Tarifs Premium — source unique de vérité pour la home, la page Tarifs et les e-mails.
+// Aucune offre en cours : `isPromoActive()` reste pour les anciens appels et renvoie toujours false.
 
 export const PROMO = {
   id: 'rentree-2026',
   label: 'Offre de rentrée',
   discountLabel: '-50 %',
-  // Dernier instant où l'on peut souscrire (heure de Paris, UTC+2 en octobre)
-  endsAt: new Date('2026-10-31T23:59:59+01:00'),
-  // La remise est conservée tant que l'abonnement reste actif
+  // Offre clôturée (les anciens abonnés conservent leur tarif chez Stripe)
+  endsAt: new Date('2026-09-20T00:00:00+02:00'),
   lifetime: true,
 };
 
-/** L'offre est-elle encore ouverte ? (à évaluer côté client pour éviter le cache statique) */
-export function isPromoActive(now = new Date()) {
-  return now < PROMO.endsAt;
+/** Aucune offre en cours. */
+export function isPromoActive() {
+  return false;
 }
 
-/** Jours restants avant la fin de l'offre (0 si terminée). */
-export function promoDaysLeft(now = new Date()) {
-  return Math.max(0, Math.ceil((PROMO.endsAt - now) / 86400000));
+/** Jours restants avant la fin de l'offre (toujours 0). */
+export function promoDaysLeft() {
+  return 0;
 }
 
-/**
- * Accroche commerciale : on met en avant l'offre annuelle, la plus attractive.
- * 74,99 € / 12 mois = 6,25 €/mois. Toujours accompagner le prix mensualisé
- * du montant réellement facturé (obligation d'information + clarté).
- */
+/** Montants affichés (TTC). L'annuel est aussi ramené au mois pour la comparaison. */
 export const HEADLINE = {
-  perMonth: '6,25',      // équivalent mensuel de l'annuel promo
-  yearTotal: '74,99',    // montant réellement facturé
-  yearFull: '149,99',    // prix annuel hors offre
-  monthlyPromo: '12,49', // prix du mensuel avec l'offre
-  monthlyFull: '24,99',  // prix du mensuel hors offre
+  perMonth: '7,50',       // équivalent mensuel de l'annuel (89,99 / 12)
+  yearTotal: '89,99',     // montant réellement facturé par an
+  yearFull: '89,99',
+  monthlyPromo: '12,99',
+  monthlyFull: '12,99',
 };
 
-/** Tarifs affichés — `full` = prix normal, `promo` = prix avec l'offre. */
 export const PRICING = {
-  monthly: {
-    full: '24,99',
-    promo: '12,49',
-    suffix: '/mois',
-    noteFull: 'sans engagement, annulable à tout moment',
-    notePromo: 'à vie · sans engagement, annulable à tout moment',
-  },
-  yearly: {
-    // Affichage ramené au mois pour la comparaison
-    full: '12,50',
-    promo: '6,25',
-    suffix: '/mois',
-    noteFull: 'facturé 149,99 € par an',
-    notePromo: 'facturé 74,99 € la 1re année, puis 74,99 €/an',
-    badge: '-75 % au total',
-  },
+  monthly: { full: '12,99', promo: '12,99', suffix: '/mois', noteFull: 'sans engagement, annulable à tout moment', notePromo: 'sans engagement, annulable à tout moment' },
+  yearly: { full: '7,50', promo: '7,50', suffix: '/mois', noteFull: 'facturé 89,99 € par an', notePromo: 'facturé 89,99 € par an', badge: '' },
 };

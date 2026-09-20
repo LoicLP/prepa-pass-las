@@ -43,20 +43,15 @@ function PremiumCheckIcon() {
 
 const BILLING_PERIODS = [
   { id: 'monthly', label: 'Mensuel' },
-  { id: 'yearly', label: 'Annuel', badge: '6 mois offerts' },
+  { id: 'yearly', label: 'Annuel' },
 ];
 
-// Tarifs normaux (hors offre de rentrée)
+// Tarifs Premium (TTC)
 const PREMIUM_PRICING = {
-  monthly: { display: '24,99', suffix: '/mois', note: 'sans engagement, annulable à tout moment' },
-  yearly: { display: '12,50', suffix: '/mois', note: 'facturé 149,99 € par an — soit 6 mois offerts', strike: '24,99', badge: '6 mois offerts' },
+  monthly: { display: '12,99', suffix: '/mois', note: 'sans engagement, annulable à tout moment' },
+  yearly: { display: '7,50', suffix: '/mois', note: 'facturé 89,99 € par an' },
 };
-
-// Tarifs pendant l'offre de rentrée (-50 % conservés tant que l'abonnement reste actif)
-const PROMO_PRICING = {
-  monthly: { display: '12,49', suffix: '/mois', strike: '24,99', badge: '-50 % à vie', note: 'à vie · sans engagement, annulable à tout moment' },
-  yearly: { display: '6,25', suffix: '/mois', strike: '12,50', badge: '6 mois offerts', note: 'facturé 74,99 € par an (au lieu de 149,99 €), à vie' },
-};
+const PROMO_PRICING = PREMIUM_PRICING;
 
 export default function TarifsPage() {
   const { tier, isLoaded } = usePremium();
@@ -374,7 +369,7 @@ export default function TarifsPage() {
               Ton QG de r&eacute;vision complet — QCM illimit&eacute;s, examens blancs, coach de
               progression — c&apos;est{' '}
               <strong className="text-indigo-600">
-                {promo ? '74,99 € l’année' : '149,99 € l’année'}
+                '89,99 € l’année'
               </strong>
               {promo ? ' pendant l’offre de rentrée.' : '.'}
             </p>

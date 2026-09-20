@@ -901,7 +901,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <Link href="/tarifs" style={{ flexShrink: 0, background: '#fff', color: '#6d28d9', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, textDecoration: 'none' }} className="hover:bg-indigo-50 transition-colors">
-                    Repasser Premium — 12,50 €/mois
+                    Repasser Premium — dès 7,50 €/mois
                   </Link>
                   <button
                     onClick={() => { localStorage.setItem('ppl-trial-ended-dismissed', '1'); setTrialEndDismissed(true); }}

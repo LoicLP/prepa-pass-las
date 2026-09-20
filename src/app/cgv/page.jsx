@@ -94,7 +94,7 @@ export default function CGVPage() {
                   <div className="flex items-start gap-3">
                     <span className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center text-xs font-bold text-violet-700 shrink-0 mt-0.5">2</span>
                     <div>
-                      <p className="font-bold text-gray-900">Premium &ndash; 24,99 &euro; / mois ou 149,99 &euro; / an</p>
+                      <p className="font-bold text-gray-900">Premium &ndash; 12,99 &euro; / mois ou 89,99 &euro; / an</p>
                       <p>QCM illimit&eacute;s g&eacute;n&eacute;r&eacute;s par intelligence artificielle, r&eacute;visions espac&eacute;es («&nbsp;&Agrave; consolider&nbsp;»), examens blancs format concours, cours complets et fiches t&eacute;l&eacute;chargeables en PDF, suivi de progression avanc&eacute;, objectifs personnalis&eacute;s, classement.</p>
                     </div>
                   </div>
@@ -155,8 +155,8 @@ export default function CGVPage() {
                   Le paiement s&rsquo;effectue en ligne par carte bancaire ou tout autre moyen de paiement accept&eacute;
                   sur la Plateforme, via le prestataire de paiement s&eacute;curis&eacute; Stripe.
                   L&rsquo;abonnement Premium est factur&eacute;, au choix de l&rsquo;Utilisateur,{' '}
-                  <strong className="text-gray-900">mensuellement (24,99 &euro; TTC)</strong> ou{' '}
-                  <strong className="text-gray-900">annuellement (149,99 &euro; TTC)</strong>, sans engagement
+                  <strong className="text-gray-900">mensuellement (12,99 &euro; TTC)</strong> ou{' '}
+                  <strong className="text-gray-900">annuellement (89,99 &euro; TTC)</strong>, sans engagement
                   de dur&eacute;e minimale. L&rsquo;abonnement est reconduit tacitement &agrave; chaque &eacute;ch&eacute;ance
                   (mensuelle ou annuelle) jusqu&rsquo;&agrave; r&eacute;siliation.
                 </p>

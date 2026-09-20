@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { SITE_METADATA, getPriceId } from '@/lib/stripe';
-import { isPromoActive } from '@/lib/promo';
+import { SITE_METADATA, resolvePriceId } from '@/lib/stripe';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -61,7 +60,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Plan ou période invalide' }, { status: 400 });
   }
 
-  const priceId = getPriceId(plan, period);
+  const priceId = await resolvePriceId(plan, period);
   if (!priceId) {
     return NextResponse.json({ error: `Price ID manquant pour ${plan}/${period}` }, { status: 500 });
   }
@@ -109,13 +108,8 @@ export async function POST(request) {
 
     const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://prepa-pass-las.fr').trim();
 
-    // Offre de rentrée : coupon appliqué automatiquement tant que l'offre est ouverte.
-    // `discounts` et `allow_promotion_codes` étant exclusifs chez Stripe, on bascule
-    // sur le champ de saisie de code promo dès que l'offre est terminée.
-    const promoCoupon = isPromoActive() ? (process.env.STRIPE_PROMO_COUPON || '').trim() : '';
-    const promoParams = promoCoupon
-      ? { 'discounts[0][coupon]': promoCoupon }
-      : { allow_promotion_codes: 'true' };
+    // Pas de remise automatique : le champ de code promo reste disponible.
+    const promoParams = { allow_promotion_codes: 'true' };
 
     // Créer la session Checkout
     const session = await stripeRequest('/checkout/sessions', {
@@ -140,7 +134,6 @@ export async function POST(request) {
       'subscription_data[metadata][plan]': plan,
       'subscription_data[metadata][billing_period]': period,
       'subscription_data[metadata][user_id]': user.id,
-      ...(promoCoupon ? { 'subscription_data[metadata][promo]': 'rentree-2026' } : {}),
     });
 
     return NextResponse.json({ url: session.url });

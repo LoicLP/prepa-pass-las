@@ -17,7 +17,7 @@ const parisToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Eur
 
 const offerLine = () => (isPromoActive()
   ? `L'offre de rentrée court toujours : <strong>Premium à ${HEADLINE.monthlyPromo} €/mois</strong> au lieu de ${HEADLINE.monthlyFull} €, à vie tant que tu restes abonné — jusqu'au 31 octobre.`
-  : `Le Premium est à <strong>${HEADLINE.monthlyFull} €/mois</strong>, sans engagement, résiliable en un clic.`);
+  : `Le Premium est à <strong>${HEADLINE.monthlyFull} €/mois</strong>, ou ${HEADLINE.yearTotal} € l'année, sans engagement, résiliable en un clic.`);
 
 function build(stage, firstName, st) {
   const n = firstName;

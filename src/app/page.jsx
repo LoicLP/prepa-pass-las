@@ -5,7 +5,6 @@ import QuestionDuJour from '@/components/home/QuestionDuJour';
 import FaqSection from '@/components/home/FaqSection';
 import RevealObserver from '@/components/home/RevealObserver';
 import ConcoursBanner from '@/components/ConcoursBanner';
-import PromoBanner from '@/components/PromoBanner';
 import PromoPriceLine from '@/components/PromoPriceLine';
 
 // Régénération horaire : le bandeau promo disparaît de lui-même après l'échéance
@@ -79,7 +78,6 @@ export default function Home() {
       <RevealObserver />
 
       {/* Bandeau offre de rentrée — rendu serveur, s'éteint seul à l'échéance */}
-      <PromoBanner />
 
       {/* ================================================================
           HERO — centré, grille de fond, typographie serrée
