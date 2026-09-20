@@ -41,34 +41,35 @@ function PremiumCheckIcon() {
   );
 }
 
-const BILLING_PERIODS = [
-  { id: 'monthly', label: 'Mensuel' },
-  { id: 'yearly', label: 'Annuel', badge: '-42 %' },
-];
-
 // Tarifs Premium (TTC). Annuel : 89,99 € au lieu de 12 × 12,99 € = 155,88 €, soit -42 %.
 const PREMIUM_PRICING = {
   monthly: { display: '12,99', suffix: '/mois', note: 'sans engagement, annulable à tout moment' },
-  yearly: { display: '7,50', suffix: '/mois', strike: '12,99', badge: '-42 %', note: 'facturé 89,99 € par an au lieu de 155,88 € — soit 65,89 € d’économie' },
+  yearly: { display: '7,50', suffix: '/mois', strike: '12,99', badge: '-42 %', note: 'facturé 89,99 € par an, soit 65,89 € d’économie' },
 };
-const PROMO_PRICING = PREMIUM_PRICING;
+
+const PREMIUM_FEATURES = [
+  <span key="q"><strong className="text-current">QCM illimit&eacute;s</strong> g&eacute;n&eacute;r&eacute;s par IA</span>,
+  <span key="p">Pile «&nbsp;&Agrave; consolider&nbsp;» — <strong className="text-current">r&eacute;p&eacute;tition espac&eacute;e</strong></span>,
+  <span key="e"><strong className="text-current">Examens blancs</strong> format concours (40 q / 60 min)</span>,
+  <span key="c"><strong className="text-current">Cours complets</strong> + fiches PDF</span>,
+  <span key="o"><strong className="text-current">Progression &amp; Objectifs</strong></span>,
+  <span key="g">Pico, XP, d&eacute;fis &amp; s&eacute;rie</span>,
+];
 
 export default function TarifsPage() {
   const { tier, isLoaded } = usePremium();
   const { user, accessToken } = useAuth();
-  // Mensuel par défaut : le ticket d'entrée le plus facile à accepter ; l'annuel reste à côté comme économie.
-  const [billing, setBilling] = useState('monthly');
   // Évalué dès le rendu : évite d'afficher un instant le prix plein avant le prix promo
   const [promo] = useState(() => (isPromoActive() ? { days: promoDaysLeft() } : null));
   const [loadingPlan, setLoadingPlan] = useState(null);
 
-  const handleSubscribe = async (plan) => {
-    track('checkout_open', { plan, period: billing, promo: !!promo, loggedIn: !!user });
+  const handleSubscribe = async (plan, period) => {
+    track('checkout_open', { plan, period, promo: !!promo, loggedIn: !!user });
     if (!user) {
       window.location.href = '/connexion?redirect=/tarifs';
       return;
     }
-    setLoadingPlan(plan);
+    setLoadingPlan(`${plan}-${period}`);
     try {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
@@ -76,7 +77,7 @@ export default function TarifsPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ plan, period: billing }),
+        body: JSON.stringify({ plan, period }),
       });
       const data = await res.json();
       if (data.url) {
@@ -108,8 +109,63 @@ export default function TarifsPage() {
       setLoadingPlan(null);
     }
   };
-  const pricing = (promo ? PROMO_PRICING : PREMIUM_PRICING)[billing];
   const isPaidTier = tier === 'essentiel' || tier === 'premium+';
+
+  /* Carte Premium (mensuel ou annuel). `dark` = formule recommandée. */
+  const PremiumCard = ({ period, dark = false }) => {
+    const pr = PREMIUM_PRICING[period];
+    const loading = loadingPlan === `premium+-${period}`;
+    return (
+      <div className={`pricing-card rounded-2xl p-6 md:p-7 h-full flex flex-col relative ${dark ? 'popular bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-primary-500 text-white shadow-xl shadow-primary-500/20' : 'bg-white border-2 border-indigo-200 text-gray-900'}`}>
+        {dark && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 text-white text-xs font-bold rounded-full whitespace-nowrap" style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
+            Recommand&eacute; · le plus &eacute;conomique
+          </div>
+        )}
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${dark ? 'bg-accent-500/20' : 'bg-indigo-50'}`}>
+          <svg className={`w-6 h-6 ${dark ? 'text-accent-400' : 'text-indigo-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
+        </div>
+        <div className="mb-5">
+          <h3 className="text-lg font-bold">Premium {period === 'yearly' ? 'annuel' : 'mensuel'}</h3>
+          <p className={`text-sm mt-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{period === 'yearly' ? 'Tout illimit\u00e9, jusqu\u2019au concours' : 'Tout illimit\u00e9, mois par mois'}</p>
+        </div>
+        <div className="mb-1 flex items-baseline flex-wrap gap-x-2">
+          {pr.strike && <span className={`text-lg line-through ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{pr.strike}&euro;</span>}
+          <span className="text-4xl font-black">{pr.display}&euro;</span>
+          <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{pr.suffix}</span>
+          {pr.badge && <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded-full ${dark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>{pr.badge}</span>}
+        </div>
+        <p className={`text-xs mb-5 ${dark ? 'text-gray-500' : 'text-gray-500'}`}>{pr.note}</p>
+        {isLoaded && isPaidTier ? (
+          <>
+            <button className={`block w-full py-3 text-center font-bold rounded-xl mb-2 cursor-default ${dark ? 'bg-accent-500 text-white' : 'bg-indigo-100 text-indigo-700'}`}>Premium activ&eacute; &#10003;</button>
+            <button onClick={handlePortal} disabled={loadingPlan === 'portal'} className={`block w-full py-2 text-center text-xs transition-colors mb-5 ${dark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}>
+              {loadingPlan === 'portal' ? 'Chargement...' : 'G\u00e9rer mon abonnement \u2192'}
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => handleSubscribe('premium+', period)}
+            disabled={loading}
+            className={`block w-full py-3 text-center font-bold rounded-xl transition-opacity hover:opacity-90 mb-5 disabled:opacity-60 disabled:cursor-not-allowed ${dark ? 'text-white shadow-lg shadow-indigo-900/40' : 'text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100'}`}
+            style={dark ? { background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' } : undefined}
+          >
+            {loading ? 'Chargement...' : period === 'yearly' ? 'Passer Premium \u00e0 l\u2019ann\u00e9e' : 'Passer Premium au mois'}
+          </button>
+        )}
+        <div className={`border-t pt-5 mt-auto ${dark ? 'border-gray-700' : 'border-gray-100'}`}>
+          <ul className="space-y-3">
+            {PREMIUM_FEATURES.map((f, i) => (
+              <li key={i} className={`flex items-center gap-2 text-sm ${dark ? 'text-gray-300' : 'text-gray-600'}`}>
+                {dark ? <PremiumCheckIcon /> : <CheckIcon />}
+                <span className={dark ? '[&_strong]:text-white' : '[&_strong]:text-gray-900'}>{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -120,13 +176,13 @@ export default function TarifsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur px-3.5 py-1.5 rounded-full border border-violet-200 mb-4">
             <span className="text-sm leading-none">💎</span>
-            <span className="text-xs font-semibold text-violet-700">Un seul plan, z&eacute;ro prise de t&ecirc;te</span>
+            <span className="text-xs font-semibold text-violet-700">Un seul Premium, deux rythmes de paiement</span>
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 leading-[1.1] mb-4">
             Tout illimit&eacute;, <span className="tarif-gradient-text">un seul prix</span>
           </h1>
           <p className="text-base md:text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
-            Sans engagement, annulable &agrave; tout moment — et{' '}
+            Mensuel ou annuel, sans engagement, annulable &agrave; tout moment — et{' '}
             <strong className="text-gray-900">7 jours de Premium offerts</strong>{' '}
             &agrave; l&apos;inscription, sans carte bancaire.
           </p>
@@ -156,37 +212,10 @@ export default function TarifsPage() {
       <section id="formules" className="py-16 md:py-20 -mt-8">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          {/* Billing Toggle */}
-          <div className="flex justify-center mb-10">
-            <div className="inline-flex items-center bg-white border border-gray-200 shadow-sm rounded-full p-1">
-              {BILLING_PERIODS.map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => { setBilling(p.id); track('billing_toggle', { period: p.id }); }}
-                  className={`flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all ${
-                    billing === p.id
-                      ? 'text-white shadow-lg shadow-indigo-500/30'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  style={billing === p.id ? { background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' } : undefined}
-                >
-                  {p.label}
-                  {p.badge && (
-                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                      billing === p.id ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'
-                    }`}>
-                      {p.badge}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
+          <div className="grid md:grid-cols-3 gap-5 max-w-6xl mx-auto items-stretch pt-3">
 
             {/* FREE */}
-            <div className="pricing-card bg-white rounded-2xl border-2 border-gray-200 p-7">
+            <div className="pricing-card bg-white rounded-2xl border-2 border-gray-200 p-6 md:p-7 h-full">
               <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-5">
                 <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
               </div>
@@ -255,92 +284,13 @@ export default function TarifsPage() {
               </div>
             </div>
 
-            {/* PREMIUM — plan unique */}
+            {/* PREMIUM mensuel */}
+            <PremiumCard period="monthly" />
+
+            {/* PREMIUM annuel — recommandé */}
             <div className="relative">
-              {/* Halo lumineux */}
-              <div
-                className="absolute -inset-2.5 rounded-3xl opacity-30 blur-2xl pointer-events-none"
-                style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
-              ></div>
-            <div className="pricing-card popular bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border-2 border-primary-500 p-7 text-white relative shadow-xl shadow-primary-500/20 h-full">
-              <div
-                className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 text-white text-xs font-bold rounded-full"
-                style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
-              >
-                Recommandé
-              </div>
-              <div className="w-12 h-12 bg-accent-500/20 rounded-xl flex items-center justify-center mb-5">
-                <svg className="w-6 h-6 text-accent-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" /></svg>
-              </div>
-              <div className="mb-5">
-                <h3 className="text-lg font-bold">Premium</h3>
-                <p className="text-sm text-gray-400 mt-1">Tout illimit&eacute;, jusqu&apos;au concours</p>
-              </div>
-              <div className="mb-1">
-                {pricing.strike && (
-                  <span className="text-lg text-gray-500 line-through mr-2">{pricing.strike}&euro;</span>
-                )}
-                <span className="text-4xl font-black">{pricing.display}&euro;</span>
-                <span className="text-sm text-gray-400">{pricing.suffix}</span>
-                {pricing.badge && (
-                  <span className="ml-2 inline-flex px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full">
-                    {pricing.badge}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-gray-500 mb-5">{pricing.note}</p>
-              {isLoaded && isPaidTier ? (
-                <>
-                  <button className="block w-full py-3 text-center bg-accent-500 text-white font-bold rounded-xl mb-2 cursor-default">
-                    Premium activ&eacute; &#10003;
-                  </button>
-                  <button
-                    onClick={handlePortal}
-                    disabled={loadingPlan === 'portal'}
-                    className="block w-full py-2 text-center text-xs text-gray-400 hover:text-white transition-colors mb-5"
-                  >
-                    {loadingPlan === 'portal' ? 'Chargement...' : 'Gérer mon abonnement →'}
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => handleSubscribe('premium+')}
-                  disabled={loadingPlan === 'premium+'}
-                  className="block w-full py-3 text-center font-bold rounded-xl transition-opacity hover:opacity-90 mb-5 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-lg shadow-indigo-900/40"
-                  style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
-                >
-                  {loadingPlan === 'premium+' ? 'Chargement...' : 'Passer Premium'}
-                </button>
-              )}
-              <div className="border-t border-gray-700 pt-5">
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-2 text-sm text-gray-300">
-                    <PremiumCheckIcon />
-                    <span><strong className="text-white">QCM illimit&eacute;s</strong>{' '}g&eacute;n&eacute;r&eacute;s par IA</span>
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-300">
-                    <PremiumCheckIcon />
-                    <span>Pile «&nbsp;&Agrave; consolider&nbsp;» — <strong className="text-white">r&eacute;p&eacute;tition espac&eacute;e</strong></span>
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-300">
-                    <PremiumCheckIcon />
-                    <span><strong className="text-white">Examens blancs</strong> format concours (40 q / 60 min)</span>
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-300">
-                    <PremiumCheckIcon />
-                    <span><strong className="text-white">Cours complets</strong> + fiches PDF</span>
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-300">
-                    <PremiumCheckIcon />
-                    <strong className="text-white">Progression &amp; Objectifs</strong>
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-300">
-                    <PremiumCheckIcon />
-                    Pico, XP, d&eacute;fis &amp; s&eacute;rie — la gamification compl&egrave;te
-                  </li>
-                </ul>
-              </div>
-            </div>
+              <div className="absolute -inset-2.5 rounded-3xl opacity-30 blur-2xl pointer-events-none" style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}></div>
+              <div className="relative h-full"><PremiumCard period="yearly" dark /></div>
             </div>
           </div>
 
@@ -369,9 +319,8 @@ export default function TarifsPage() {
               Ton QG de r&eacute;vision complet — QCM illimit&eacute;s, examens blancs, coach de
               progression — c&apos;est{' '}
               <strong className="text-indigo-600">
-                '89,99 € l’année'
-              </strong>
-              {promo ? ' pendant l’offre de rentrée.' : '.'}
+                89,99 &euro; l&rsquo;ann&eacute;e
+              </strong>, soit 7,50 &euro; par mois.
             </p>
           </div>
 
