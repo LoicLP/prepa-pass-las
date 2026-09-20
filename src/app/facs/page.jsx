@@ -38,29 +38,49 @@ function describe(f) {
   return { m, b, conf, order, minutes, questions, particularites, dates: ex?.dates || null, exams };
 }
 
+import FacsList from './FacsList';
+
+const SHORT_BAREME = { differences: 'Dégressif 1 · 0,7 · 0,1', degressif: 'Dégressif 1 · 0,5 · 0,2', degressif75: 'Dégressif 1 · 0,75 · 0,5', degressif50: 'Dégressif 1 · 0,5 · 0', degressif80: 'Dégressif 1 · 0,8 · 0,25', item_02_01: '+0,2 / −0,1 par item', negatif: 'Points négatifs', tout_ou_rien: 'Tout ou rien', partiel: 'Points partiels' };
+const CONF_LABEL = { officiel: 'MCC officielles', secondaire: 'prépa / tutorat', temoignage: 'témoignages' };
+// Regroupement géographique pour la lecture (ordre d'affichage = ordre ci-dessous)
+export const REGIONS = [
+  { id: 'idf', name: 'Île-de-France', color: '#4f46e5', ids: ['paris-cite', 'sorbonne', 'paris-saclay', 'upec', 'versailles'] },
+  { id: 'nord-est', name: 'Nord & Est', color: '#0891b2', ids: ['lille', 'amiens', 'reims', 'nancy', 'strasbourg', 'dijon', 'besancon'] },
+  { id: 'ouest', name: 'Ouest & Normandie', color: '#059669', ids: ['nantes', 'rennes', 'brest', 'angers', 'tours', 'rouen', 'caen', 'poitiers'] },
+  { id: 'sud-ouest', name: 'Sud-Ouest & Occitanie', color: '#d97706', ids: ['bordeaux', 'toulouse', 'limoges', 'montpellier'] },
+  { id: 'sud-est', name: 'Sud-Est & Centre', color: '#e11d48', ids: ['lyon-est', 'lyon-sud', 'saint-etienne', 'grenoble', 'clermont', 'marseille', 'nice'] },
+  { id: 'outre-mer', name: 'Outre-mer', color: '#7c3aed', ids: ['antilles', 'reunion'] },
+];
+
 export default function FacsIndexPage() {
   const facs = FACS.filter((f) => f.id !== 'autre').sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   const nBareme = facs.filter((f) => MCC[f.id]?.bareme).length;
   const nProg = facs.filter((f) => FAC_EXAMS[f.id]?.exams?.length).length;
   const jsonLd = { '@context': 'https://schema.org', '@type': 'ItemList', name: 'Facultés PASS/LAS : programme, barème et épreuves', url: `${siteUrl}/facs`, itemListElement: facs.map((f, i) => ({ '@type': 'ListItem', position: i + 1, url: `${siteUrl}/facs/${f.id}`, name: f.name })) };
 
-  const Row = ({ k, children }) => (
-    <div className="flex gap-3 text-[13px] leading-snug">
-      <span className="w-24 shrink-0 text-[11px] font-bold uppercase tracking-wider text-gray-400 pt-0.5">{k}</span>
-      <span className="min-w-0 flex-1 text-gray-700">{children}</span>
-    </div>
-  );
+  // Données plates pour la liste cliente
+  const rows = facs.map((f) => {
+    const d = describe(f);
+    return {
+      id: f.id, name: f.name, short: f.name.replace(/^Université (de |d’|d')?/i, ''), city: f.city || '', voie: NO_PASS[f.id] || 'PASS',
+      conf: d.m ? d.m.confidence : null, confLabel: d.m ? CONF_LABEL[d.m.confidence] : 'non documentée',
+      bareme: d.b ? (SHORT_BAREME[d.b.id] || d.b.label) : null,
+      epreuves: d.minutes.length ? `${d.minutes.length} épreuve${d.minutes.length > 1 ? 's' : ''} · ${fmtMinutes(Math.min(...d.minutes))}${Math.max(...d.minutes) !== Math.min(...d.minutes) ? ` à ${fmtMinutes(Math.max(...d.minutes))}` : ''}` : null,
+      ue: d.order.length, partiels: d.dates?.s1 ? fmtDate(d.dates.s1) : null,
+      region: (REGIONS.find((r) => r.ids.includes(f.id)) || REGIONS[REGIONS.length - 1]).id,
+    };
+  });
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <section className="gradient-hero noise-overlay dot-grid pt-28 pb-10 md:pt-36 md:pb-14 relative overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-4">Les facult&eacute;s, <span className="programme-gradient-text">une par une</span></h1>
-          <p className="text-lg text-gray-600 leading-relaxed max-w-2xl">Programme, notation des QCM, dur&eacute;e des &eacute;preuves, dates : ce que chaque facult&eacute; publie dans ses MCC, avec la source.</p>
+          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 leading-[1.1] mb-4">Ta fac, <span className="programme-gradient-text">ses r&egrave;gles</span></h1>
+          <p className="text-lg text-gray-600 leading-relaxed max-w-2xl">Comment tes QCM sont not&eacute;s, combien de temps durent les &eacute;preuves, quand tombent les partiels. Pour {facs.length} facult&eacute;s, d&rsquo;apr&egrave;s ce qu&rsquo;elles publient, avec la source.</p>
           <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold">
             <span className="rounded-full bg-white/80 border border-primary-200 px-3 py-1 text-primary-700">{facs.length} facult&eacute;s</span>
-            <span className="rounded-full bg-white/80 border border-gray-200 px-3 py-1 text-gray-600">{nBareme} bar&egrave;mes connus</span>
+            <span className="rounded-full bg-white/80 border border-emerald-200 px-3 py-1 text-emerald-700">{nBareme} bar&egrave;mes connus</span>
             <span className="rounded-full bg-white/80 border border-gray-200 px-3 py-1 text-gray-600">{nProg} programmes renseign&eacute;s</span>
           </div>
         </div>
@@ -68,31 +88,12 @@ export default function FacsIndexPage() {
 
       <section className="py-10 md:py-14 bg-slate-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-4">
-            {facs.map((f) => {
-              const d = describe(f);
-              const voie = NO_PASS[f.id] || 'PASS';
-              return (
-                <Link key={f.id} href={`/facs/${f.id}`} className="group block bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-indigo-300 hover:shadow-md transition-all">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="min-w-0">
-                      <h2 className="font-bold text-gray-900 leading-snug group-hover:text-indigo-700 transition-colors">{f.name}</h2>
-                      <p className="text-xs text-gray-400 mt-0.5">{f.city}{f.city ? ' · ' : ''}{voie}</p>
-                    </div>
-                    {d.conf ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${d.conf[1]}`}>{d.conf[0]}</span> : <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold bg-gray-100 text-gray-500">non document&eacute;e</span>}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Row k="Notation">{d.b ? <><strong className="text-gray-900">{d.b.label}</strong> <span className="text-gray-500">· {d.b.desc.toLowerCase()}</span></> : <span className="text-gray-500">bar&egrave;me non publi&eacute;{d.m ? ' par la faculté' : ''}</span>}</Row>
-                    <Row k="Programme">{d.order.length ? <><strong className="text-gray-900">{d.order.length} UE</strong> <span className="text-gray-500">· {d.order.map((id) => d.exams.find((e) => e.subject === id)?.label || subjName(id)).slice(0, 4).join(', ')}{d.order.length > 4 ? '…' : ''}</span></> : <span className="text-gray-500">maquette non publi&eacute;e, programme complet propos&eacute;</span>}</Row>
-                    <Row k="&Eacute;preuves">{d.minutes.length ? <>{d.minutes.length} &eacute;preuves de <strong className="text-gray-900">{fmtMinutes(Math.min(...d.minutes))}{Math.max(...d.minutes) !== Math.min(...d.minutes) ? ` à ${fmtMinutes(Math.max(...d.minutes))}` : ''}</strong>{d.questions.length ? <span className="text-gray-500"> · {Math.min(...d.questions)}{Math.max(...d.questions) !== Math.min(...d.questions) ? ` à ${Math.max(...d.questions)}` : ''} QCM</span> : null}</> : <span className="text-gray-500">dur&eacute;es non publi&eacute;es</span>}</Row>
-                    {d.particularites.length > 0 && <Row k="Sp&eacute;cificit&eacute;s">{d.particularites.join(' · ')}</Row>}
-                    {d.dates && (d.dates.s1 || d.dates.s2) && <Row k="Partiels">{d.dates.s1 ? `S1 ${fmtDate(d.dates.s1)}` : ''}{d.dates.s1 && d.dates.s2 ? ' · ' : ''}{d.dates.s2 ? `S2 ${fmtDate(d.dates.s2)}` : ''}{d.dates.approx ? <span className="text-gray-400"> (d&apos;apr&egrave;s 2025-2026)</span> : null}</Row>}
-                  </div>
-                  <p className="mt-3 text-xs font-bold text-indigo-600">Voir la fiche →</p>
-                </Link>
-              );
-            })}
-          </div>
+          <FacsList facs={rows} regions={REGIONS.map(({ id, name, color }) => ({ id, name, color }))} />
+
+          <p className="mt-6 text-[12.5px] text-gray-400 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> MCC officielles : document de l&rsquo;universit&eacute;</span>
+            <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> pr&eacute;pa, tutorat ou t&eacute;moignages : &agrave; confirmer sur l&rsquo;intranet</span>
+          </p>
 
           <div className="mt-12 rounded-3xl bg-slate-900 text-white p-8 md:p-10 text-center">
             <h2 className="text-2xl font-black mb-2">R&eacute;vise dans les conditions de ta fac</h2>
