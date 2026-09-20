@@ -43,13 +43,13 @@ function PremiumCheckIcon() {
 
 const BILLING_PERIODS = [
   { id: 'monthly', label: 'Mensuel' },
-  { id: 'yearly', label: 'Annuel' },
+  { id: 'yearly', label: 'Annuel', badge: '-42 %' },
 ];
 
-// Tarifs Premium (TTC)
+// Tarifs Premium (TTC). Annuel : 89,99 € au lieu de 12 × 12,99 € = 155,88 €, soit -42 %.
 const PREMIUM_PRICING = {
   monthly: { display: '12,99', suffix: '/mois', note: 'sans engagement, annulable à tout moment' },
-  yearly: { display: '7,50', suffix: '/mois', note: 'facturé 89,99 € par an' },
+  yearly: { display: '7,50', suffix: '/mois', strike: '12,99', badge: '-42 %', note: 'facturé 89,99 € par an au lieu de 155,88 € — soit 65,89 € d’économie' },
 };
 const PROMO_PRICING = PREMIUM_PRICING;
 
