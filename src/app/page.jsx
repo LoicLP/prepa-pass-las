@@ -5,7 +5,8 @@ import QuestionDuJour from '@/components/home/QuestionDuJour';
 import FaqSection from '@/components/home/FaqSection';
 import RevealObserver from '@/components/home/RevealObserver';
 import ConcoursBanner from '@/components/ConcoursBanner';
-import PromoPriceLine from '@/components/PromoPriceLine';
+import HeroNueeCanvas from '@/components/home/HeroNueeTile';
+import { NUEE_THEMES } from '@/components/home/nueeThemes';
 
 // Régénération horaire : le bandeau promo disparaît de lui-même après l'échéance
 export const revalidate = 3600;
@@ -22,6 +23,16 @@ export const metadata = {
 /* ============================================================
    Briques visuelles (langage de l'accueil CRFPA, palette indigo)
 ============================================================ */
+/* Tuile du hero : premier thème rendu côté serveur, mise à jour ensuite par la nuée. */
+function NueeTile() {
+  const t = NUEE_THEMES[0];
+  return (
+    <div data-nuee-tuile="true" className="w-[66%] aspect-square flex items-center justify-center opacity-0" style={{ borderRadius: '27.3%', background: `linear-gradient(145deg, ${t.fond[0]}, ${t.fond[1]})`, boxShadow: '0 28px 70px rgba(0,0,0,0.16)' }}>
+      <svg className="w-1/2 h-1/2" viewBox="0 0 24 24" fill="none" stroke={t.encre} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d={t.formes[0]} /></svg>
+    </div>
+  );
+}
+
 function GridBackground({ opacity = 0.05, light = false }) {
   const rgb = light ? '255,255,255' : '30,27,75';
   return (
@@ -82,60 +93,55 @@ export default function Home() {
       {/* ================================================================
           HERO — centré, grille de fond, typographie serrée
       ================================================================ */}
-      <section id="accueil" className="relative pt-28 pb-24 md:pt-36 md:pb-32 overflow-hidden bg-gradient-to-b from-[#eef2ff] via-white to-[#f5f3ff]">
+      <section id="accueil" className="relative z-[1] pt-28 pb-16 md:pt-[150px] md:pb-24 overflow-hidden bg-gradient-to-b from-[#eef2ff] via-white to-[#f5f3ff]">
         <GridBackground opacity={0.06} />
-        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-indigo-600/[0.07] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
-        <div className="absolute top-10 right-[-8%] w-[400px] h-[400px] bg-violet-300/[0.16] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
-        <div className="absolute top-32 left-[-6%] w-[350px] h-[350px] bg-indigo-300/[0.16] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="absolute top-10 right-[-8%] w-[400px] h-[400px] bg-violet-300/[0.14] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="absolute top-32 left-[-6%] w-[350px] h-[350px] bg-indigo-300/[0.14] rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+        {/* Nuée : calque plein-section */}
+        <HeroNueeCanvas />
 
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 text-center">
-          <div className="hero-seq-1 inline-flex items-center justify-center mb-8">
-            <div className="relative float-soft">
-              <div className="absolute inset-0 bg-indigo-600/10 rounded-2xl blur-lg" />
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg shadow-indigo-600/30 flex items-center justify-center">
-                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
-                </svg>
-              </div>
+        <div className="relative z-10 max-w-6xl mx-auto px-5 sm:px-6 grid place-items-center sm:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] sm:gap-5 lg:gap-10">
+          {/* Tuile (à droite sur desktop, au-dessus sur mobile) */}
+          <div className="grid place-items-center w-full sm:order-2">
+            <div aria-hidden="true" className="grid place-items-center w-[170px] h-[160px] sm:w-full sm:h-[200px] md:h-[235px] lg:h-[350px]">
+              <NueeTile />
+            </div>
+            <p className="mt-2 inline-flex items-center gap-2 max-w-full rounded-2xl lg:rounded-full bg-white/75 backdrop-blur-sm ring-1 ring-indigo-600/15 px-3.5 py-2 text-[13px] text-slate-700">
+              <svg className="w-4 h-4 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" /></svg>
+              <span className="truncate">Adapté à <strong className="text-indigo-700">33 facultés</strong> · barème et format de ta fac</span>
+            </p>
+          </div>
+
+          {/* Texte */}
+          <div data-nuee-texte="true" className="grid place-items-center sm:place-items-start text-center sm:text-left sm:order-1">
+            <h1 className="mt-4 sm:mt-0 text-[2.7rem] sm:text-[2.3rem] md:text-[2.75rem] lg:text-[3.7rem] xl:text-[4.4rem] font-extrabold tracking-[-0.035em] leading-[1.02] max-w-4xl text-slate-900">
+              Réussis <br className="hidden sm:block" />le concours <br />
+              <span aria-label="PASS/LAS">
+                {'PASS/LAS'.split('').map((ch, i) => <span key={i} data-lettre="true" aria-hidden="true" style={{ color: '#4f46e5', transition: 'color 0.25s ease' }}>{ch}</span>)}
+              </span>
+            </h1>
+            <p className="mt-6 text-[17px] md:text-lg text-slate-500 max-w-xl leading-relaxed">
+              Le QG de révision qui s&apos;adapte à ta fac : examens blancs <strong className="text-slate-800">au barème et au format de tes MCC</strong>, QCM illimités corrigés, <strong className="text-slate-800">révisions espacées</strong> de tes erreurs, et un coach qui récompense ta régularité.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row items-center gap-3">
+              <Link href="/inscription" className="group inline-flex items-center justify-center gap-2 h-[52px] px-7 bg-[#141414] text-white font-semibold rounded-full hover:bg-black/80 transition-colors shadow-lg shadow-slate-900/15">
+                Commencer gratuitement
+                <ArrowIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <Link href="#methode" className="inline-flex items-center justify-center h-[52px] px-7 bg-white text-slate-900 font-semibold rounded-full border border-slate-200 hover:border-slate-300 transition-colors">
+                Découvrir la méthode
+              </Link>
+            </div>
+            <div className="mt-5 flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-2 text-sm text-slate-500">
+              <div className="inline-flex items-center gap-1.5"><CheckIcon /> 7 jours de Premium offerts</div>
+              <div className="inline-flex items-center gap-1.5"><CheckIcon /> Sans carte bancaire</div>
+              <div className="inline-flex items-center gap-1.5"><CheckIcon /> 170 fiches en accès libre</div>
             </div>
           </div>
+        </div>
 
-          <h1 className="hero-seq-2 text-5xl sm:text-6xl md:text-7xl font-black tracking-tight text-slate-900 leading-[1.05] mb-8">
-            Réussis le concours<br />
-            <span className="text-indigo-600">PASS/LAS</span>
-          </h1>
-
-          <p className="hero-seq-3 text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed mb-10">
-            Le QG de révision qui s&apos;adapte à ta fac : examens blancs au barème et au format de tes MCC, QCM illimités corrigés,
-            révisions espacées de tes erreurs — et un coach qui récompense ta régularité, jour après jour.
-          </p>
-
-          <div className="hero-seq-4 flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
-            <Link href="/inscription" className="group inline-flex items-center justify-center gap-2 px-7 py-4 bg-slate-900 text-white font-semibold rounded-full hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10">
-              Commencer gratuitement
-              <ArrowIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-            <Link href="#methode" className="inline-flex items-center justify-center gap-2 px-7 py-4 bg-white text-slate-900 font-semibold rounded-full border border-slate-200 hover:border-slate-300 transition-colors">
-              Découvrir la méthode
-            </Link>
-          </div>
-
-          <div className="hero-seq-5">
-            <PromoPriceLine />
-          </div>
-
-          <div className="hero-seq-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-slate-500">
-            <div className="inline-flex items-center gap-1.5"><CheckIcon /> 7 jours de Premium offerts</div>
-            <div className="inline-flex items-center gap-1.5"><CheckIcon /> Sans carte bancaire</div>
-            <div className="inline-flex items-center gap-1.5"><CheckIcon /> 170 fiches en accès libre</div>
-            <div className="inline-flex items-center gap-1.5"><CheckIcon /> Adapté à 33 facultés</div>
-          </div>
-
-          <div className="mt-16 flex justify-center">
-            <svg className="w-6 h-6 text-slate-300 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-            </svg>
-          </div>
+        <div className="relative z-10 mt-12 md:mt-16 flex justify-center">
+          <svg className="w-6 h-6 text-slate-300 hero-cue" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
         </div>
       </section>
 
@@ -174,7 +180,7 @@ export default function Home() {
               },
             ].map((v, i) => (
               <div
-                data-reveal data-reveal-delay={i + 1} key={v.name}
+                data-reveal="scale" data-reveal-delay={i + 1} key={v.name}
                 className={`relative rounded-2xl p-7 border transition-all ${v.highlight ? 'bg-gradient-to-br from-[#eef2ff] to-white border-indigo-600/20 shadow-lg shadow-indigo-600/5' : 'bg-white border-slate-200'}`}
               >
                 <span className={`absolute -top-3 left-6 text-[10px] font-bold uppercase tracking-wider text-white px-2.5 py-1 rounded-full ${v.highlight ? 'bg-indigo-600' : 'bg-emerald-600'}`}>{v.tag}</span>
@@ -220,21 +226,21 @@ export default function Home() {
           </div>
 
           <div className="grid lg:grid-cols-[1fr_0.95fr] gap-10 lg:gap-14 items-center mb-14">
-            <div data-reveal className="grid sm:grid-cols-2 gap-3.5">
+            <div className="grid sm:grid-cols-2 gap-3.5">
               {[
                 { t: 'Barème', d: 'Ta note sur 20, calculée comme dans ta fac.', c: 'from-indigo-400 to-indigo-600' },
                 { t: 'Format', d: 'La durée et le nombre de QCM de chaque UE, pré-remplis.', c: 'from-violet-400 to-violet-600' },
                 { t: 'Coefficients', d: 'Tes priorités pondérées, la note-seuil sous les yeux.', c: 'from-emerald-400 to-emerald-600' },
                 { t: 'Stratégie', d: 'Cocher ou s’abstenir ? Ça dépend du barème. On te le dit.', c: 'from-amber-300 to-amber-500' },
-              ].map((c) => (
-                <div key={c.t} className="relative rounded-2xl bg-white/[0.06] border border-white/10 p-5 backdrop-blur-sm overflow-hidden">
+              ].map((c, i) => (
+                <div key={c.t} data-reveal="scale" data-reveal-delay={i + 1} className="relative rounded-2xl bg-white/[0.06] border border-white/10 p-5 backdrop-blur-sm overflow-hidden">
                   <span className={`absolute left-5 top-0 h-1 w-10 rounded-b-full bg-gradient-to-r ${c.c}`} aria-hidden="true" />
                   <h3 className="text-xl font-black tracking-tight mt-2 mb-1">{c.t}</h3>
                   <p className="text-sm text-indigo-100/75 leading-relaxed">{c.d}</p>
                 </div>
               ))}
             </div>
-            <div data-reveal className="relative">
+            <div data-reveal="right" className="relative">
               <div className="absolute -inset-6 bg-indigo-400/25 rounded-[2rem] blur-3xl pointer-events-none" aria-hidden="true" />
               <div className="relative"><MockFac /></div>
             </div>
@@ -360,7 +366,7 @@ export default function Home() {
             {byCode.map((ue, i) => {
               const t = UE_TONES[ue.color] || UE_TONES.indigo;
               return (
-                <Link data-reveal data-reveal-delay={(i % 3) + 1} key={ue.id} href={`/programme#ue-${ue.id}`} className="group bg-white rounded-2xl border border-slate-200 p-5 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5 transition-all block">
+                <Link data-reveal="scale" data-reveal-delay={(i % 3) + 1} key={ue.id} href={`/programme#ue-${ue.id}`} className="group bg-white rounded-2xl border border-slate-200 p-5 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5 transition-all block">
                   <div className="flex items-center justify-between mb-3">
                     <span className="inline-flex items-center gap-2">
                       <span className={`inline-flex items-center gap-2 text-[11px] font-bold px-2.5 py-1 rounded-full border ${t.soft}`}>
@@ -473,7 +479,7 @@ export default function Home() {
               { name: 'Adam', role: 'LAS Droit · Bordeaux', quote: "Le streak et Pico me font ouvrir l'appli même les jours sans motivation. C'est bête, mais ça marche.", gradient: 'from-violet-500 to-fuchsia-500' },
               { name: 'Inès', role: 'PASS · Paris Cité', quote: "Les examens blancs m'ont enlevé la peur du chrono. Le jour du concours, j'avais déjà fait dix fois le format.", gradient: 'from-cyan-500 to-indigo-500' },
             ].map((t, i) => (
-              <div data-reveal data-reveal-delay={i + 1} key={t.name} className="bg-white rounded-2xl p-7 border border-slate-200 hover:shadow-lg hover:-translate-y-0.5 transition-all flex flex-col">
+              <div data-reveal="scale" data-reveal-delay={i + 1} key={t.name} className="bg-white rounded-2xl p-7 border border-slate-200 hover:shadow-lg hover:-translate-y-0.5 transition-all flex flex-col">
                 <div className="flex items-center gap-0.5 text-amber-400 mb-4">
                   {[1, 2, 3, 4, 5].map((s) => (
                     <svg key={s} className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.961a1 1 0 00.95.69h4.164c.969 0 1.371 1.24.588 1.81l-3.37 2.449a1 1 0 00-.363 1.118l1.285 3.96c.3.922-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.176 0l-3.37 2.448c-.784.57-1.838-.196-1.539-1.118l1.285-3.96a1 1 0 00-.363-1.118L2.05 9.388c-.783-.57-.38-1.81.588-1.81h4.164a1 1 0 00.95-.69l1.286-3.961z" /></svg>
@@ -518,7 +524,6 @@ export default function Home() {
               Voir les tarifs
             </Link>
           </div>
-          <div className="mb-4"><PromoPriceLine variant="dark" /></div>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-400">
             <div className="inline-flex items-center gap-1.5"><CheckIcon className="w-4 h-4 text-emerald-400" /> 7 jours de Premium offerts</div>
             <div className="inline-flex items-center gap-1.5"><CheckIcon className="w-4 h-4 text-emerald-400" /> Sans carte bancaire</div>
@@ -536,7 +541,7 @@ export default function Home() {
 function FeatureRow({ num, flip = false, label, title, subtitle, bullets, href, cta, mockup }) {
   return (
     <div className={`grid md:grid-cols-2 gap-8 md:gap-14 items-center ${flip ? 'md:[direction:rtl]' : ''}`}>
-      <div data-reveal className={flip ? 'md:[direction:ltr]' : ''}>
+      <div data-reveal={flip ? 'right' : 'left'} className={flip ? 'md:[direction:ltr]' : ''}>
         <div className="flex items-center gap-3 mb-4">
           <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-900 text-white font-bold text-sm">{num}</span>
           <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{label}</span>
@@ -554,7 +559,7 @@ function FeatureRow({ num, flip = false, label, title, subtitle, bullets, href, 
           {cta} <ArrowIcon className="w-4 h-4" />
         </Link>
       </div>
-      <div data-reveal data-reveal-delay="1" className={`relative ${flip ? 'md:[direction:ltr]' : ''}`}>
+      <div data-reveal={flip ? 'left' : 'right'} data-reveal-delay="1" className={`relative ${flip ? 'md:[direction:ltr]' : ''}`}>
         <div className="absolute -inset-4 bg-gradient-to-br from-indigo-600/10 via-violet-400/[0.04] to-transparent rounded-3xl blur-2xl pointer-events-none" />
         <div className="relative">{mockup}</div>
       </div>
