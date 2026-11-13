@@ -1,10 +1,18 @@
+import { permanentRedirect } from 'next/navigation';
+import { FICHES_DATA } from '@/data/fiches';
 import CoursPage from './CoursClient';
 
-export const metadata = {
-  title: 'Cours détaillés PASS/LAS - Anatomie, Chimie, Biologie',
-  description: 'Cours complets et structurés par matière pour réussir le concours PASS et LAS : anatomie, chimie, biologie cellulaire, biostatistiques, biophysique et SSH.',
-  alternates: { canonical: '/cours' },
-};
+/* /cours n'existe qu'avec ?id=<fiche> : sans identifiant valide la page était vide côté serveur
+   (Soft 404 pour Google). On redirige vers /fiches, et chaque cours déclare la fiche comme canonique. */
+export async function generateMetadata({ searchParams }) {
+  const { id } = await searchParams;
+  const fiche = FICHES_DATA.find((f) => f.id === id);
+  return {
+    title: fiche ? `${fiche.title} — Cours complet PASS/LAS` : 'Cours détaillés PASS/LAS - Anatomie, Chimie, Biologie',
+    description: fiche?.summary || 'Cours complets et structurés par matière pour réussir le concours PASS et LAS.',
+    alternates: { canonical: fiche ? `/fiches/${fiche.id}` : '/fiches' },
+  };
+}
 
 const siteUrl = 'https://www.prepa-pass-las.fr';
 
@@ -48,7 +56,9 @@ const jsonLd = {
   })),
 };
 
-export default function Page() {
+export default async function Page({ searchParams }) {
+  const { id } = await searchParams;
+  if (!id || !FICHES_DATA.some((f) => f.id === id)) permanentRedirect('/fiches');
   return (
     <>
       <script
