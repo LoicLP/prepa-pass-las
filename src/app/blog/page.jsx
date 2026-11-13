@@ -13,7 +13,7 @@ export const metadata = {
   },
 };
 
-const siteUrl = 'https://prepa-pass-las.fr';
+const siteUrl = 'https://www.prepa-pass-las.fr';
 
 const jsonLd = {
   '@context': 'https://schema.org',

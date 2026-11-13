@@ -3,7 +3,7 @@ import { FICHES_DATA } from '@/data/fiches';
 import { SUBJECTS } from '@/data/subjects';
 import FicheDetail from './FicheDetail';
 
-const siteUrl = 'https://prepa-pass-las.fr';
+const siteUrl = 'https://www.prepa-pass-las.fr';
 
 const subjectLabels = Object.fromEntries(SUBJECTS.map((s) => [s.id, s.name]));
 const SITE_NAME = 'Prépa PASS/LAS';

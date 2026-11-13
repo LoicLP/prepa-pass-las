@@ -3,7 +3,7 @@ import { BLOG_ARTICLES } from '@/data/blog';
 import { FACS } from '@/data/facs';
 
 export default function sitemap() {
-  const baseUrl = 'https://prepa-pass-las.fr';
+  const baseUrl = 'https://www.prepa-pass-las.fr';
 
   const fichesPages = FICHES_DATA.map((fiche) => ({
     url: `${baseUrl}/fiches/${fiche.id}`,

@@ -10,7 +10,7 @@ export const metadata = {
   alternates: { canonical: '/facs' },
 };
 
-const siteUrl = 'https://prepa-pass-las.fr';
+const siteUrl = 'https://www.prepa-pass-las.fr';
 const NO_PASS = { nice: 'LAS', caen: 'LAS', poitiers: 'LAS', reims: 'LAS', strasbourg: 'L1 SpS', upec: 'LSPS / LAS', angers: 'PluriPASS' };
 const CONF = { officiel: ['MCC officielles', 'bg-emerald-50 text-emerald-700'], secondaire: ['prépa / tutorat', 'bg-amber-50 text-amber-700'], temoignage: ['témoignages', 'bg-amber-50 text-amber-700'] };
 const subjName = (id) => SUBJECTS.find((s) => s.id === id)?.name || id;

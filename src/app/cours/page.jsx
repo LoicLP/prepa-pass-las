@@ -6,7 +6,7 @@ export const metadata = {
   alternates: { canonical: '/cours' },
 };
 
-const siteUrl = 'https://prepa-pass-las.fr';
+const siteUrl = 'https://www.prepa-pass-las.fr';
 
 const courses = [
   { id: 'anatomie', name: 'Anatomie', description: 'Cours complet d\'anatomie humaine : ostéologie, myologie, angiologie, neuroanatomie et splanchnologie.' },

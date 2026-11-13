@@ -39,7 +39,7 @@ const categoryIcons = {
   ),
 };
 
-const BASE_URL = 'https://prepa-pass-las.fr';
+const BASE_URL = 'https://www.prepa-pass-las.fr';
 
 export function generateStaticParams() {
   return BLOG_ARTICLES.map((a) => ({ slug: a.slug }));

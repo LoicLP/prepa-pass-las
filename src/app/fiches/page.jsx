@@ -5,10 +5,10 @@ export const metadata = {
   title: `${FICHES_DATA.length} fiches de révision PASS/LAS gratuites, 9 UE`,
   description: `${FICHES_DATA.length} fiches de révision gratuites pour le concours PASS/LAS : anatomie, chimie-biochimie, biologie cellulaire, biostatistiques, biophysique, SSH, physiologie, médicament, histologie-embryologie. Points clés, QCM et PDF.`,
   alternates: { canonical: '/fiches' },
-  openGraph: { type: 'website', locale: 'fr_FR', siteName: 'Prépa PASS/LAS', url: 'https://prepa-pass-las.fr/fiches', title: `${FICHES_DATA.length} fiches de révision PASS/LAS gratuites`, description: 'Toutes les fiches du tronc commun PASS/LAS, par UE, avec leurs points clés du concours.' },
+  openGraph: { type: 'website', locale: 'fr_FR', siteName: 'Prépa PASS/LAS', url: 'https://www.prepa-pass-las.fr/fiches', title: `${FICHES_DATA.length} fiches de révision PASS/LAS gratuites`, description: 'Toutes les fiches du tronc commun PASS/LAS, par UE, avec leurs points clés du concours.' },
 };
 
-const siteUrl = 'https://prepa-pass-las.fr';
+const siteUrl = 'https://www.prepa-pass-las.fr';
 
 import { SUBJECTS } from '@/data/subjects';
 const subjectLabels = Object.fromEntries(SUBJECTS.map((s) => [s.id, s.name]));

@@ -7,6 +7,6 @@ export default function robots() {
         disallow: ['/dashboard', '/api/', '/auth/', '/payment/', '/reset-password'],
       },
     ],
-    sitemap: 'https://prepa-pass-las.fr/sitemap.xml',
+    sitemap: 'https://www.prepa-pass-las.fr/sitemap.xml',
   };
 }

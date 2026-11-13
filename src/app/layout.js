@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', weight: ['600', '700', '800'] });
 
 export const metadata = {
-  metadataBase: new URL('https://prepa-pass-las.fr'),
+  metadataBase: new URL('https://www.prepa-pass-las.fr'),
   title: {
     default: 'Prépa PASS/LAS - Réussissez votre première année de médecine',
     template: '%s | Prépa PASS/LAS',
@@ -22,7 +22,7 @@ export const metadata = {
   openGraph: {
     type: 'website',
     locale: 'fr_FR',
-    url: 'https://prepa-pass-las.fr',
+    url: 'https://www.prepa-pass-las.fr',
     siteName: 'Prépa PASS/LAS',
     title: 'Prépa PASS/LAS - Réussissez votre première année de médecine',
     description: 'La plateforme de révision n°1 pour réussir le concours PASS/LAS. QCM illimités, fiches de cours, mode examen et suivi de progression.',
@@ -39,7 +39,7 @@ export const metadata = {
     follow: true,
   },
   alternates: {
-    canonical: 'https://prepa-pass-las.fr',
+    canonical: 'https://www.prepa-pass-las.fr',
   },
 };
 
@@ -54,8 +54,8 @@ export default function RootLayout({ children }) {
               '@context': 'https://schema.org',
               '@type': 'Organization',
               name: 'Prépa PASS/LAS',
-              url: 'https://prepa-pass-las.fr',
-              logo: 'https://prepa-pass-las.fr/icon.svg',
+              url: 'https://www.prepa-pass-las.fr',
+              logo: 'https://www.prepa-pass-las.fr/icon.svg',
               contactPoint: {
                 '@type': 'ContactPoint',
                 email: 'support@prepa-pass-las.fr',

@@ -7,7 +7,7 @@ import { baremeById } from '@/lib/profile';
 import { strategyFor, SCALES } from '@/lib/bareme';
 import { facStats } from '@/lib/facStats';
 
-const siteUrl = 'https://prepa-pass-las.fr';
+const siteUrl = 'https://www.prepa-pass-las.fr';
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
