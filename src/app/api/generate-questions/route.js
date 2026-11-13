@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 import { buildQCMPrompt, buildExamenPrompt } from '@/utils/prompts';
+import { alertAdmin } from '@/lib/alert';
 
 import { SUBJECTS } from '@/data/subjects';
 const VALID_SUBJECTS = SUBJECTS.map((s) => s.id);
@@ -203,6 +204,19 @@ export async function POST(request) {
     return Response.json({ questions: validQuestions, aiGenerated: true, topic: ficheTopic || subjectName });
   } catch (err) {
     console.error('[Gemini API Error]', err);
+    // Panne de génération (crédits épuisés, quota, clé invalide…) : les élèves reçoivent la banque de secours,
+    // on prévient l'administrateur (une alerte par tranche de 6 h).
+    const msg = String(err?.message || err).replace(/key=[^&\s]+/g, 'key=…').slice(0, 500);
+    const credit = /402|prepayment|billing|quota|429/i.test(msg);
+    await alertAdmin('gemini', {
+      subject: credit ? 'Génération IA en panne : crédits ou quota Gemini' : 'Génération IA en panne',
+      lines: [
+        'La génération de questions par IA échoue. Les élèves reçoivent la banque de secours (5 questions par UE, toujours les mêmes).',
+        credit ? 'Cause probable : crédits prépayés ou quota Gemini épuisés. À recharger sur https://ai.studio/projects — aucun redéploiement nécessaire.' : 'Vérifie la clé GEMINI_API_KEY et l’état du service Gemini.',
+        `Erreur : ${msg}`,
+        `Mode : ${mode} · matière : ${subject || subjectName || ficheTopic || '—'}`,
+      ],
+    });
     return Response.json(
       { error: 'Erreur lors de la génération des questions. Veuillez réessayer.' },
       { status: 500 }
